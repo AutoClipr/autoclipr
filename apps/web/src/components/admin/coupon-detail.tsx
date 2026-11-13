@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Pause, Play, Pencil, Trash2, Users, IndianRupee, Ticket, Archive } from "lucide-react";
 import type { Coupon } from "@/components/admin/coupon-manager";
+import { PlanMultiSelect } from "@/components/admin/plan-multi-select";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1`;
 
@@ -390,10 +391,8 @@ function EditCouponForm({
     const maxUses = String(form.get("max_uses") ?? "").trim();
     const expiresAt = String(form.get("expires_at") ?? "").trim();
     const startsAt = String(form.get("starts_at") ?? "").trim();
-    const plans = String(form.get("applicable_plans") ?? "")
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
+    // One value per ticked plan; none ticked means every plan.
+    const plans = form.getAll("applicable_plans").map(String);
 
     try {
       const res = await fetch(`${API}/admin/coupons/${coupon.id}`, {
@@ -510,14 +509,7 @@ function EditCouponForm({
           />
         </Field>
 
-        <Field label="Plans" hint="Comma separated. Blank = all plans">
-          <input
-            name="applicable_plans"
-            defaultValue={coupon.applicable_plans.join(", ")}
-            placeholder="creator, business"
-            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-[#3C50E0] focus:outline-none"
-          />
-        </Field>
+        <PlanMultiSelect defaultValue={coupon.applicable_plans} />
 
         <Field label="Visibility" hint="Private codes are never listed to users">
           <select
