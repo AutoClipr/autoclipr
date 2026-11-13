@@ -33,6 +33,8 @@ export interface ValidatedCoupon {
   currency: string;
   /** Human-readable summary for the checkout UI. */
   description: string;
+  /** Plans the coupon is valid for; empty means every plan. */
+  applicablePlans: string[];
 }
 
 @Injectable()
@@ -104,6 +106,10 @@ export class CouponsService {
       finalPaise: Math.max(0, originalPaise - discountPaise),
       currency: 'INR',
       description: this.describe(coupon),
+      // Lets the pricing page show the discount only on plans it covers, and
+      // not send the code with a checkout for a plan that would reject it.
+      // Empty means every plan.
+      applicablePlans: coupon.applicable_plans,
     };
   }
 

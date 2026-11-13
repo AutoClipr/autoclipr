@@ -7,7 +7,20 @@ import { createClient } from "@/lib/supabase/client";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1`;
 
-export type AppliedCoupon = { code: string; description: string };
+export type AppliedCoupon = {
+  code: string;
+  description: string;
+  type: "percentage" | "free_trial" | "free_credits";
+  /** Percent off for percentage coupons; days or credits otherwise. */
+  value: number;
+  /** Plans the coupon is valid for. Empty means every plan. */
+  applicablePlans: string[];
+};
+
+/** Whether a coupon may be used with a given plan. */
+export function couponAppliesTo(coupon: AppliedCoupon, planId: string): boolean {
+  return coupon.applicablePlans.length === 0 || coupon.applicablePlans.includes(planId);
+}
 
 /**
  * "Have a coupon?" input for the pricing page.
@@ -101,7 +114,13 @@ export function CouponField({
         return;
       }
 
-      onApply({ code: body.data.code, description: body.data.description });
+      onApply({
+        code: body.data.code,
+        description: body.data.description,
+        type: body.data.type,
+        value: Number(body.data.value) || 0,
+        applicablePlans: Array.isArray(body.data.applicablePlans) ? body.data.applicablePlans : [],
+      });
       setError(null);
     } catch {
       setError("Could not check that code. Try again.");

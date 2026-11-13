@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { CouponField, type AppliedCoupon } from "@/components/landing/coupon-field";
+import { CouponField, couponAppliesTo, type AppliedCoupon } from "@/components/landing/coupon-field";
 import { type CurrencyCode, PLAN_PRICES, formatPrice, CURRENCY_SYMBOLS } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -169,7 +169,16 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
   const Icon = plan.icon;
   const ac = accentMap[plan.accentColor];
   const planPrices = PLAN_PRICES[plan.id]?.[currency];
-  const displayPrice = yearly ? (planPrices?.yearly ?? 0) : (planPrices?.monthly ?? 0);
+  const listPrice = yearly ? (planPrices?.yearly ?? 0) : (planPrices?.monthly ?? 0);
+  // Only send/show a coupon on plans it covers: the checkout API rejects a
+  // code for an ineligible plan.
+  const planCoupon = coupon && listPrice > 0 && couponAppliesTo(coupon, plan.id) ? coupon : null;
+  const percentOff = planCoupon?.type === "percentage" ? Math.min(planCoupon.value, 100) : 0;
+  // A display estimate in the visitor's currency. What is actually charged is
+  // decided server-side and by Dodo; this only previews the same percentage.
+  const displayPrice = percentOff
+    ? Math.round(listPrice * (100 - percentOff)) / 100
+    : listPrice;
   const priceLabel = formatPrice(displayPrice, currency);
   const [loading, setLoading] = useState(false);
 
@@ -187,7 +196,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
       if (!session) {
         // Not logged in — redirect to login, then back to pricing to trigger checkout
         const back = `/pricing?checkout=${plan.id}&billing=${yearly ? "yearly" : "monthly"}${
-          coupon ? `&coupon=${encodeURIComponent(coupon.code)}` : ""
+          planCoupon ? `&coupon=${encodeURIComponent(planCoupon.code)}` : ""
         }`;
         // Encoded: unencoded, everything after the first & became a param of
         // /login instead of the redirect, losing the billing period.
@@ -209,7 +218,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
         body: JSON.stringify({
           planId: plan.id,
           billingPeriod: yearly ? "yearly" : "monthly",
-          ...(coupon ? { couponCode: coupon.code } : {}),
+          ...(planCoupon ? { couponCode: planCoupon.code } : {}),
           ...(country ? { country } : {}),
         }),
       });
@@ -276,15 +285,29 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
 
         {/* Price */}
         <div className="relative mt-5">
+          {percentOff > 0 && (
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-lg font-semibold text-white/35 line-through">
+                {formatPrice(listPrice, currency)}
+              </span>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                {planCoupon!.code} · {percentOff}% off
+              </span>
+            </div>
+          )}
           <div className="flex items-end gap-1">
             <span className="text-5xl font-extrabold tracking-tight text-white">{priceLabel}</span>
             {displayPrice > 0 && <span className="mb-2 text-sm text-muted-foreground">/month</span>}
           </div>
+          {coupon && listPrice > 0 && !planCoupon && (
+            <p className="mt-1 text-xs text-white/35">{coupon.code} doesn&apos;t apply to this plan</p>
+          )}
           {/* Yearly total + discount */}
           {yearly && displayPrice > 0 && (() => {
             const monthlyPrice = planPrices?.monthly ?? 0;
             const yearlyTotal = displayPrice * 12;
-            const savings = (monthlyPrice - displayPrice) * 12;
+            // "Save" is the yearly-vs-monthly saving only, not the coupon.
+            const savings = (monthlyPrice - listPrice) * 12;
             const discountPct = Math.round((savings / (monthlyPrice * 12)) * 100);
             const sym = CURRENCY_SYMBOLS[currency];
             return (
