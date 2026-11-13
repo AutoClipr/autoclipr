@@ -40,7 +40,12 @@ export function CouponField({
   onApply,
   onClear,
 }: {
-  planId: string;
+  /**
+   * Omit on the pricing page: the code is checked before a plan is chosen,
+   * and each card decides from `applicablePlans`. Pass it to require that
+   * the code is valid for one specific plan.
+   */
+  planId?: string;
   billingPeriod: "monthly" | "yearly";
   applied: AppliedCoupon | null;
   onApply: (coupon: AppliedCoupon) => void;
@@ -100,7 +105,7 @@ export function CouponField({
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ code: trimmed, planId, billingPeriod }),
+        body: JSON.stringify({ code: trimmed, ...(planId ? { planId } : {}), billingPeriod }),
       });
       const body = await res.json().catch(() => null);
 

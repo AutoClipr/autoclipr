@@ -10,6 +10,16 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+/** Plans a coupon can be limited to. The free Starter plan has nothing to discount. */
+export const COUPON_PLANS = ['creator', 'business'] as const;
+
+/** Trim and lowercase plan names, so "Creator " still means creator. */
+const normalizePlans = ({ value }: { value: unknown }) =>
+  Array.isArray(value)
+    ? value.map((p) => (typeof p === 'string' ? p.trim().toLowerCase() : p))
+    : value;
 
 export class CreateCouponDto {
   /** Capped at 16 characters because Dodo's discount codes are. */
@@ -52,7 +62,11 @@ export class CreateCouponDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
-  @IsString({ each: true })
+  @Transform(normalizePlans)
+  @IsIn(COUPON_PLANS, {
+    each: true,
+    message: `applicable_plans must only contain: ${COUPON_PLANS.join(', ')}`,
+  })
   applicable_plans?: string[];
 
   @IsOptional()
@@ -79,8 +93,14 @@ export class ValidateCouponDto {
   @Length(3, 16)
   code!: string;
 
+  /**
+   * Optional: the pricing page checks a code before a plan is chosen, and
+   * shows the discount per plan from `applicablePlans`. Checkout always
+   * re-validates against the plan actually being bought.
+   */
+  @IsOptional()
   @IsString()
-  planId!: string;
+  planId?: string;
 
   @IsOptional()
   @IsIn(['monthly', 'yearly'])
@@ -120,7 +140,11 @@ export class UpdateCouponDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
-  @IsString({ each: true })
+  @Transform(normalizePlans)
+  @IsIn(COUPON_PLANS, {
+    each: true,
+    message: `applicable_plans must only contain: ${COUPON_PLANS.join(', ')}`,
+  })
   applicable_plans?: string[];
 
   @IsOptional()

@@ -162,6 +162,25 @@ describe('CouponsService', () => {
       );
     });
 
+    it('accepts a business-only coupon when no plan is given, and reports its plans', async () => {
+      repo.findByCode.mockResolvedValue(coupon({ applicable_plans: ['business'], value: 25 }));
+
+      const result = await service.validate('BIZ25', undefined, 'monthly', 'u1');
+
+      expect(result.applicablePlans).toEqual(['business']);
+      // Priced for the coupon's own plan, not Creator: 25% of ₹1999.
+      expect(result.originalPaise).toBe(199_900);
+      expect(result.discountPaise).toBe(49_975);
+    });
+
+    it('still rejects a business-only coupon when checkout asks about Creator', async () => {
+      repo.findByCode.mockResolvedValue(coupon({ applicable_plans: ['business'] }));
+
+      await expect(service.validate('BIZ25', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
+        response: { error: 'COUPON_PLAN_NOT_ELIGIBLE' },
+      });
+    });
+
     it('treats an empty plan list as applying to every plan', async () => {
       repo.findByCode.mockResolvedValue(coupon({ applicable_plans: [] }));
 

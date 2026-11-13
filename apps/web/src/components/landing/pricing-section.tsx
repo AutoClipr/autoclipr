@@ -491,7 +491,6 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
         )}
 
         <CouponField
-          planId="creator"
           billingPeriod={yearly ? "yearly" : "monthly"}
           applied={coupon}
           onApply={setCoupon}

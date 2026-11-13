@@ -56,9 +56,15 @@ export class CouponsService {
    * Throws BadRequestException with a user-facing reason; the caller surfaces
    * the message directly.
    */
+  /**
+   * `planId` is optional. Without one, the plan check is skipped and the
+   * amounts are computed for the coupon's first eligible plan (or Creator);
+   * the caller decides per plan from `applicablePlans`. Checkout always passes
+   * the real plan, so a code still cannot be redeemed on a plan it excludes.
+   */
   async validate(
     code: string,
-    planId: string,
+    planId: string | undefined,
     billingPeriod: 'monthly' | 'yearly',
     userId: string,
   ): Promise<ValidatedCoupon> {
@@ -79,7 +85,11 @@ export class CouponsService {
       throw new CouponRejectedError('COUPON_EXHAUSTED');
     }
 
-    if (coupon.applicable_plans.length > 0 && !coupon.applicable_plans.includes(planId)) {
+    if (
+      planId !== undefined &&
+      coupon.applicable_plans.length > 0 &&
+      !coupon.applicable_plans.includes(planId)
+    ) {
       throw new CouponRejectedError('COUPON_PLAN_NOT_ELIGIBLE');
     }
 
@@ -88,8 +98,9 @@ export class CouponsService {
       throw new CouponRejectedError('COUPON_USER_LIMIT_REACHED');
     }
 
-    const originalPaise = PLAN_PRICE_PAISE[planId]?.[billingPeriod] ?? 0;
-    const discountPaise = this.discountPaiseFor(coupon, planId, billingPeriod);
+    const pricedPlan = planId ?? coupon.applicable_plans[0] ?? 'creator';
+    const originalPaise = PLAN_PRICE_PAISE[pricedPlan]?.[billingPeriod] ?? 0;
+    const discountPaise = this.discountPaiseFor(coupon, pricedPlan, billingPeriod);
 
     return {
       valid: true,
