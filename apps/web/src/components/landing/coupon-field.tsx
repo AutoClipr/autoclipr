@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Tag, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1`;
@@ -36,21 +37,32 @@ export function CouponField({
   const [code, setCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const autoApplied = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastUrlCode = useRef<string | null>(null);
+  const searchParams = useSearchParams();
+  const urlCoupon = searchParams?.get("coupon")?.trim().toUpperCase() ?? "";
 
   // A code arriving from the promo banner (/pricing?coupon=CODE) is applied
   // without the user having to retype what they just clicked.
+  //
+  // Keyed on the URL parameter, not run once on mount: when the banner is
+  // clicked on /pricing itself, Next only soft-navigates, this component does
+  // not remount, and a mount-only effect never saw the code.
   useEffect(() => {
-    if (autoApplied.current || applied) return;
-    const fromUrl = new URLSearchParams(window.location.search).get("coupon");
-    if (!fromUrl) return;
+    if (!urlCoupon || urlCoupon === lastUrlCode.current) return;
+    lastUrlCode.current = urlCoupon;
+    if (applied?.code === urlCoupon) return;
 
-    autoApplied.current = true;
     setOpen(true);
-    setCode(fromUrl.toUpperCase());
-    void validate(fromUrl);
+    setCode(urlCoupon);
+    void validate(urlCoupon);
+    // The field sits well below the banner; without this the click looks
+    // like it did nothing.
+    window.setTimeout(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [urlCoupon]);
 
   async function validate(raw: string) {
     const trimmed = raw.trim().toUpperCase();
@@ -100,7 +112,10 @@ export function CouponField({
 
   if (applied) {
     return (
-      <div className="mx-auto mb-6 flex max-w-md items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+      <div
+        ref={containerRef}
+        className="mx-auto mb-6 flex max-w-md scroll-mt-24 items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+      >
         <span className="flex min-w-0 items-center gap-2 text-sm text-emerald-300">
           <Check className="h-4 w-4 shrink-0" />
           <span className="truncate">
@@ -140,7 +155,7 @@ export function CouponField({
   }
 
   return (
-    <div className="mx-auto mb-6 max-w-md">
+    <div ref={containerRef} className="mx-auto mb-6 max-w-md scroll-mt-24">
       <form
         onSubmit={(e) => {
           e.preventDefault();
