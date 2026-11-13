@@ -383,7 +383,6 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
   const [yearly, setYearly] = useState(true);
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const [currency, setCurrency] = useState<CurrencyCode>("INR");
-  const [country, setCountry] = useState<string>("");
   const searchParams = useSearchParams();
   const autoCheckoutTriggered = useRef(false);
 
@@ -392,7 +391,6 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
       .then((r) => r.json())
       .then((data) => {
         if (data?.currency?.code) setCurrency(data.currency.code as CurrencyCode);
-        if (data?.country) setCountry(data.country);
       })
       .catch(() => {});
   }, []);
@@ -483,12 +481,6 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
             )}
           </p>
         </Reveal>
-
-        {country && (
-          <p className="mb-4 text-center text-xs text-white/30">
-            Showing prices for {country} · {currency}
-          </p>
-        )}
 
         <CouponField
           billingPeriod={yearly ? "yearly" : "monthly"}
