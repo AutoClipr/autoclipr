@@ -127,8 +127,30 @@ describe('BillingController (e2e)', () => {
         .send({ planId: 'creator', billingPeriod: 'yearly' })
         .expect(201);
 
-      expect(subscriptions.createCheckoutUrl).toHaveBeenCalledWith('user-1', 'jane@example.com', 'creator', 'yearly', undefined);
+      expect(subscriptions.createCheckoutUrl).toHaveBeenCalledWith('user-1', 'jane@example.com', 'creator', 'yearly', undefined, undefined);
       expect(response.body).toEqual({ success: true, data: { url: 'https://pay.dodo/session' } });
+    });
+
+    it('passes the detected country through to prefill the checkout', async () => {
+      subscriptions.createCheckoutUrl.mockResolvedValue('https://pay.dodo/session');
+
+      await request(app.getHttpServer())
+        .post('/api/v1/billing/checkout')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ planId: 'creator', billingPeriod: 'monthly', country: 'BE' })
+        .expect(201);
+
+      expect(subscriptions.createCheckoutUrl).toHaveBeenCalledWith('user-1', 'jane@example.com', 'creator', 'monthly', undefined, 'BE');
+    });
+
+    it('returns 400 for a country that is not a two-letter code', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/billing/checkout')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ planId: 'creator', country: 'Belgium' })
+        .expect(400);
+
+      expect(subscriptions.createCheckoutUrl).not.toHaveBeenCalled();
     });
 
     it('returns 400 when planId is missing', async () => {
