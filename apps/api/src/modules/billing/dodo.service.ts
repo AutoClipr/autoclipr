@@ -43,12 +43,17 @@ export class DodoService {
     const productId = planProducts[opts.billingPeriod];
     if (!productId) throw new Error(`No product configured for ${opts.planId} ${opts.billingPeriod}`);
 
-    const session = await this.client.subscriptions.create({
-      billing: { city: '', country: 'IN', state: '', street: '', zipcode: '' },
+    // A checkout session, not subscriptions.create: the latter requires a
+    // billing address up front, and it used to be hardcoded to India. That
+    // routed every buyer through an INR, India-recurring mandate, which
+    // foreign cards are declined for (PAYMENT_METHOD_UNSUPPORTED). Leaving
+    // billing_address out lets Dodo's hosted page collect the buyer's real
+    // country, so the price, currency and payment methods match their card.
+    // On redirect Dodo appends subscription_id and status to return_url,
+    // which the dashboard's activation fallback already reads.
+    const session = await this.client.checkoutSessions.create({
+      product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email: opts.email, name: opts.email },
-      product_id: productId,
-      quantity: 1,
-      payment_link: true,
       return_url: opts.successUrl,
       metadata: {
         user_id: opts.userId,
@@ -58,23 +63,19 @@ export class DodoService {
         // to claim once the payment is confirmed.
         ...(opts.discountCode ? { coupon_code: opts.discountCode } : {}),
       },
-      ...(opts.discountCode ? { discount_codes: [opts.discountCode] } : {}),
-      ...(opts.trialPeriodDays ? { trial_period_days: opts.trialPeriodDays } : {}),
+      ...(opts.discountCode ? { discount_code: opts.discountCode } : {}),
+      ...(opts.trialPeriodDays
+        ? { subscription_data: { trial_period_days: opts.trialPeriodDays } }
+        : {}),
+      feature_flags: {
+        // Coupons are validated and claimed by our own coupon service; a code
+        // typed straight into Dodo's page would skip those checks.
+        allow_discount_code: false,
+      },
     });
 
-    const url = (session as any).payment_link ?? (session as any).url;
-    if (!url) throw new Error('Dodo did not return a payment URL');
-
-    // Embed subscription ID into the success URL so frontend captures it on redirect
-    const subscriptionId: string = (session as any).subscription_id ?? (session as any).id ?? '';
-    if (subscriptionId) {
-      return url.replace(
-        encodeURIComponent(opts.successUrl),
-        encodeURIComponent(`${opts.successUrl}&subscription_id=${subscriptionId}`),
-      );
-    }
-
-    return url;
+    if (!session.checkout_url) throw new Error('Dodo did not return a checkout URL');
+    return session.checkout_url;
   }
 
   /**
