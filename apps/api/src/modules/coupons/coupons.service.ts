@@ -127,10 +127,10 @@ export class CouponsService {
   }
 
   /**
-   * The discount floor, enforced here as well as by the database's
-   * coupons_min_percentage constraint. Applies only to percentage coupons —
-   * `value` means days for free_trial and credits for free_credits, where a
-   * 25 floor would be meaningless.
+   * A percentage must be a real discount (1–100%), enforced here as well as by
+   * the database's coupons_min_percentage constraint. Applies only to
+   * percentage coupons — `value` means days for free_trial and credits for
+   * free_credits.
    */
   private assertPercentageInRange(type: CouponType, value: number): void {
     if (type !== 'percentage') return;

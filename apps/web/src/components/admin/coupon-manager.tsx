@@ -327,13 +327,11 @@ function CreateCouponForm({
           </select>
         </Field>
 
-        <Field label={valueLabel} hint={type === "percentage" ? "Minimum 25%" : undefined}>
+        <Field label={valueLabel} hint={type === "percentage" ? "1–100%" : undefined}>
           <input
             name="value"
             type="number"
             required
-            min={type === "percentage" ? 25 : 1}
-            max={type === "percentage" ? 100 : undefined}
             defaultValue={type === "percentage" ? 25 : undefined}
             className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white focus:border-[#3C50E0] focus:outline-none"
           />

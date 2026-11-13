@@ -461,13 +461,11 @@ function EditCouponForm({
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label={valueLabel} hint={coupon.type === "percentage" ? "Minimum 25%" : undefined}>
+        <Field label={valueLabel} hint={coupon.type === "percentage" ? "1–100%" : undefined}>
           <input
             name="value"
             type="number"
             required
-            min={coupon.type === "percentage" ? 25 : 1}
-            max={coupon.type === "percentage" ? 100 : undefined}
             defaultValue={coupon.value}
             className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white focus:border-[#3C50E0] focus:outline-none"
           />

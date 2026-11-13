@@ -305,8 +305,8 @@ describe('CouponsService', () => {
     });
   });
 
-  describe('minimum discount', () => {
-    it.each([25, 30, 40, 50, 75, 100])('accepts %i%%', async (value) => {
+  describe('discount range', () => {
+    it.each([1, 10, 15, 20, 24, 25, 50, 100])('accepts %i%%', async (value) => {
       repo.findByCode.mockResolvedValue(null);
 
       await expect(
@@ -314,12 +314,12 @@ describe('CouponsService', () => {
       ).resolves.toBeDefined();
     });
 
-    it.each([0, 1, 10, 15, 20, 24])('rejects %i%%', async (value) => {
+    it('rejects 0%', async () => {
       repo.findByCode.mockResolvedValue(null);
 
       await expect(
-        service.create({ code: `LOW${value}`, type: 'percentage', value }, 'admin-1'),
-      ).rejects.toThrow('between 25% and 100%');
+        service.create({ code: 'ZERO', type: 'percentage', value: 0 }, 'admin-1'),
+      ).rejects.toThrow('between 1% and 100%');
       // Rejected before the mirror, so no orphan discount is left at Dodo.
       expect(dodo.createDiscount).not.toHaveBeenCalled();
     });
@@ -329,19 +329,19 @@ describe('CouponsService', () => {
 
       await expect(
         service.create({ code: 'OVER', type: 'percentage', value: 101 }, 'admin-1'),
-      ).rejects.toThrow('between 25% and 100%');
+      ).rejects.toThrow('between 1% and 100%');
     });
 
-    it('does not apply the floor to free_trial days', async () => {
+    it('does not apply the percentage range to free_trial days', async () => {
       repo.findByCode.mockResolvedValue(null);
 
-      // `value` means days here, so a 25 floor would be nonsense.
+      // `value` means days here, not a percentage.
       await expect(
         service.create({ code: 'TRY7', type: 'free_trial', value: 7 }, 'admin-1'),
       ).resolves.toBeDefined();
     });
 
-    it('does not apply the floor to free_credits', async () => {
+    it('does not apply the percentage range to free_credits', async () => {
       repo.findByCode.mockResolvedValue(null);
 
       await expect(
@@ -349,8 +349,8 @@ describe('CouponsService', () => {
       ).resolves.toBeDefined();
     });
 
-    it('blocks an edit that would take a percentage coupon below the floor', async () => {
-      await expect(service.update('c1', { value: 20 })).rejects.toThrow('between 25% and 100%');
+    it('blocks an edit that would take a percentage coupon above 100%', async () => {
+      await expect(service.update('c1', { value: 101 })).rejects.toThrow('between 1% and 100%');
       expect(dodo.updateDiscount).not.toHaveBeenCalled();
     });
   });

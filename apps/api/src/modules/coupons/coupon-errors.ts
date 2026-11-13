@@ -15,8 +15,8 @@ export type CouponErrorCode =
   | 'COUPON_USER_LIMIT_REACHED'
   | 'COUPON_PLAN_NOT_ELIGIBLE';
 
-/** The smallest percentage discount a coupon may offer. */
-export const MIN_DISCOUNT_PERCENTAGE = 25;
+/** The valid range for a percentage discount: no business floor, just 1–100%. */
+export const MIN_DISCOUNT_PERCENTAGE = 1;
 export const MAX_DISCOUNT_PERCENTAGE = 100;
 
 const MESSAGES: Record<CouponErrorCode, string> = {
