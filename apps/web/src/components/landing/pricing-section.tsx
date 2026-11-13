@@ -150,6 +150,21 @@ const accentMap: Record<string, { badge: string; icon: string; ring: string; glo
   },
 };
 
+/**
+ * The buyer's country from IP geolocation, used to prefill Dodo's checkout.
+ * Returns undefined when the lookup failed: /api/geo falls back to "US" then,
+ * and prefilling a guess would be worse than letting the buyer pick.
+ */
+async function detectCheckoutCountry(): Promise<string | undefined> {
+  try {
+    const data = await fetch("/api/geo").then((r) => r.json());
+    if (data?.countryName === "Unknown") return undefined;
+    return typeof data?.country === "string" ? data.country : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: boolean; currency: CurrencyCode; coupon: AppliedCoupon | null }) {
   const Icon = plan.icon;
   const ac = accentMap[plan.accentColor];
@@ -181,6 +196,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
       }
 
       // Logged in — call checkout API
+      const country = await detectCheckoutCountry();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/billing/checkout`, {
         method: "POST",
         headers: {
@@ -194,6 +210,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
           planId: plan.id,
           billingPeriod: yearly ? "yearly" : "monthly",
           ...(coupon ? { couponCode: coupon.code } : {}),
+          ...(country ? { country } : {}),
         }),
       });
       const data = await res.json();
@@ -369,6 +386,7 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
       if (!session) return;
 
       try {
+        const country = await detectCheckoutCountry();
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/billing/checkout`, {
           method: "POST",
           headers: {
@@ -379,6 +397,7 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
             planId: checkoutPlan,
             billingPeriod: searchParams?.get("billing") ?? "yearly",
             ...(searchParams?.get("coupon") ? { couponCode: searchParams.get("coupon") } : {}),
+            ...(country ? { country } : {}),
           }),
         });
         const data = await res.json();

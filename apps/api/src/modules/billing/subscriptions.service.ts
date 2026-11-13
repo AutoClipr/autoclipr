@@ -104,6 +104,7 @@ export class SubscriptionsService {
     planId: string,
     billingPeriod: 'monthly' | 'yearly' = 'yearly',
     couponCode?: string,
+    country?: string,
   ): Promise<string> {
     const appUrl = this.config.get<string>('WEB_APP_URL') ?? 'https://autoclipr.com';
 
@@ -127,6 +128,7 @@ export class SubscriptionsService {
       email,
       discountCode,
       trialPeriodDays,
+      country,
       successUrl: `${appUrl}/dashboard?payment=success&plan=${planId}&billing=${billingPeriod}`,
       cancelUrl: `${appUrl}/pricing?payment=cancelled`,
     });

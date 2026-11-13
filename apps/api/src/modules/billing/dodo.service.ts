@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import DodoPayments from 'dodopayments';
 
+type DodoCountryCode = NonNullable<
+  Parameters<DodoPayments['checkoutSessions']['create']>[0]['billing_address']
+>['country'];
+
 const PRODUCT_IDS: Record<string, { monthly: string; yearly: string }> = {
   starter: { monthly: '', yearly: '' },
   creator: {
@@ -37,6 +41,8 @@ export class DodoService {
     discountCode?: string | null;
     /** Trial days from a free_trial coupon. */
     trialPeriodDays?: number | null;
+    /** ISO 3166-1 alpha-2 country from the buyer's IP, used only as a prefill. */
+    country?: string | null;
   }): Promise<string> {
     const planProducts = PRODUCT_IDS[opts.planId];
     if (!planProducts) throw new Error(`Unknown plan: ${opts.planId}`);
@@ -46,13 +52,18 @@ export class DodoService {
     // A checkout session, not subscriptions.create: the latter requires a
     // billing address up front, and it used to be hardcoded to India. That
     // routed every buyer through an INR, India-recurring mandate, which
-    // foreign cards are declined for (PAYMENT_METHOD_UNSUPPORTED). Leaving
-    // billing_address out lets Dodo's hosted page collect the buyer's real
-    // country, so the price, currency and payment methods match their card.
+    // foreign cards are declined for (PAYMENT_METHOD_UNSUPPORTED). Now the
+    // country is prefilled from the buyer's IP when we have it, and always
+    // left editable: IP location is not always the card's country (VPNs,
+    // travellers), and a wrong country locked in would reproduce the decline.
     // On redirect Dodo appends subscription_id and status to return_url,
     // which the dashboard's activation fallback already reads.
+    const country = opts.country?.toUpperCase();
     const session = await this.client.checkoutSessions.create({
       product_cart: [{ product_id: productId, quantity: 1 }],
+      ...(country && /^[A-Z]{2}$/.test(country)
+        ? { billing_address: { country: country as DodoCountryCode } }
+        : {}),
       customer: { email: opts.email, name: opts.email },
       return_url: opts.successUrl,
       metadata: {
@@ -71,6 +82,8 @@ export class DodoService {
         // Coupons are validated and claimed by our own coupon service; a code
         // typed straight into Dodo's page would skip those checks.
         allow_discount_code: false,
+        // The prefilled country is only a guess; the buyer must be able to fix it.
+        allow_customer_editing_country: true,
       },
     });
 
