@@ -3,7 +3,12 @@ const mockSubscriptionsRetrieve = jest.fn();
 const mockSubscriptionsUpdate = jest.fn();
 const mockWebhooksUnwrap = jest.fn();
 
+const mockCheckoutSessionsCreate = jest.fn();
+
 const MockDodoPayments = jest.fn().mockImplementation(() => ({
+  checkoutSessions: {
+    create: mockCheckoutSessionsCreate,
+  },
   subscriptions: {
     create: mockSubscriptionsCreate,
     retrieve: mockSubscriptionsRetrieve,
@@ -103,72 +108,76 @@ describe('DodoService', () => {
       ).rejects.toThrow('No product configured for starter yearly');
     });
 
-    it('creates a subscription session and embeds the subscription id into the returned success URL', async () => {
-      // Dodo's real payment_link embeds the return_url (URL-encoded) as a query param;
-      // the service finds that encoded occurrence and appends &subscription_id=<id> to it.
-      const encodedSuccess = encodeURIComponent('https://app/success');
-      mockSubscriptionsCreate.mockResolvedValue({
-        payment_link: `https://pay.dodo/abc?return_url=${encodedSuccess}`,
-        subscription_id: 'sub_123',
+    const baseOpts = {
+      planId: 'creator',
+      billingPeriod: 'yearly' as const,
+      userId: 'user-1',
+      email: 'jane@example.com',
+      successUrl: 'https://app/success',
+      cancelUrl: 'https://app/cancel',
+    };
+
+    it('creates a checkout session and returns its checkout url', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({
+        session_id: 'cks_1',
+        checkout_url: 'https://pay.dodo/session/cks_1',
       });
 
-      const url = await service.createCheckoutUrl({
-        planId: 'creator',
-        billingPeriod: 'yearly',
-        userId: 'user-1',
-        email: 'jane@example.com',
-        successUrl: 'https://app/success',
-        cancelUrl: 'https://app/cancel',
-      });
+      const url = await service.createCheckoutUrl(baseOpts);
 
-      expect(mockSubscriptionsCreate).toHaveBeenCalledWith(
+      expect(mockCheckoutSessionsCreate).toHaveBeenCalledWith(
         expect.objectContaining({
+          product_cart: [{ product_id: 'prod_creator_yearly', quantity: 1 }],
           customer: { email: 'jane@example.com', name: 'jane@example.com' },
-          quantity: 1,
-          payment_link: true,
           return_url: 'https://app/success',
           metadata: { user_id: 'user-1', plan_id: 'creator', billing_period: 'yearly' },
+          feature_flags: expect.objectContaining({ allow_discount_code: false }),
         }),
       );
-      expect(url).toContain(encodeURIComponent('https://app/success&subscription_id=sub_123'));
+      // The old subscriptions.create path forced billing to India.
+      expect(mockSubscriptionsCreate).not.toHaveBeenCalled();
+      expect(url).toBe('https://pay.dodo/session/cks_1');
     });
 
-    it('falls back to the `id` field for the subscription id when subscription_id is absent', async () => {
-      const encodedSuccess = encodeURIComponent('https://app/success');
-      mockSubscriptionsCreate.mockResolvedValue({
-        url: `https://pay.dodo/xyz?return_url=${encodedSuccess}`,
-        id: 'sub_456',
-      });
+    it('leaves the billing address for the buyer to fill when no country is known', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({ checkout_url: 'https://pay.dodo/s' });
 
-      const url = await service.createCheckoutUrl({
-        planId: 'business',
-        billingPeriod: 'monthly',
-        userId: 'user-1',
-        email: 'jane@example.com',
-        successUrl: 'https://app/success',
-        cancelUrl: 'https://app/cancel',
-      });
+      await service.createCheckoutUrl(baseOpts);
 
-      expect(url).toContain(encodeURIComponent('https://app/success&subscription_id=sub_456'));
+      expect(mockCheckoutSessionsCreate.mock.calls[0][0]).not.toHaveProperty('billing_address');
     });
 
-    it('returns the raw url unchanged when the SDK response has no subscription/session id', async () => {
-      mockSubscriptionsCreate.mockResolvedValue({ payment_link: 'https://pay.dodo/no-id' });
+    it('prefills the detected country and keeps it editable', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({ checkout_url: 'https://pay.dodo/s' });
 
-      const url = await service.createCheckoutUrl({
-        planId: 'creator',
-        billingPeriod: 'monthly',
-        userId: 'user-1',
-        email: 'jane@example.com',
-        successUrl: 'https://app/success',
-        cancelUrl: 'https://app/cancel',
-      });
+      await service.createCheckoutUrl({ ...baseOpts, country: 'be' });
 
-      expect(url).toBe('https://pay.dodo/no-id');
+      const body = mockCheckoutSessionsCreate.mock.calls[0][0];
+      expect(body.billing_address).toEqual({ country: 'BE' });
+      expect(body.feature_flags.allow_customer_editing_country).toBe(true);
     });
 
-    it('throws when Dodo does not return a payment URL', async () => {
-      mockSubscriptionsCreate.mockResolvedValue({});
+    it('ignores a malformed country instead of sending it to Dodo', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({ checkout_url: 'https://pay.dodo/s' });
+
+      await service.createCheckoutUrl({ ...baseOpts, country: 'Belgium' });
+
+      expect(mockCheckoutSessionsCreate.mock.calls[0][0]).not.toHaveProperty('billing_address');
+    });
+
+    it('passes the coupon and trial through to the session', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({ checkout_url: 'https://pay.dodo/s' });
+
+      await service.createCheckoutUrl({ ...baseOpts, discountCode: 'ILIAS20', trialPeriodDays: 7 });
+
+      const body = mockCheckoutSessionsCreate.mock.calls[0][0];
+      expect(body.discount_code).toBe('ILIAS20');
+      expect(body.metadata.coupon_code).toBe('ILIAS20');
+      expect(body.subscription_data).toEqual({ trial_period_days: 7 });
+    });
+
+    it('throws when Dodo does not return a checkout URL', async () => {
+      mockCheckoutSessionsCreate.mockResolvedValue({ session_id: 'cks_2' });
 
       await expect(
         service.createCheckoutUrl({
@@ -179,7 +188,7 @@ describe('DodoService', () => {
           successUrl: 'https://app/success',
           cancelUrl: 'https://app/cancel',
         }),
-      ).rejects.toThrow('Dodo did not return a payment URL');
+      ).rejects.toThrow('Dodo did not return a checkout URL');
     });
   });
 
