@@ -23,7 +23,6 @@ import { PricingSection } from "@/components/landing/pricing-section";
 import { PricingSkeleton } from "@/components/landing/pricing-skeleton";
 import { CTA } from "@/components/landing/cta";
 import { PlatformMarquee } from "@/components/landing/platform-marquee";
-import { PlatformsShowcase } from "@/components/landing/platforms-showcase";
 import { CreatorsMarquee } from "@/components/landing/creators-marquee";
 import { CreatorWinTicker } from "@/components/layout/creator-win-ticker";
 import { FreeTools } from "@/components/landing/free-tools";
@@ -41,7 +40,6 @@ export default function HomePage() {
       <Features />
       <HowItWorks />
       <FreeTools />
-      <PlatformsShowcase />
       <PublishDirectly />
       <Suspense fallback={<PricingSkeleton />}>
         <PricingSection />
