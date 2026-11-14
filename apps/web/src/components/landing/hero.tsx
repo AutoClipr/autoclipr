@@ -72,13 +72,13 @@ export function Hero() {
           >
             Turn long videos into
             <br />
-            <RotatingPhrase />automatically
+            <RotatingPhrase />10x faster
           </h1>
         </MotionItem>
 
         <MotionItem>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            Monitor channels. Detect uploads. Auto-clip. Zero editing.
+          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            Paste a link or drop a raw take, and AutoClipr clips, edits, sizes and publishes them to all social platforms in one click.
           </p>
         </MotionItem>
 
