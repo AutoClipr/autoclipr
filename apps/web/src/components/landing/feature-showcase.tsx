@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Captions,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Crop,
   Radio,
   Scissors,
@@ -46,35 +48,71 @@ export function FeatureShowcase() {
     return () => clearTimeout(t);
   }, [active, paused]);
 
+  const index = TABS.findIndex((tab) => tab.id === active);
+  const go = (delta: number) =>
+    setActive(TABS[(index + delta + TABS.length) % TABS.length].id);
+
   return (
     <div
-      className="mx-auto mt-12 w-full max-w-5xl px-4 text-left sm:px-6"
+      className="mt-12 w-full text-left"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] shadow-2xl shadow-black/40 sm:aspect-[16/9]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            className="absolute inset-0"
-            initial={{ opacity: 0, scale: 0.985 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.985 }}
-            transition={{ duration: 0.35 }}
+      {/* Carousel: the active card is centred, its neighbours peek in dimmed. */}
+      <div
+        className="relative w-full overflow-clip py-2 [--card:min(64rem,calc(100vw-3rem))] [--gap:1.25rem] sm:[--card:min(60rem,calc(100vw-16rem))]"
+      >
+        <div
+          className="relative left-1/2 flex gap-[var(--gap)] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            transform: `translateX(calc(-1 * (${index} * (var(--card) + var(--gap)) + var(--card) / 2)))`,
+          }}
+        >
+          {TABS.map((tab, i) => {
+            const on = i === index;
+            return (
+              <div
+                key={tab.id}
+                aria-hidden={!on}
+                onClick={on ? undefined : () => setActive(tab.id)}
+                className={cn(
+                  "relative aspect-[4/5] w-[var(--card)] shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] shadow-2xl shadow-black/40 transition-[opacity,transform] duration-700 sm:aspect-[16/9]",
+                  on ? "opacity-100" : "scale-[0.96] cursor-pointer opacity-35 hover:opacity-50",
+                )}
+              >
+                {/* Remount on activation so each demo's animation restarts. */}
+                <div key={on ? `${tab.id}-on` : tab.id} className={cn("absolute inset-0", !on && "pointer-events-none")}>
+                  {tab.id === "clipping" && <ClippingDemo />}
+                  {tab.id === "captions" && <CaptionsDemo />}
+                  {tab.id === "reframe" && <ReframeDemo />}
+                  {tab.id === "monitor" && <MonitorDemo />}
+                  {tab.id === "publish" && <PublishDemo />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {[-1, 1].map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => go(d)}
+            aria-label={d < 0 ? "Previous feature" : "Next feature"}
+            className="absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white/80 backdrop-blur transition hover:bg-black/80 hover:text-white sm:flex"
+            style={{
+              left: d < 0 ? "calc(50% - var(--card) / 2 - 1.25rem)" : "calc(50% + var(--card) / 2 - 1.25rem)",
+            }}
           >
-            {active === "clipping" && <ClippingDemo />}
-            {active === "captions" && <CaptionsDemo />}
-            {active === "reframe" && <ReframeDemo />}
-            {active === "monitor" && <MonitorDemo />}
-            {active === "publish" && <PublishDemo />}
-          </motion.div>
-        </AnimatePresence>
+            {d < 0 ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          </button>
+        ))}
       </div>
 
       <div
         role="tablist"
         aria-label="AutoClipr features"
-        className="mt-5 flex flex-wrap items-center justify-center gap-2"
+        className="mx-auto mt-5 flex max-w-5xl flex-wrap items-center justify-center gap-2 px-4"
       >
         {TABS.map((tab) => {
           const on = tab.id === active;
