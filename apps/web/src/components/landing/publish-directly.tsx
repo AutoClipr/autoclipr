@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Reveal, Stagger } from "@/components/ui/motion";
 import { MockupVideo } from "@/components/landing/mockup-video";
@@ -22,6 +23,36 @@ const IG_GRAD = "linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc23
 const TT_BLACK = "#010101";
 const FB_BLUE = "#1877F2";
 const LI_BLUE = "#0A66C2";
+
+/**
+ * Burned-in style caption: three words at a time, white, with the spoken word
+ * in yellow — like a real Reel.
+ */
+function MockupCaption({ words, className = "" }: { words: string[]; className?: string }) {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % words.length), 450);
+    return () => clearInterval(t);
+  }, [words.length]);
+
+  const start = Math.floor(i / 3) * 3;
+  const visible = words.slice(start, start + 3);
+
+  return (
+    <p
+      className={`pointer-events-none absolute inset-x-3 z-10 text-center text-[15px] font-black uppercase leading-tight ${className}`}
+      style={{ WebkitTextStroke: "1px black", paintOrder: "stroke fill", textShadow: "0 2px 6px rgba(0,0,0,0.6)" }}
+      aria-hidden
+    >
+      {visible.map((w, k) => (
+        <span key={start + k} className={start + k === i ? "text-yellow-300" : "text-white"}>
+          {w}{" "}
+        </span>
+      ))}
+    </p>
+  );
+}
 
 /* ─── Platform mock previews (pure SVG / CSS — no images needed) ─── */
 
@@ -80,6 +111,10 @@ function InstagramMockup() {
         <MockupVideo
           src={MOCKUP_CLIPS.instagram}
           placeholderClassName="bg-gradient-to-b from-purple-950/60 to-zinc-950"
+        />
+        <MockupCaption
+          words={["Pick", "the", "right", "vehicle", "and", "the", "effort", "pays", "off"]}
+          className="top-[58%]"
         />
         {/* top bar */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2.5">
@@ -178,6 +213,10 @@ function FacebookMockup() {
             top strip. Insetting it instead would make the area non-9:16 and
             leave the player's black bars showing at the sides. */}
         <MockupVideo src={MOCKUP_CLIPS.facebook} />
+        <MockupCaption
+          words={["Trade", "short-term", "status", "for", "long-term", "status", "most", "people", "won't"]}
+          className="top-[56%]"
+        />
         {/* right actions */}
         <div className="absolute right-2 bottom-20 flex flex-col items-center gap-4">
           <div className="flex flex-col items-center gap-0.5">

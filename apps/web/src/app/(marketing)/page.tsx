@@ -18,7 +18,6 @@ export const metadata: Metadata = pageMetadata({
 import { Features } from "@/components/landing/features";
 import { UrlToShorts } from "@/components/landing/url-to-shorts";
 import { HowItWorks } from "@/components/landing/how-it-works";
-import { Testimonials } from "@/components/landing/testimonials";
 import { Suspense } from "react";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { PricingSkeleton } from "@/components/landing/pricing-skeleton";
@@ -44,7 +43,6 @@ export default function HomePage() {
       <FreeTools />
       <PlatformsShowcase />
       <PublishDirectly />
-      <Testimonials />
       <Suspense fallback={<PricingSkeleton />}>
         <PricingSection />
       </Suspense>
