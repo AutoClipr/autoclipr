@@ -258,37 +258,31 @@ export function Hero() {
 function HeroUrlForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const value = url.trim();
-    if (!/^https?:\/\/\S+\.\S+/i.test(value)) {
-      setError("Paste a full video link, e.g. https://youtube.com/watch?v=…");
-      return;
-    }
-    setError(null);
+    if (!value) return;
     router.push(`/create?url=${encodeURIComponent(value)}`);
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-xl px-4 sm:px-0">
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] p-1.5 pl-4 backdrop-blur focus-within:border-emerald-400/50">
-        <Link2 className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
+    <form onSubmit={onSubmit} className="mx-auto mt-10 w-full max-w-2xl px-4 sm:px-0">
+      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] p-2 pl-5 backdrop-blur focus-within:border-emerald-400/50">
+        <Link2 className="h-5 w-5 shrink-0 text-white/40" aria-hidden />
         <input
-          type="url"
+          type="text"
           inputMode="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Drop a YouTube or video link"
           aria-label="Video link"
-          className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white placeholder:text-white/40 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
         />
-        <Button type="submit" variant="gradient" className="shrink-0 rounded-full px-5">
+        <Button type="submit" variant="gradient" className="h-12 shrink-0 rounded-full px-7 text-base">
           Get free clips
         </Button>
       </div>
-      {error && <p className="mt-2 text-left text-xs text-red-400 sm:pl-4">{error}</p>}
     </form>
   );
 }
