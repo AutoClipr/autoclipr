@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Link2, Play, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FeatureShowcase } from "@/components/landing/feature-showcase";
 import { motion, Stagger, MotionItem } from "@/components/ui/motion";
 
 const CLIPS = [
@@ -82,6 +83,10 @@ export function Hero() {
 
         <MotionItem>
           <HeroUrlForm />
+        </MotionItem>
+
+        <MotionItem>
+          <FeatureShowcase />
         </MotionItem>
 
         <MotionItem className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
