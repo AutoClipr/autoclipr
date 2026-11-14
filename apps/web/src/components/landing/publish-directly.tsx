@@ -7,12 +7,13 @@ import { MockupVideo } from "@/components/landing/mockup-video";
 /* Self-hosted 9:16 loops used as the phone-mockup "screens".
    Drop the files in apps/web/public/assets/mockups/. Until they exist each
    mockup just shows its gradient placeholder — nothing breaks.
-   LinkedIn is intentionally absent: its mockup is a feed post, not a phone. */
+   LinkedIn's clip is 16:9: its mockup is a feed post, not a phone. */
 const MOCKUP_CLIPS = {
   youtube: "/assets/mockups/youtube.mp4",
   instagram: "/assets/mockups/instagram.mp4",
   tiktok: "/assets/mockups/tiktok.mp4",
   facebook: "/assets/mockups/facebook.mp4",
+  linkedin: "/assets/mockups/linkedin.mp4",
 } as const;
 
 /* ─── Platform brand colours ─── */
@@ -26,7 +27,7 @@ const LI_BLUE = "#0A66C2";
 
 function YoutubeMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[340px]">
+    <div className="relative mx-auto w-full max-w-[212px]">
       {/* phone shell */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black aspect-[9/16]">
         {/* video bg */}
@@ -74,7 +75,7 @@ function YoutubeMockup() {
 
 function InstagramMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[300px]">
+    <div className="relative mx-auto w-full max-w-[212px]">
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black aspect-[9/16]">
         <MockupVideo
           src={MOCKUP_CLIPS.instagram}
@@ -120,7 +121,7 @@ function InstagramMockup() {
 
 function TikTokMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[280px]">
+    <div className="relative mx-auto w-full max-w-[212px]">
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black aspect-[9/16]">
         <MockupVideo
           src={MOCKUP_CLIPS.tiktok}
@@ -158,10 +159,6 @@ function TikTokMockup() {
         </div>
         {/* tiktok gradient */}
         <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 45%)" }} />
-        {/* coming soon overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px]">
-          <span className="rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-semibold text-white/80 tracking-wide">Coming Soon</span>
-        </div>
       </div>
       <div className="absolute -inset-2 rounded-3xl blur-xl opacity-10" style={{ background: "#69C9D0" }} />
     </div>
@@ -170,7 +167,7 @@ function TikTokMockup() {
 
 function FacebookMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-[280px]">
+    <div className="relative mx-auto w-full max-w-[212px]">
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#18191A] aspect-[9/16]">
         {/* header */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2" style={{ background: "#18191A" }}>
@@ -217,9 +214,9 @@ function FacebookMockup() {
 function LinkedInMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[320px]">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1B1F23] aspect-[4/3]">
-        {/* LinkedIn post card */}
-        <div className="absolute inset-0 flex flex-col p-4">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1B1F23]">
+        {/* LinkedIn post card — sized by its content so the video keeps 16:9 */}
+        <div className="flex flex-col p-4">
           {/* header */}
           <div className="flex items-start gap-2 mb-3">
             <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: LI_BLUE }}>AC</div>
@@ -236,17 +233,16 @@ function LinkedInMockup() {
             Paste any YouTube link → get viral clips in minutes.<br/>
             <span className="text-[#0A66C2]">#ContentMarketing #AI #VideoMarketing</span>
           </p>
-          {/* Video thumbnail — deliberately static. This box is a short, wide
-              feed-post frame, not a 9:16 phone screen: a vertical clip sits
-              badly in it, and at this size YouTube overlays its own title bar,
-              logo and play button, which reads as a broken embed. A still
-              thumbnail is also what a real LinkedIn feed post looks like. */}
-          <div className="flex-1 rounded-lg overflow-hidden bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center min-h-0">
-            <div className="flex flex-col items-center gap-1">
-              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
-              </div>
-              <span className="text-[8px] text-white/30">autoclipr.com</span>
+          {/* Video: a 16:9 loop, since a LinkedIn feed post shows landscape
+              video — a vertical clip would sit badly in this wide frame. */}
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+            <MockupVideo
+              src={MOCKUP_CLIPS.linkedin}
+              placeholderClassName="bg-gradient-to-br from-zinc-700 to-zinc-900"
+            />
+            <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+              <span className="text-[8px] text-white/80">0:42</span>
             </div>
           </div>
           {/* reactions */}
@@ -378,7 +374,8 @@ function PlatformCard({ card }: { card: typeof CARDS[number] }) {
       />
 
       {/* Mockup preview */}
-      <div className={`relative flex items-end justify-center overflow-hidden bg-gradient-to-b from-white/[0.03] to-transparent ${card.wide ? "h-64 lg:h-72" : "h-56"} px-6 pt-8`}>
+      {/* Tall enough to show each phone whole, top to bottom. */}
+      <div className="relative flex h-[27rem] items-center justify-center overflow-hidden bg-gradient-to-b from-white/[0.03] to-transparent px-6 py-6">
         <div className="w-full">{card.mockup}</div>
       </div>
 

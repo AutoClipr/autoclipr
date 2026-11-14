@@ -2,9 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Link2, Play, Sparkles, Zap } from "lucide-react";
+import { Link2, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeatureShowcase } from "@/components/landing/feature-showcase";
 import { motion, Stagger, MotionItem } from "@/components/ui/motion";
@@ -16,21 +15,9 @@ const CLIPS = [
   { id: "aiQrLxzu9ug", score: 79, platform: "TikTok", border: "from-emerald-500 to-teal-400" },
 ];
 
-const stats = [
-  { value: "10K+", label: "Clips generated", icon: "🎬" },
-  { value: "2min", label: "Avg. processing", icon: "⚡" },
-  { value: "99%", label: "Satisfaction", icon: "🏆" },
-];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const AVATARS = [
-  "from-rose-400 to-orange-400",
-  "from-violet-400 to-fuchsia-400",
-  "from-cyan-400 to-blue-400",
-  "from-emerald-400 to-teal-400",
-  "from-amber-400 to-yellow-400",
-];
 
 export function Hero() {
   return (
@@ -77,8 +64,10 @@ export function Hero() {
         </MotionItem>
 
         <MotionItem>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            Paste a link or drop a raw take, and AutoClipr clips, edits, sizes and publishes them to all social platforms in one click.
+          <p className="mx-auto mt-6 max-w-4xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            Paste a link or drop a raw take, and AutoClipr clips, edits, sizes and publishes{" "}
+            <br className="hidden sm:block" />
+            them to all social platforms in one click.
           </p>
         </MotionItem>
 
@@ -88,80 +77,6 @@ export function Hero() {
 
         <MotionItem>
           <FeatureShowcase />
-        </MotionItem>
-
-        <MotionItem className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button
-            variant="gradient"
-            size="lg"
-            className="group relative min-w-[220px] overflow-hidden shadow-lg shadow-emerald-500/25"
-            asChild
-          >
-            <Link href="/register">
-              {/* Shimmer sweep */}
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                animate={{ x: ["-150%", "400%"] }}
-                transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.2 }}
-              />
-              Start Free Trial
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="min-w-[200px] backdrop-blur" asChild>
-            <Link href="/#how-it-works">
-              <Play className="h-4 w-4" />
-              See how it works
-            </Link>
-          </Button>
-        </MotionItem>
-
-        {/* Social proof strip */}
-        <MotionItem className="mt-8 flex items-center justify-center gap-3">
-          <div className="flex -space-x-2.5">
-            {AVATARS.map((g, i) => (
-              <span
-                key={g}
-                className={`flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${g} text-[10px] font-bold text-black/70 ring-2 ring-[#030014]`}
-                style={{ zIndex: AVATARS.length - i }}
-              >
-                {String.fromCharCode(65 + i)}
-              </span>
-            ))}
-          </div>
-          <div className="text-left">
-            <div className="flex items-center gap-0.5 text-amber-400" aria-label="5 star rating">
-              {"★★★★★".split("").map((s, i) => (
-                <span key={i} className="text-xs">{s}</span>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Loved by <span className="font-semibold text-foreground/90">2,000+ creators</span>
-            </p>
-          </div>
-        </MotionItem>
-
-        <MotionItem className="mt-14 flex justify-center px-4">
-          <div className="inline-flex w-full max-w-sm gap-3 sm:w-auto sm:max-w-none sm:gap-4">
-            {stats.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + i * 0.1, duration: 0.5, ease: EASE }}
-                className="group relative flex flex-1 flex-col items-center gap-1 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d18]/80 px-4 py-4 backdrop-blur-sm transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/5 sm:px-8 sm:py-5"
-              >
-                {/* Subtle glow on hover */}
-                <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/0 to-emerald-500/0 transition-all duration-300 group-hover:from-emerald-500/5 group-hover:to-transparent" />
-                <span className="text-lg sm:text-xl">{stat.icon}</span>
-                <p className="text-xl font-extrabold text-aurora sm:text-3xl">{stat.value}</p>
-                <p className="text-center text-[9px] font-semibold uppercase tracking-widest text-white/40 sm:text-[10px]">
-                  {stat.label}
-                </p>
-              </motion.div>
-            ))}
-          </div>
         </MotionItem>
       </Stagger>
 
@@ -312,7 +227,7 @@ function RotatingPhrase() {
       <motion.span
         layout
         transition={{ layout: { duration: 0.45, ease: EASE } }}
-        className="relative mx-[0.06em] inline-flex items-center overflow-hidden rounded-full bg-[#1b2528] px-[0.55em] py-[0.16em] align-middle"
+        className="relative mx-[0.06em] mt-[0.18em] inline-flex items-center overflow-hidden rounded-full bg-[#1b2528] px-[0.42em] py-[0.06em] align-middle"
       >
         {/* A single soft glow in the middle, like a blurred video frame */}
         <span
@@ -341,7 +256,7 @@ function RotatingPhrase() {
       {/* Thin blinking caret before the trailing word */}
       <motion.span
         aria-hidden
-        className="mx-[0.08em] inline-block h-[0.9em] w-[2px] bg-white/80 align-middle"
+        className="ml-[0.22em] mr-[0.1em] inline-block h-[0.9em] w-[2px] bg-white/80 align-middle"
         animate={{ opacity: [1, 1, 0, 0] }}
         transition={{ duration: 1, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
       />

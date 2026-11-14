@@ -11,9 +11,10 @@ Expected files — the paths are referenced in `MOCKUP_CLIPS`:
 | `instagram.mp4` | Instagram Reels |
 | `tiktok.mp4`    | TikTok          |
 | `facebook.mp4`  | Facebook Reels  |
+| `linkedin.mp4`  | LinkedIn (16:9) |
 
-LinkedIn deliberately has no clip: that mockup is a feed post, not a phone
-screen, so it keeps a static thumbnail.
+LinkedIn's clip is the exception: that mockup is a feed post, not a phone
+screen, so its clip is 16:9 landscape rather than 9:16.
 
 ## Requirements
 
