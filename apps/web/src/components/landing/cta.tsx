@@ -12,7 +12,7 @@ const social = [
 ];
 
 const trust = [
-  { icon: Check, text: "7-day free trial" },
+  { icon: Check, text: "3-day free trial" },
   { icon: Zap, text: "No credit card needed" },
   { icon: Users, text: "Cancel anytime" },
 ];
@@ -84,7 +84,7 @@ export function CTA() {
           {/* Right CTA box */}
           <div className="w-full max-w-sm shrink-0 rounded-2xl bg-white/10 p-8 backdrop-blur-sm ring-1 ring-white/20">
             <p className="mb-1 text-sm font-medium text-white/60">Get started for free</p>
-            <p className="mb-6 text-2xl font-bold text-white">7-day free trial</p>
+            <p className="mb-6 text-2xl font-bold text-white">3-day free trial</p>
 
             <Link
               href="/register"

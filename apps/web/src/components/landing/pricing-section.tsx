@@ -498,7 +498,7 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
         {/* Footer */}
         <Reveal className="mt-12 text-center" delay={0.2}>
           <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-8 py-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> 7-day free trial</span>
+            <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> 3-day free trial</span>
             <span className="hidden h-1 w-1 rounded-full bg-white/20 sm:block" />
             <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" /> No credit card required</span>
             <span className="hidden h-1 w-1 rounded-full bg-white/20 sm:block" />
