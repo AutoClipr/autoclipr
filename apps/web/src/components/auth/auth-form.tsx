@@ -62,6 +62,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/setup/platforms";
+  // Arrived from the landing page's "Get free clips" link box.
+  const fromClipLink = redirectTo.startsWith("/create?url=");
+  // Keep the redirect when switching between login and register.
+  const redirectQuery = searchParams.get("redirect")
+    ? `?redirect=${encodeURIComponent(redirectTo)}`
+    : "";
 
   // Phone/OTP sign-in is switched off everywhere for now (signup and login).
   // The code is kept, not deleted, so it can be turned back on later by
@@ -377,20 +383,26 @@ export function AuthForm({ mode }: { mode: Mode }) {
     <div className="gradient-border w-full max-w-md shadow-glow">
       <div className="p-8">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+          <h1 className="text-balance text-2xl font-bold leading-tight sm:text-[1.7rem]">
+            {fromClipLink
+              ? mode === "login"
+                ? "Sign in to get your free clips"
+                : "Finish signing up to get your free clips"
+              : mode === "login"
+                ? "Welcome back"
+                : "Create your account"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "login"
+            {mode === "login" && !fromClipLink
               ? "Sign in to your AutoClipr dashboard"
-              : "Start your free trial — no credit card required"}
+              : "Free plan available. No credit card required."}
           </p>
         </div>
 
         <Button
           type="button"
           variant="outline"
-          className="mb-4 w-full"
+          className="mb-4 h-12 w-full rounded-xl border-white/[0.06] bg-white/[0.07] text-[15px] font-medium hover:bg-white/[0.12]"
           onClick={handleGoogle}
           disabled={loading}
         >
@@ -399,7 +411,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </Button>
 
         <div className="relative py-2 text-center text-xs text-muted-foreground">
-          <span className="relative z-10 bg-[#0a0618] px-3">or continue with</span>
+          <span className="relative z-10 bg-[#0a0618] px-3">or continue with email</span>
           <div className="absolute inset-x-0 top-1/2 h-px bg-white/[0.08]" />
         </div>
 
@@ -663,18 +675,30 @@ export function AuthForm({ mode }: { mode: Mode }) {
           {mode === "login" ? (
             <>
               No account?{" "}
-              <Link href="/register" className="font-medium text-emerald-400 hover:text-emerald-300">
+              <Link href={`/register${redirectQuery}`} className="font-medium text-emerald-400 hover:text-emerald-300">
                 Sign up free
               </Link>
             </>
           ) : (
             <>
               Already have an account?{" "}
-              <Link href="/login" className="font-medium text-emerald-400 hover:text-emerald-300">
+              <Link href={`/login${redirectQuery}`} className="font-medium text-emerald-400 hover:text-emerald-300">
                 Sign in
               </Link>
             </>
           )}
+        </p>
+
+        <p className="mt-5 text-center text-xs leading-relaxed text-white/35">
+          By continuing, you agree to AutoClipr&apos;s{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-white/60">
+            Terms of Service
+          </Link>
+          . Read our{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-white/60">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </div>
     </div>
