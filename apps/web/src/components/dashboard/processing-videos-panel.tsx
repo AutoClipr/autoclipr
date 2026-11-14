@@ -33,6 +33,17 @@ function activeStepLabel(pipeline: VideoPipeline): string {
   return "Preparing your video…";
 }
 
+/** "ETA 3m" / "ETA <1m" from the API's estimated completion time, or null. */
+function formatEta(estimatedAt: string | null | undefined): string | null {
+  if (!estimatedAt) return null;
+  const ms = new Date(estimatedAt).getTime() - Date.now();
+  if (!Number.isFinite(ms)) return null;
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 1) return "ETA <1m";
+  if (minutes < 60) return `ETA ${minutes}m`;
+  return `ETA ${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
 type ProcessingVideosPanelProps = {
   videos: Video[];
 };
@@ -145,6 +156,7 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
             const error = errors[video.id];
             const progress = pipeline?.progress_percent ?? 8;
             const statusLabel = STATUS_LABELS[video.status] ?? video.status;
+            const eta = formatEta(pipeline?.estimated_completion_at);
 
             return (
               <div key={video.id} className="space-y-3 p-4 sm:p-5">
@@ -204,7 +216,9 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
                         <Sparkles className="h-3 w-3 text-violet-400" />
                         {statusLabel}
                       </span>
-                      <span>{progress}%</span>
+                      <span>
+                        {progress}%{eta && <span className="ml-1.5 text-white/40">· {eta}</span>}
+                      </span>
                     </div>
                   </>
                 )}

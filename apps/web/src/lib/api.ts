@@ -140,6 +140,8 @@ export interface VideoPipeline {
   source_type?: string;
   current_step: number | null;
   progress_percent: number;
+  /** ISO time the job is expected to finish; null until there's enough progress to estimate. */
+  estimated_completion_at?: string | null;
   steps: Array<{
     id: string;
     label: string;

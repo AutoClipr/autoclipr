@@ -63,7 +63,7 @@ export class JobsRepository {
       .getClient()
       .from('processing_jobs')
       .select(
-        'id, job_type, status, payload, result, error_message, created_at, completed_at',
+        'id, job_type, status, payload, result, error_message, created_at, started_at, completed_at',
       )
       .eq('video_id', videoId)
       .order('created_at', { ascending: false })
@@ -79,6 +79,7 @@ export class JobsRepository {
       result: Record<string, unknown> | null;
       error_message: string | null;
       created_at: string;
+      started_at: string | null;
       completed_at: string | null;
     } | null;
   }

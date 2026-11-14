@@ -1,3 +1,4 @@
+import { estimateCompletionAt } from './utils/estimate-completion';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService, NR_EVENTS } from '@autoclipr/monitoring';
@@ -222,6 +223,10 @@ export class VideosService {
       steps,
       clips_created: result.clips_created ?? 0,
       progress_percent,
+      estimated_completion_at:
+        job?.status === 'processing'
+          ? estimateCompletionAt(job.started_at, progress_percent)
+          : null,
       queue_state: queueState,
       queue_hint: queueHint,
       error_message: job?.error_message ?? null,
