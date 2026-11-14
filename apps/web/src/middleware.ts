@@ -93,7 +93,11 @@ export async function middleware(request: NextRequest) {
     "/dashboard/affiliate",
     "/settings",
   ].some((p) => request.nextUrl.pathname.startsWith(p));
-  if (user && isDashboardArea && !onboardingDone) {
+  // A link pasted into the landing page's "Get free clips" box goes straight
+  // to /create, so the onboarding gate doesn't swallow it.
+  const isClipLink =
+    request.nextUrl.pathname === "/create" && request.nextUrl.searchParams.has("url");
+  if (user && isDashboardArea && !onboardingDone && !isClipLink) {
     return NextResponse.redirect(new URL("/setup/platforms", request.url));
   }
 

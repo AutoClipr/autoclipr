@@ -262,8 +262,7 @@ function HeroUrlForm() {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const value = url.trim();
-    if (!value) return;
-    router.push(`/create?url=${encodeURIComponent(value)}`);
+    router.push(value ? `/create?url=${encodeURIComponent(value)}` : "/create");
   }
 
   return (
