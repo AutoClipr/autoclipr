@@ -5,6 +5,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Captions,
   CheckCircle2,
+  Facebook,
+  Instagram,
+  Link2,
+  Linkedin,
+  MousePointer2,
+  Music2,
+  Twitter,
+  Youtube,
   ChevronLeft,
   ChevronRight,
   Crop,
@@ -243,44 +251,166 @@ function Label({ children }: { children: React.ReactNode }) {
 
 /* ─── 1. AI clipping ────────────────────────────────────────────────────── */
 
-const CLIPS = [
-  { x: 0.2, offset: 0, score: 94, title: "The idiot index" },
-  { x: 0.26, offset: 2.4, score: 88, title: "Pick your vehicle" },
-  { x: 0.22, offset: 4.6, score: 81, title: "Moat-built businesses" },
+const SOURCES: { name: string; duration: string; crops: number[] }[] = [
+  { name: "podcast", duration: "1:12:08", crops: [0.27, 0.3, 0.24, 0.29, 0.26] },
+  { name: "whiteboard", duration: "17:23", crops: [0.2, 0.26, 0.22, 0.24, 0.18] },
+  { name: "gameplay", duration: "9:14", crops: [0.35, 0.42, 0.3, 0.5, 0.38] },
+  { name: "screenshare", duration: "21:55", crops: [0.62, 0.3, 0.68, 0.4, 0.65] },
 ];
 
-function ClippingDemo() {
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-5 p-5 sm:flex-row sm:gap-10 sm:p-10">
-      <motion.div
-        className="w-full max-w-[22rem] space-y-2 sm:w-[42%]"
-        initial={{ x: 40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <CroppedLoop name="whiteboard" className="aspect-video rounded-xl border border-white/10" />
-        <p className="text-center text-xs text-white/50">1 long video · 17 min</p>
-      </motion.div>
+const SCORES = [97, 99, 97, 98, 94, 92];
 
-      <div className="flex gap-2.5 sm:gap-3">
-        {CLIPS.map((clip, i) => (
+const PLATFORM_ICONS: { icon: LucideIcon; className: string }[] = [
+  { icon: Youtube, className: "bg-red-600" },
+  { icon: Instagram, className: "bg-gradient-to-br from-fuchsia-500 to-orange-400" },
+  { icon: Linkedin, className: "bg-sky-600" },
+  { icon: Music2, className: "bg-black ring-1 ring-white/20" },
+  { icon: Facebook, className: "bg-blue-600" },
+  { icon: Twitter, className: "bg-black ring-1 ring-white/20" },
+];
+
+type ClipPhase = "drop" | "click" | "ingest" | "fan" | "exit";
+
+/** ms each phase lasts before moving to the next. */
+const PHASE_MS: Record<ClipPhase, number> = {
+  drop: 900,
+  click: 500,
+  ingest: 600,
+  fan: 2200,
+  exit: 550,
+};
+const PHASE_ORDER: ClipPhase[] = ["drop", "click", "ingest", "fan", "exit"];
+
+/**
+ * A long video drops in above a "Get clips" box, the cursor clicks, the video
+ * is pulled in and a row of scored clips fans out — then it slides away and
+ * the next source drops in.
+ */
+function ClippingDemo() {
+  const [cycle, setCycle] = useState(0);
+  const [phase, setPhase] = useState<ClipPhase>("drop");
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = PHASE_ORDER[(PHASE_ORDER.indexOf(phase) + 1) % PHASE_ORDER.length];
+      if (next === "drop") setCycle((c) => c + 1);
+      setPhase(next);
+    }, PHASE_MS[phase]);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  const source = SOURCES[cycle % SOURCES.length];
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const showSource = phase === "drop" || phase === "click" || phase === "ingest";
+  const showRow = phase === "fan" || phase === "exit";
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {/* Source video: drops in above the box, then gets pulled in. */}
+      <AnimatePresence>
+        {showSource && (
           <motion.div
-            key={clip.title}
-            initial={{ opacity: 0, y: 30, scale: 0.85 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.6 + i * 0.25, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="w-[5.5rem] sm:w-36"
+            key={`src-${cycle}`}
+            className="absolute inset-x-0 z-0 mx-auto w-36 sm:w-64"
+            initial={{ top: "-40%", opacity: 0 }}
+            animate={
+              phase === "ingest"
+                ? { top: "50%", scale: 0.85, opacity: 0.9 }
+                : { top: "7%", scale: 1, opacity: 1 }
+            }
+            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+            transition={{ duration: phase === "ingest" ? 0.55 : 0.8, ease }}
           >
-            <Phone>
-              <CroppedLoop name="whiteboard" region={portrait(clip.x)} offset={clip.offset} className="h-full w-full" />
-              <span className="absolute left-1.5 top-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                {clip.score}🔥
+            <div className="relative aspect-video overflow-hidden rounded-xl border border-white/15 shadow-2xl shadow-black/60">
+              <CroppedLoop name={source.name} className="h-full w-full" />
+              <span className="absolute bottom-1 right-1.5 rounded bg-black/70 px-1 text-[10px] font-medium text-white/90">
+                {source.duration}
               </span>
-            </Phone>
-            <p className="mt-1.5 truncate text-center text-[11px] text-white/60">{clip.title}</p>
+            </div>
           </motion.div>
-        ))}
+        )}
+      </AnimatePresence>
+
+      {/* The input box with the "Get clips" button and a cursor. */}
+      <div className="absolute left-1/2 top-[36%] z-10 w-[min(24rem,88%)] -translate-x-1/2 sm:top-[42%]">
+        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#141821]/95 p-1 pl-3.5 shadow-xl shadow-black/50 backdrop-blur">
+          <Link2 className="h-3.5 w-3.5 shrink-0 text-white/40" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-xs text-white/45 sm:text-sm">
+            Drop a long video and…
+          </span>
+          <motion.span
+            className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-black sm:text-sm"
+            animate={{ scale: phase === "click" ? [1, 0.9, 1.06, 1] : 1 }}
+            transition={{ duration: 0.45 }}
+          >
+            Get clips
+          </motion.span>
+        </div>
+        <motion.div
+          className="pointer-events-none absolute right-5 top-6 text-white drop-shadow"
+          animate={phase === "click" ? { x: [0, -2, 0], y: [0, -3, 0] } : { x: 0, y: 0 }}
+          transition={{ duration: 0.4 }}
+          aria-hidden
+        >
+          <MousePointer2 className="h-4 w-4 fill-white" />
+        </motion.div>
       </div>
+
+      {/* The clips it makes, each with a score and the platform it's for. */}
+      <AnimatePresence>
+        {showRow && (
+          <motion.div
+            key={`row-${cycle}`}
+            className="absolute inset-x-0 top-[52%] z-0 flex items-end justify-center gap-1.5 px-3 sm:top-[58%] sm:gap-3"
+            initial={{ opacity: 1, x: 0 }}
+            animate={phase === "exit" ? { x: "70%", opacity: 0 } : { x: 0, opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease }}
+          >
+            {SCORES.map((score, i) => {
+              const Platform = PLATFORM_ICONS[i];
+              const wide = i === 0;
+              return (
+                <motion.div
+                  key={i}
+                  className={cn(
+                    "relative shrink-0",
+                    wide ? "w-20 sm:w-44" : "w-10 sm:w-[5.6rem]",
+                  )}
+                  initial={{ opacity: 0, scale: 0.6, x: (2.5 - i) * 40 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  transition={{ delay: 0.05 * i, duration: 0.5, ease }}
+                >
+                  <span
+                    className={cn(
+                      "absolute -top-2 left-1/2 z-10 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full sm:-top-2.5 sm:h-5 sm:w-5",
+                      Platform.className,
+                    )}
+                  >
+                    <Platform.icon className="h-2.5 w-2.5 text-white sm:h-3 sm:w-3" />
+                  </span>
+                  <div
+                    className={cn(
+                      "overflow-hidden rounded-lg border border-white/15 shadow-lg shadow-black/50",
+                      wide ? "aspect-[16/11]" : "aspect-[9/16]",
+                    )}
+                  >
+                    <CroppedLoop
+                      name={source.name}
+                      region={wide ? { x: 0.1, y: 0, w: 0.8, h: 0.95 } : portrait(source.crops[i - 1])}
+                      offset={i * 1.1}
+                      className="h-full w-full"
+                    />
+                  </div>
+                  <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1 text-[9px] font-bold text-lime-300 sm:text-[10px]">
+                    {score}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
