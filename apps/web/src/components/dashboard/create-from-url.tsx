@@ -73,6 +73,12 @@ const CAPTION_EMOJI: Record<string, string> = {
 export function CreateFromUrl() {
   const router = useRouter();
   const [url, setUrl] = useState("");
+
+  // Prefill from ?url= (the landing page's "Get free clips" box sends people here).
+  useEffect(() => {
+    const fromQuery = new URLSearchParams(window.location.search).get("url");
+    if (fromQuery) setUrl(fromQuery);
+  }, []);
   const [clipCount, setClipCount] = useState(5);
   const [credits, setCredits] = useState<number | null>(null);
   const [creditCostPerClip, setCreditCostPerClip] = useState(1);
