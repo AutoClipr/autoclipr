@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Link2, Play, Sparkles, Zap } from "lucide-react";
@@ -69,9 +70,9 @@ export function Hero() {
             className="font-bold tracking-[-1.28px] leading-[1.1] px-2 text-darks-off-white"
             style={{ fontSize: "clamp(2rem, 5vw, 5rem)" }}
           >
-            Turn long videos into{" "}
-            <span className="text-aurora">viral shorts</span>
-            <br /> — automatically
+            Turn long videos into
+            <br />
+            <RotatingPhrase />automatically
           </h1>
         </MotionItem>
 
@@ -288,5 +289,62 @@ function HeroUrlForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+const PHRASES = ["viral shorts", "10 scored clips", "a week of posts", "captioned Reels"];
+
+/**
+ * The headline's rotating phrase: sits in a pill with a soft, blurred colour
+ * wash; every few seconds the phrase blurs out, the next blurs in and the
+ * pill resizes to fit.
+ */
+function RotatingPhrase() {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % PHRASES.length), 2600);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <>
+      <motion.span
+        layout
+        transition={{ layout: { duration: 0.45, ease: EASE } }}
+        className="relative mx-[0.06em] inline-flex items-center overflow-hidden rounded-full bg-[#1b2528] px-[0.55em] py-[0.16em] align-middle"
+      >
+        {/* A single soft glow in the middle, like a blurred video frame */}
+        <span
+          aria-hidden
+          className="absolute left-1/2 top-1/2 h-[190%] w-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(236,160,170,0.55), rgba(196,140,150,0.28) 55%, transparent)",
+          }}
+        />
+
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={PHRASES[i]}
+            layout="position"
+            className="relative whitespace-nowrap text-[0.92em] font-semibold text-white/95"
+            initial={{ opacity: 0, filter: "blur(10px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(10px)" }}
+            transition={{ duration: 0.45, ease: EASE }}
+          >
+            {PHRASES[i]}
+          </motion.span>
+        </AnimatePresence>
+      </motion.span>
+      {/* Thin blinking caret before the trailing word */}
+      <motion.span
+        aria-hidden
+        className="mx-[0.08em] inline-block h-[0.9em] w-[2px] bg-white/80 align-middle"
+        animate={{ opacity: [1, 1, 0, 0] }}
+        transition={{ duration: 1, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
+      />
+    </>
   );
 }
