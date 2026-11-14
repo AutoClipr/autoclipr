@@ -227,7 +227,7 @@ function RotatingPhrase() {
       <motion.span
         layout
         transition={{ layout: { duration: 0.45, ease: EASE } }}
-        className="relative mx-[0.06em] mt-[0.18em] inline-flex items-center overflow-hidden rounded-full bg-[#1b2528] px-[0.42em] py-[0.06em] align-middle"
+        className="relative ml-[0.06em] mr-[0.28em] mt-[0.18em] inline-flex items-center overflow-hidden rounded-full bg-[#1b2528] px-[0.42em] py-[0.06em] align-baseline"
       >
         {/* A single soft glow in the middle, like a blurred video frame */}
         <span
@@ -253,13 +253,6 @@ function RotatingPhrase() {
           </motion.span>
         </AnimatePresence>
       </motion.span>
-      {/* Thin blinking caret before the trailing word */}
-      <motion.span
-        aria-hidden
-        className="ml-[0.22em] mr-[0.1em] inline-block h-[0.9em] w-[2px] bg-white/80 align-middle"
-        animate={{ opacity: [1, 1, 0, 0] }}
-        transition={{ duration: 1, repeat: Infinity, times: [0, 0.5, 0.5, 1] }}
-      />
     </>
   );
 }
