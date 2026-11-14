@@ -9,7 +9,7 @@ import {
   Instagram,
   Link2,
   Linkedin,
-  MousePointer2,
+  Pointer,
   Music2,
   Twitter,
   Youtube,
@@ -332,14 +332,14 @@ function ClippingDemo() {
       </AnimatePresence>
 
       {/* The input box with the "Get clips" button and a cursor. */}
-      <div className="absolute left-1/2 top-[36%] z-10 w-[min(24rem,88%)] -translate-x-1/2 sm:top-[42%]">
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#141821]/95 p-1 pl-3.5 shadow-xl shadow-black/50 backdrop-blur">
-          <Link2 className="h-3.5 w-3.5 shrink-0 text-white/40" aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-xs text-white/45 sm:text-sm">
+      <div className="absolute left-1/2 top-[36%] z-10 w-[min(30rem,90%)] -translate-x-1/2 sm:top-[42%]">
+        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-[#141821]/95 p-1.5 pl-4 shadow-xl sm:pl-5 shadow-black/50 backdrop-blur">
+          <Link2 className="h-4 w-4 shrink-0 text-white/40 sm:h-5 sm:w-5" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-sm text-white sm:text-base">
             Drop a long video and…
           </span>
           <motion.span
-            className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-black sm:text-sm"
+            className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/15 sm:px-5 sm:py-2.5 sm:text-base"
             animate={{ scale: phase === "click" ? [1, 0.9, 1.06, 1] : 1 }}
             transition={{ duration: 0.45 }}
           >
@@ -347,12 +347,12 @@ function ClippingDemo() {
           </motion.span>
         </div>
         <motion.div
-          className="pointer-events-none absolute right-5 top-6 text-white drop-shadow"
+          className="pointer-events-none absolute right-7 top-[32px] text-black drop-shadow sm:top-[36px]"
           animate={phase === "click" ? { x: [0, -2, 0], y: [0, -3, 0] } : { x: 0, y: 0 }}
           transition={{ duration: 0.4 }}
           aria-hidden
         >
-          <MousePointer2 className="h-4 w-4 fill-white" />
+          <Pointer className="h-6 w-6 fill-white" strokeWidth={1.75} />
         </motion.div>
       </div>
 
