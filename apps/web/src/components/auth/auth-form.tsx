@@ -63,10 +63,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/setup/platforms";
 
-  // Phone/OTP is closed to new signups, but stays available on login: users
-  // who registered by phone have no email address on their account, so
-  // removing it from the login screen would lock them out entirely.
-  const phoneAuthEnabled = mode === "login";
+  // Phone/OTP sign-in is switched off everywhere for now (signup and login).
+  // The code is kept, not deleted, so it can be turned back on later by
+  // setting this to `mode === "login"` (or `true` to reopen phone signup).
+  //
+  // While this is false, users who registered by phone only — no email or
+  // password on their account — cannot sign in. Bring this back before
+  // removing the code for good, or give those users another way in.
+  const phoneAuthEnabled = false;
 
   const [tab, setTab] = useState<AuthTab>("email");
   const [phoneStep, setPhoneStep] = useState<PhoneStep>("enter");
