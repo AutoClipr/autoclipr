@@ -149,7 +149,9 @@ function ScheduleVisual() {
 
 export function WorkflowAutomation() {
   return (
-    <section className="relative px-4 py-24 sm:px-6">
+    // id="how-it-works": target of the "How it works" links in the navbar,
+    // footer and mobile menu.
+    <section id="how-it-works" className="relative scroll-mt-16 px-4 py-24 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <Reveal className="mb-12 text-center">
           <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60 sm:text-sm">

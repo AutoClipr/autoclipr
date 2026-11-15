@@ -17,15 +17,10 @@ export const metadata: Metadata = pageMetadata({
 });
 import { AiModels } from "@/components/landing/ai-models";
 import { WorkflowAutomation } from "@/components/landing/workflow-automation";
-import { HowItWorks } from "@/components/landing/how-it-works";
-import { Suspense } from "react";
-import { PricingSection } from "@/components/landing/pricing-section";
-import { PricingSkeleton } from "@/components/landing/pricing-skeleton";
 import { CTA } from "@/components/landing/cta";
 import { PlatformMarquee } from "@/components/landing/platform-marquee";
 import { CreatorsMarquee } from "@/components/landing/creators-marquee";
 import { CreatorWinTicker } from "@/components/layout/creator-win-ticker";
-import { FreeTools } from "@/components/landing/free-tools";
 import { PublishDirectly } from "@/components/landing/publish-directly";
 
 export default function HomePage() {
@@ -38,12 +33,7 @@ export default function HomePage() {
       <PlatformMarquee />
       <AiModels />
       <WorkflowAutomation />
-      <HowItWorks />
-      <FreeTools />
       <PublishDirectly />
-      <Suspense fallback={<PricingSkeleton />}>
-        <PricingSection />
-      </Suspense>
       <CTA />
     </>
   );
