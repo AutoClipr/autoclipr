@@ -34,7 +34,7 @@ const CREATORS_META = [
 type YTLive = { name: string; thumbnail: string; subs: string; views: string; videos: string; country: string };
 type Creator = typeof CREATORS_META[number] & { thumbnail?: string; subs: string; views: string; videos: string };
 
-const CATEGORIES = ["Entertainment", "Music", "Kids", "Technology", "Sports", "Lifestyle", "News"];
+const CATEGORIES = ["Entertainment", "Music", "Kids", "Technology", "Sports", "News"];
 const SORT_OPTIONS = [
   { key: "rank", label: "Rank", icon: TrendingUp },
   { key: "subs", label: "Subscribers", icon: Users },
@@ -216,8 +216,8 @@ export function TopCreatorsList() {
         </div>
 
         {/* ── Controls: sort + category chips ── */}
-        <div className="mt-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex w-full items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur lg:w-auto">
+        <div className="mt-12 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex w-full shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur sm:w-auto sm:self-start">
             {SORT_OPTIONS.map((opt) => {
               const Icon = opt.icon;
               return (
@@ -225,7 +225,7 @@ export function TopCreatorsList() {
                   key={opt.key}
                   onClick={() => setSort(opt.key)}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all lg:flex-none",
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all sm:flex-none",
                     sort === opt.key ? "bg-white text-black shadow" : "text-white/55 hover:text-white",
                   )}
                 >
@@ -235,7 +235,7 @@ export function TopCreatorsList() {
               );
             })}
           </div>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:justify-end lg:overflow-visible lg:px-0 lg:pb-0">
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 xl:flex-nowrap xl:justify-end">
             <button
               onClick={() => setActiveCategory(null)}
               className={cn(
