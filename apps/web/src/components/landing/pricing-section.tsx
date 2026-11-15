@@ -238,32 +238,29 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
   return (
     <MotionCard
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-3xl border bg-[#0d0d18] transition-all duration-300",
+        "relative flex flex-col overflow-hidden rounded-3xl border backdrop-blur transition-all duration-300 hover:-translate-y-1",
         plan.popular
-          ? cn("border-emerald-500/40 shadow-2xl shadow-emerald-500/10 ring-1 ring-emerald-500/20 scale-[1.02]", "lg:scale-[1.04]")
-          : "border-white/[0.08] hover:border-white/20"
+          ? "border-emerald-400/50 bg-gradient-to-b from-emerald-500/[0.14] via-white/[0.03] to-white/[0.02] shadow-[0_0_60px_-15px_rgba(16,185,129,0.55)] lg:scale-[1.04]"
+          : "border-white/[0.08] bg-white/[0.03] hover:border-white/20"
       )}
     >
-      {/* Popular badge */}
+      {/* Popular: soft glow at the top + floating pill */}
       {plan.badgeText && (
-        <div className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-500 py-2.5 text-xs font-bold uppercase tracking-widest text-white">
-          <Sparkles className="h-3 w-3" />
-          {plan.badgeText}
-        </div>
+        <>
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full bg-emerald-400/25 blur-3xl" />
+          <div className="absolute right-5 top-5 z-10 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black shadow-lg shadow-emerald-500/30">
+            <Sparkles className="h-3 w-3" />
+            {plan.badgeText}
+          </div>
+        </>
       )}
 
       {/* Header */}
       <div className="relative overflow-hidden px-7 pb-7 pt-8">
-        {/* Subtle grid bg */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: "24px 24px",
-          }}
-        />
-        {/* Glow dot */}
-        <span className={cn("absolute right-6 top-6 h-2 w-2 rounded-full blur-sm opacity-90", ac.glow)} />
+        {/* Glow dot (popular card shows its pill there instead) */}
+        {!plan.badgeText && (
+          <span className={cn("absolute right-6 top-6 h-2 w-2 rounded-full blur-sm opacity-90", ac.glow)} />
+        )}
 
         {/* Icon */}
         <div className={cn("relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg", ac.icon)}>
@@ -296,7 +293,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
             </div>
           )}
           <div className="flex items-end gap-1">
-            <span className="text-5xl font-extrabold tracking-tight text-white">{priceLabel}</span>
+            <span className="text-6xl font-extrabold tracking-tight text-white">{priceLabel}</span>
             {displayPrice > 0 && <span className="mb-2 text-sm text-muted-foreground">/month</span>}
           </div>
           {coupon && listPrice > 0 && !planCoupon && (
@@ -363,7 +360,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
             onClick={handleCheckout}
             disabled={loading}
             className={cn(
-              "flex w-full items-center justify-center rounded-2xl px-6 py-3.5 text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed",
+              "flex w-full items-center justify-center rounded-full px-6 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed",
               ac.btn
             )}
           >
@@ -448,7 +445,7 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
 
         {/* Billing toggle */}
         <Reveal className="mb-10 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur">
             <button
               onClick={() => setYearly(false)}
               className={cn(
@@ -462,10 +459,14 @@ export function PricingSection({ showHeader = true }: PricingSectionProps) {
               onClick={() => setYearly(true)}
               className={cn(
                 "rounded-full px-5 py-2 text-sm font-semibold transition-all",
-                yearly ? "bg-[#5B6CF6] text-white shadow" : "text-muted-foreground hover:text-white"
+                "flex items-center gap-2",
+                yearly ? "bg-white text-black shadow" : "text-muted-foreground hover:text-white"
               )}
             >
               Yearly
+              <span className={cn("rounded-full px-1.5 py-px text-[10px] font-bold", yearly ? "bg-emerald-500 text-white" : "bg-emerald-500/20 text-emerald-300")}>
+                −13%
+              </span>
             </button>
           </div>
           <p className="text-sm text-muted-foreground">

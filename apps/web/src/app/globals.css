@@ -76,6 +76,11 @@
     @apply inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-emerald-300;
   }
 
+  /* White variant of the section label pill */
+  .section-label-white {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white;
+  }
+
   /* Frosted glass panel with an animated sheen on hover */
   .glass-panel {
     @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl;

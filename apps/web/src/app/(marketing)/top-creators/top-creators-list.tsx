@@ -34,8 +34,7 @@ const CREATORS_META = [
 type YTLive = { name: string; thumbnail: string; subs: string; views: string; videos: string; country: string };
 type Creator = typeof CREATORS_META[number] & { thumbnail?: string; subs: string; views: string; videos: string };
 
-const COUNTRIES = ["🇺🇸 United States", "🇮🇳 India", "🇬🇧 United Kingdom", "🇨🇦 Canada", "🇧🇷 Brazil", "🇰🇷 South Korea", "🇯🇵 Japan", "🇲🇽 Mexico"];
-const CATEGORIES = ["Entertainment", "Music", "Kids", "Gaming", "Education", "Technology", "Sports", "Lifestyle", "News", "Food", "Travel"];
+const CATEGORIES = ["Entertainment", "Music", "Kids", "Technology", "Sports", "Lifestyle", "News"];
 const SORT_OPTIONS = [
   { key: "rank", label: "Rank", icon: TrendingUp },
   { key: "subs", label: "Subscribers", icon: Users },
@@ -43,27 +42,12 @@ const SORT_OPTIONS = [
   { key: "videos", label: "Videos", icon: Video },
 ];
 
-function RankBadge({ rank, tier }: { rank: number; tier?: string }) {
-  if (tier === "gold") return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-sm font-extrabold text-black shadow-lg shadow-yellow-500/30">
-      1
-    </div>
-  );
-  if (tier === "silver") return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-300 to-gray-400 text-sm font-extrabold text-black shadow-lg">
-      2
-    </div>
-  );
-  if (tier === "bronze") return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 text-sm font-extrabold text-white shadow-lg shadow-orange-500/30">
-      3
-    </div>
-  );
-  return (
-    <div className="flex h-10 w-10 items-center justify-center text-sm font-semibold text-white/40">
-      #{rank}
-    </div>
-  );
+/** "526.0M" / "146.97B" / "1.0K" / "—" → a number for sorting. */
+function parseStat(v: string): number {
+  const m = /^([\d.]+)\s*([KMB])?$/i.exec(v.trim());
+  if (!m) return -1;
+  const mult = { K: 1e3, M: 1e6, B: 1e9 }[(m[2] ?? "").toUpperCase() as "K" | "M" | "B"] ?? 1;
+  return parseFloat(m[1]) * mult;
 }
 
 const GRAD_COLORS = [
@@ -74,20 +58,22 @@ const GRAD_COLORS = [
   "from-pink-500 to-rose-500",
 ];
 
-function Avatar({ name, thumbnail }: { name: string; thumbnail?: string }) {
+function Avatar({ name, thumbnail, size = "h-11 w-11" }: { name: string; thumbnail?: string; size?: string }) {
   if (thumbnail) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={thumbnail} alt={name} className="h-11 w-11 shrink-0 rounded-full object-cover border border-white/10 shadow-lg" />
+      <img src={thumbnail} alt={name} className={cn(size, "shrink-0 rounded-full border border-white/10 object-cover shadow-lg")} />
     );
   }
   const color = GRAD_COLORS[name.charCodeAt(0) % GRAD_COLORS.length];
   return (
-    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${color} text-base font-bold text-white shadow-lg`}>
+    <div className={cn(size, `flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${color} font-bold text-white shadow-lg`)}>
       {name.charAt(0)}
     </div>
   );
 }
+
+const channelHref = (name: string) => `/top-creators/${encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-"))}`;
 
 // Merge static meta with live YouTube data
 function buildCreators(liveMap: Record<string, YTLive>): Creator[] {
@@ -103,10 +89,54 @@ function buildCreators(liveMap: Record<string, YTLive>): Creator[] {
   });
 }
 
+/* ─── Podium (top 3 of the current view) ────────────────────────────────── */
+
+const PODIUM_STYLE = [
+  { ring: "from-yellow-300 to-amber-500", glow: "bg-yellow-400/25", badge: "bg-gradient-to-br from-yellow-300 to-amber-500 text-black", lift: "lg:-translate-y-6" },
+  { ring: "from-slate-200 to-slate-400", glow: "bg-slate-300/15", badge: "bg-gradient-to-br from-slate-200 to-slate-400 text-black", lift: "" },
+  { ring: "from-orange-300 to-orange-600", glow: "bg-orange-500/20", badge: "bg-gradient-to-br from-orange-300 to-orange-600 text-white", lift: "" },
+];
+
+function PodiumCard({ creator, place }: { creator: Creator; place: number }) {
+  const st = PODIUM_STYLE[place];
+  return (
+    <Link
+      href={channelHref(creator.name)}
+      className={cn(
+        "group relative flex flex-col items-center overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] px-5 pb-6 pt-8 text-center backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20",
+        st.lift,
+      )}
+    >
+      <div className={cn("pointer-events-none absolute -top-16 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full blur-3xl", st.glow)} />
+      <span className={cn("absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-xl text-sm font-extrabold shadow-lg", st.badge)}>
+        {place + 1}
+      </span>
+      <div className={cn("relative rounded-full bg-gradient-to-br p-[3px]", st.ring)}>
+        <Avatar name={creator.name} thumbnail={creator.thumbnail} size="h-20 w-20 text-2xl" />
+      </div>
+      <p className="relative mt-4 text-lg font-bold text-white">{creator.name}</p>
+      <p className="relative text-xs text-white/45">{creator.country} · {creator.niche}</p>
+      <p className="relative mt-4 text-3xl font-extrabold tracking-tight text-white">{creator.subs}</p>
+      <p className="relative text-[11px] uppercase tracking-widest text-white/40">subscribers</p>
+      <div className="relative mt-4 flex w-full justify-center gap-6 border-t border-white/[0.07] pt-4 text-sm">
+        <div>
+          <p className="font-semibold text-white">{creator.views}</p>
+          <p className="text-[10px] text-white/40">views</p>
+        </div>
+        <div>
+          <p className="font-semibold text-white">{creator.videos}</p>
+          <p className="text-[10px] text-white/40">videos</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─── Page ──────────────────────────────────────────────────────────────── */
+
 export function TopCreatorsList() {
   const router = useRouter();
   const [sort, setSort] = useState("rank");
-  const [activeCountry, setActiveCountry] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [channelSearch, setChannelSearch] = useState("");
   const [liveMap, setLiveMap] = useState<Record<string, YTLive>>({});
@@ -131,155 +161,120 @@ export function TopCreatorsList() {
     return true;
   });
 
-  return (
-    <div className="min-h-screen pt-2">
-      {/* Hero */}
-      <div className="border-b border-white/[0.06] bg-gradient-to-b from-white/[0.02] to-transparent px-4 py-12 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-400">Live Stats · Refreshed daily</span>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                Top 100 YouTube<br />
-                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  Creators by Subscribers
-                </span>
-              </h1>
-              <p className="mt-3 max-w-lg text-white/50">
-                Live rankings with view counts, growth trends, and channel stats. Study what the best are doing — then clip it with AutoClipr.
-              </p>
-            </div>
-            <Link
-              href="/register"
-              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition hover:from-emerald-500 hover:to-emerald-400"
-            >
-              Start clipping — free
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+  const sorted =
+    sort === "rank"
+      ? filtered
+      : [...filtered].sort(
+          (a, b) =>
+            parseStat(b[sort as "subs" | "views" | "videos"]) - parseStat(a[sort as "subs" | "views" | "videos"]),
+        );
 
-          {/* Search bar */}
-          <div className="mt-6">
-            <ChannelSearchBar
-              localSearch={channelSearch}
-              onLocalSearchChange={setChannelSearch}
-            />
+  // Podium only when there are enough results to fill it.
+  const podium = sorted.length >= 3 ? sorted.slice(0, 3) : [];
+  const rest = sorted.slice(podium.length);
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] pt-2">
+      {/* Glow + faint grid */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-48 left-1/2 h-[600px] w-[1000px] -translate-x-1/2 rounded-full bg-emerald-500/[0.09] blur-[130px]" />
+        <div
+          className="absolute inset-x-0 top-0 h-[560px] opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
+          }}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6">
+        {/* ── Hero ── */}
+        <div className="text-center">
+          <p className="section-label-white mb-6">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
+            Live stats · Refreshed daily
+          </p>
+          <h1 className="mx-auto max-w-4xl text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            Top YouTube creators{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              by subscribers
+            </span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/55">
+            Live rankings with views, uploads and channel stats. Study what the best are doing — then clip it with AutoClipr.
+          </p>
+          <div className="mx-auto mt-8 max-w-xl text-left">
+            <ChannelSearchBar localSearch={channelSearch} onLocalSearchChange={setChannelSearch} />
             {channelSearch && (
-              <p className="mt-2 text-xs text-white/30">
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""} for &quot;{channelSearch}&quot; in list
+              <p className="mt-2 text-center text-xs text-white/40">
+                {filtered.length} result{filtered.length !== 1 ? "s" : ""} for &quot;{channelSearch}&quot; in the list
               </p>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Body */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <aside className="hidden w-52 shrink-0 lg:block">
-            {/* Sort */}
-            <div className="mb-8">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/30">Sort By</p>
-              <ul className="space-y-1">
-                {SORT_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
-                  return (
-                    <li key={opt.key}>
-                      <button
-                        onClick={() => setSort(opt.key)}
-                        className={cn(
-                          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors",
-                          sort === opt.key
-                            ? "bg-emerald-500/15 font-semibold text-emerald-400"
-                            : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
-                        )}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {opt.label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+        {/* ── Controls: sort + category chips ── */}
+        <div className="mt-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex w-full items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur lg:w-auto">
+            {SORT_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.key}
+                  onClick={() => setSort(opt.key)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all lg:flex-none",
+                    sort === opt.key ? "bg-white text-black shadow" : "text-white/55 hover:text-white",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:justify-end lg:overflow-visible lg:px-0 lg:pb-0">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={cn(
+                "shrink-0 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                activeCategory === null ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200" : "border-white/10 text-white/55 hover:text-white",
+              )}
+            >
+              All
+            </button>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(activeCategory === c ? null : c)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                  activeCategory === c ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-200" : "border-white/10 text-white/55 hover:text-white",
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
 
-            {/* By Country */}
-            <div className="mb-8">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/30">Top 100 by Country</p>
-              <ul className="space-y-1">
-                {COUNTRIES.map((c) => (
-                  <li key={c}>
-                    <button
-                      onClick={() => setActiveCountry(activeCountry === c ? null : c)}
-                      className={cn(
-                        "flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                        activeCountry === c
-                          ? "bg-emerald-500/15 font-semibold text-emerald-400"
-                          : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
-                      )}
-                    >
-                      <TrendingUp className="h-3 w-3 text-emerald-500/60" />
-                      {c}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* ── Podium ── */}
+        {podium.length > 0 && (
+          <div className="mt-14 grid gap-4 sm:grid-cols-3 lg:items-end">
+            {/* 2nd · 1st · 3rd on wide screens */}
+            <div className="sm:order-2"><PodiumCard creator={podium[0]} place={0} /></div>
+            <div className="sm:order-1"><PodiumCard creator={podium[1]} place={1} /></div>
+            <div className="sm:order-3"><PodiumCard creator={podium[2]} place={2} /></div>
+          </div>
+        )}
 
-            {/* By Category */}
-            <div>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/30">Top 100 by Category</p>
-              <ul className="space-y-1">
-                {CATEGORIES.map((c) => (
-                  <li key={c}>
-                    <button
-                      onClick={() => setActiveCategory(activeCategory === c ? null : c)}
-                      className={cn(
-                        "w-full rounded-xl px-3 py-1.5 text-left text-sm transition-colors",
-                        activeCategory === c
-                          ? "bg-emerald-500/15 font-semibold text-emerald-400"
-                          : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
-                      )}
-                    >
-                      {c}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-
-          {/* Main */}
-          <div className="flex-1 min-w-0">
-            {/* Sort tabs */}
-            <div className="mb-4 flex items-center gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1">
-              {SORT_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => setSort(opt.key)}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all",
-                      sort === opt.key
-                        ? "bg-emerald-500 text-white shadow"
-                        : "text-white/40 hover:text-white/70"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Table header — hidden on mobile */}
-            <div className="mb-2 hidden sm:grid grid-cols-[auto_1fr_100px_100px_80px_36px] items-center gap-3 px-4 text-[10px] font-bold uppercase tracking-widest text-white/25">
-              <div className="w-10">Rank</div>
+        {/* ── Table ── */}
+        {rest.length > 0 && (
+          <div className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.025] backdrop-blur">
+            <div className="hidden grid-cols-[56px_1fr_110px_110px_90px_36px] items-center gap-3 border-b border-white/[0.07] px-5 py-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 sm:grid">
+              <div>#</div>
               <div>Channel</div>
               <div className="text-right">Subscribers</div>
               <div className="text-right">Views</div>
@@ -287,89 +282,77 @@ export function TopCreatorsList() {
               <div />
             </div>
 
-            {/* Rows */}
-            <div className="space-y-1">
-              {filtered.map((creator, i) => (
-                <div key={creator.rank}>
-                  {/* Mid-list CTA */}
-                  {i === 10 && (
-                    <div className="my-4 flex flex-col gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                      <div>
-                        <p className="font-semibold text-white">See a creator you want to beat?</p>
-                        <p className="text-sm text-white/40">Clip their best moments — start in 30 seconds.</p>
+            <div className="divide-y divide-white/[0.05]">
+              {rest.map((creator, i) => {
+                const place = podium.length + i + 1;
+                return (
+                  <div key={creator.rank}>
+                    {/* Mid-list CTA */}
+                    {i === 7 && (
+                      <div className="flex flex-col gap-3 bg-gradient-to-r from-emerald-500/[0.12] to-cyan-500/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-semibold text-white">See a creator you want to beat?</p>
+                          <p className="text-sm text-white/50">Clip their best moments — start in 30 seconds.</p>
+                        </div>
+                        <Link
+                          href="/register"
+                          className="group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
+                        >
+                          Start free
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        </Link>
                       </div>
-                      <Link
-                        href="/register"
-                        className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-emerald-400"
-                      >
-                        Start free
-                      </Link>
-                    </div>
-                  )}
-                  {/* Mobile card layout / Desktop grid row */}
-                  <div
-                    onClick={() => router.push(`/top-creators/${encodeURIComponent(creator.name.toLowerCase().replace(/\s+/g, "-"))}`)}
-                    className="group cursor-pointer rounded-2xl border border-transparent px-3 py-3 transition-all hover:border-white/[0.06] hover:bg-white/[0.03] sm:px-4"
-                  >
-                    {/* Mobile layout */}
-                    <div className="flex items-center gap-3 sm:hidden">
-                      <RankBadge rank={creator.rank} tier={creator.tier} />
-                      <Avatar name={creator.name} thumbnail={creator.thumbnail} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-white">{creator.name}</p>
-                        <p className="text-xs text-white/35">{creator.country} · {creator.niche}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-white">{creator.subs}</p>
-                        <p className="text-[10px] text-white/30">subs</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-white/20" />
-                    </div>
-                    {/* Desktop grid layout */}
-                    <div className="hidden sm:grid grid-cols-[auto_1fr_100px_100px_80px_36px] items-center gap-3">
-                      <RankBadge rank={creator.rank} tier={creator.tier} />
+                    )}
+                    <div
+                      onClick={() => router.push(channelHref(creator.name))}
+                      className="group grid cursor-pointer grid-cols-[40px_1fr_auto_20px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.04] sm:grid-cols-[56px_1fr_110px_110px_90px_36px] sm:px-5"
+                    >
+                      <span className="text-sm font-semibold text-white/40 group-hover:text-white">#{place}</span>
                       <div className="flex min-w-0 items-center gap-3">
                         <Avatar name={creator.name} thumbnail={creator.thumbnail} />
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-white">{creator.name}</p>
-                          <p className="text-xs text-white/35">{creator.country} · {creator.niche}</p>
+                          <p className="text-xs text-white/40">{creator.country} · {creator.niche}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-white">{creator.subs}</p>
-                        <p className="text-[10px] text-white/30">subs</p>
+                        <p className="text-[10px] text-white/35 sm:hidden">subs</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-white">{creator.views}</p>
-                        <p className="text-[10px] text-white/30">views</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-white">{creator.videos}</p>
-                        <p className="text-[10px] text-white/30">videos</p>
-                      </div>
-                      <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] text-white/30 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-400 opacity-0 group-hover:opacity-100">
+                      <p className="hidden text-right font-semibold text-white/80 sm:block">{creator.views}</p>
+                      <p className="hidden text-right font-semibold text-white/80 sm:block">{creator.videos}</p>
+                      <span className="flex h-8 w-8 items-center justify-center justify-self-end rounded-full text-white/25 transition-all group-hover:bg-emerald-500/15 group-hover:text-emerald-300">
                         <ChevronRight className="h-4 w-4" />
-                      </button>
+                      </span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          </div>
+        )}
 
-            {/* Bottom CTA */}
-            <div className="mt-8 rounded-3xl bg-gradient-to-r from-emerald-600 to-cyan-600 p-6 text-center sm:p-8">
-              <h2 className="text-2xl font-bold text-white">Your turn to climb the rankings</h2>
-              <p className="mt-2 text-white/70">
-                Auto-clip top creators&apos; best moments, add captions, and publish across platforms — in minutes.
-              </p>
-              <Link
-                href="/register"
-                className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-emerald-700 shadow-lg transition hover:bg-white/90"
-              >
-                Start clipping free
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+        {sorted.length === 0 && (
+          <p className="mt-16 text-center text-white/50">No creators match that search.</p>
+        )}
+
+        {/* ── Closing card ── */}
+        <div className="relative mt-16 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center sm:p-12">
+          <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
+          <div className="relative">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-white sm:text-4xl">
+              Your turn to climb the rankings
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-white/55">
+              Auto-clip your best moments, add captions, and publish across platforms — in minutes.
+            </p>
+            <Link
+              href="/register"
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
+            >
+              Start clipping free
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </div>

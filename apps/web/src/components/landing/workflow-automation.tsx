@@ -154,10 +154,7 @@ export function WorkflowAutomation() {
     <section id="how-it-works" className="relative scroll-mt-16 px-4 py-24 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <Reveal className="mb-12 text-center">
-          <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60 sm:text-sm">
-            <RefreshCw className="h-4 w-4" />
-            Workflow automation
-          </p>
+          <p className="section-label-white mx-auto mb-4">Workflow automation</p>
           <h2 className="mx-auto max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-5xl">
             Your video creation process — now
             <br />

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ConverterVisual, ReframeVisual, SlicerVisual } from "./tools-visuals";
 
 export const metadata: Metadata = pageMetadata({
   title: "Free Online Video Tools — No Upload, 100% Private",
@@ -182,205 +183,197 @@ export default function ToolsPage() {
         { "@type": "ListItem", position: 10, name: "GIF Generator",         url: "https://autoclipr.com/tools/gif-generator" },
       ],
     }} />
-    <div className="relative min-h-screen bg-[#07080f]">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-emerald-500/5 blur-[120px]" />
-        <div className="absolute top-1/3 -left-40 h-[400px] w-[400px] rounded-full bg-violet-500/5 blur-[100px]" />
-        <div className="absolute top-1/3 -right-40 h-[400px] w-[400px] rounded-full bg-sky-500/5 blur-[100px]" />
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f]">
+      {/* Ambient glow + faint grid */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-48 left-1/2 h-[620px] w-[1000px] -translate-x-1/2 rounded-full bg-emerald-500/[0.08] blur-[130px]" />
+        <div className="absolute top-[35%] -left-40 h-[420px] w-[420px] rounded-full bg-violet-500/[0.06] blur-[110px]" />
+        <div className="absolute top-[35%] -right-40 h-[420px] w-[420px] rounded-full bg-orange-500/[0.05] blur-[110px]" />
+        <div
+          className="absolute inset-x-0 top-0 h-[520px] opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
+          }}
+        />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
-
+      <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-20 sm:px-6">
         {/* ── Header ── */}
-        <div className="mb-16 text-center">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-1.5">
+        <div className="mb-14 text-center">
+          <p className="section-label-white mb-6">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">100% Free · No Signup</span>
-          </div>
-
-          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-6xl">
-            Free Video{" "}
-            <span className="relative">
-              <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
-                Tools
-              </span>
-              <span className="absolute -bottom-1 left-0 h-px w-full bg-gradient-to-r from-emerald-400/50 via-cyan-400/50 to-violet-400/50" />
+            100% free · No signup
+          </p>
+          <h1 className="mx-auto max-w-3xl text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            Free video tools,{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              right in your browser
             </span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-white/40 leading-relaxed">
-            Professional video editing tools that run entirely in your browser.
-            <br className="hidden sm:block" /> No uploads, no accounts, no cost — ever.
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/55">
+            Slice, convert, compress and caption videos without uploading a thing. No accounts, no cost — ever.
           </p>
 
-          {/* Stat pills */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {STATS.map(s => (
-              <div key={s.label} className="flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-4 py-2">
-                <span className="text-emerald-400">{s.icon}</span>
-                <div className="text-left">
-                  <p className="text-xs font-semibold text-white/80 leading-none">{s.label}</p>
-                  <p className="mt-0.5 text-[10px] text-white/30 leading-none">{s.sub}</p>
-                </div>
-              </div>
+          <ul className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3">
+            {STATS.map((s) => (
+              <li key={s.label} className="flex items-center gap-2 text-sm">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                  {s.icon}
+                </span>
+                <span className="font-semibold text-white">{s.label}</span>
+                <span className="hidden text-white/40 sm:inline">· {s.sub}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        {/* ── Featured hero tool ── */}
-        <Link
-          href={TOOLS[0].href}
-          className="group relative mb-6 flex items-center gap-6 overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent p-7 transition-all duration-300 hover:border-emerald-500/30 hover:shadow-[0_0_60px_-15px_rgba(52,211,153,0.2)] sm:p-8"
-        >
-          {/* glow orb */}
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl transition-all duration-500 group-hover:bg-emerald-500/20" />
-
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/20 transition-all group-hover:scale-110 group-hover:bg-emerald-500/30">
-            <Scissors className="h-8 w-8" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <p className="text-xl font-bold text-white">{TOOLS[0].label}</p>
-              <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                Most Popular
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-white/50">{TOOLS[0].desc}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Multi-segment", "Fade In/Out", "Speed Control", "9:16 Crop", "GIF Export"].map(t => (
-                <span key={t} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40 border border-white/[0.06]">{t}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden shrink-0 sm:flex items-center gap-1.5 text-sm font-semibold text-emerald-400 group-hover:gap-3 transition-all">
-            Open tool <ArrowRight className="h-4 w-4" />
-          </div>
-        </Link>
-
-        {/* ── Format converter hero (second featured) ── */}
-        <Link
-          href={TOOLS[1].href}
-          className="group relative mb-6 flex items-center gap-6 overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-transparent p-7 transition-all duration-300 hover:border-violet-500/30 hover:shadow-[0_0_60px_-15px_rgba(139,92,246,0.2)] sm:p-8"
-        >
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl transition-all duration-500 group-hover:bg-violet-500/20" />
-
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/20 transition-all group-hover:scale-110 group-hover:bg-violet-500/30">
-            <FileVideo className="h-8 w-8" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <p className="text-xl font-bold text-white">{TOOLS[1].label}</p>
-              <span className="rounded-full bg-violet-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-400">
-                New
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-white/50">{TOOLS[1].desc}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["MP4", "WebM", "MOV", "GIF", "MP3", "M4A", "WAV"].map(t => (
-                <span key={t} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40 border border-white/[0.06]">{t}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden shrink-0 sm:flex items-center gap-1.5 text-sm font-semibold text-violet-400 group-hover:gap-3 transition-all">
-            Open tool <ArrowRight className="h-4 w-4" />
-          </div>
-        </Link>
-
-        {/* ── Aspect Ratio Converter hero (third featured) ── */}
-        <Link
-          href={TOOLS[2].href}
-          className="group relative mb-6 flex items-center gap-6 overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent p-7 transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_0_60px_-15px_rgba(249,115,22,0.2)] sm:p-8"
-        >
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl transition-all duration-500 group-hover:bg-orange-500/20" />
-
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-orange-500/20 text-orange-400 ring-1 ring-orange-500/20 transition-all group-hover:scale-110 group-hover:bg-orange-500/30">
-            <Crop className="h-8 w-8" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <p className="text-xl font-bold text-white">{TOOLS[2].label}</p>
-              <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-400">
-                New
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-white/50">{TOOLS[2].desc}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["16:9", "9:16", "1:1", "4:5", "21:9", "Custom", "Crop · Pad · Stretch"].map(t => (
-                <span key={t} className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40 border border-white/[0.06]">{t}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden shrink-0 sm:flex items-center gap-1.5 text-sm font-semibold text-orange-400 group-hover:gap-3 transition-all">
-            Open tool <ArrowRight className="h-4 w-4" />
-          </div>
-        </Link>
-
-        {/* ── Section label ── */}
-        <div className="mb-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/[0.05]" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/20">All Tools</p>
-          <div className="h-px flex-1 bg-white/[0.05]" />
+        {/* ── Featured tools: bento with live previews ── */}
+        <div className="grid gap-4 lg:grid-cols-2 lg:grid-rows-2">
+          <FeaturedCard
+            href={TOOLS[0].href}
+            icon={<Scissors className="h-5 w-5" />}
+            title={TOOLS[0].label}
+            badge="Most popular"
+            desc={TOOLS[0].desc}
+            accent="emerald"
+            className="lg:row-span-2"
+            visual={<SlicerVisual />}
+          />
+          <FeaturedCard
+            href={TOOLS[1].href}
+            icon={<FileVideo className="h-5 w-5" />}
+            title={TOOLS[1].label}
+            badge="New"
+            desc={TOOLS[1].desc}
+            accent="violet"
+            visual={<ConverterVisual />}
+          />
+          <FeaturedCard
+            href={TOOLS[2].href}
+            icon={<Crop className="h-5 w-5" />}
+            title={TOOLS[2].label}
+            badge="New"
+            desc={TOOLS[2].desc}
+            accent="orange"
+            visual={<ReframeVisual />}
+          />
         </div>
 
-        {/* ── Tool grid ── */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* ── All tools ── */}
+        <div className="mb-6 mt-16 flex items-end justify-between">
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">All tools</h2>
+          <p className="text-sm text-white/40">{TOOLS.length} tools · all free</p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {TOOLS.slice(3).map((tool) => {
             const Icon = tool.icon;
             return (
               <Link
                 key={tool.href}
                 href={tool.href}
-                className={`group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br ${tool.gradient} bg-white/[0.02] p-5 transition-all duration-300 ${tool.border} hover:shadow-lg hover:-translate-y-0.5`}
+                className={`group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.04] ${tool.border}`}
               >
-                {/* icon */}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tool.iconBg} ${tool.iconColor} transition-all duration-300`}>
+                <div
+                  className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${tool.gradient} opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100`}
+                />
+                <span
+                  className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] ${tool.iconBg} ${tool.iconColor} transition-transform duration-300 group-hover:scale-110`}
+                >
                   <Icon className="h-5 w-5" />
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold text-white/90 group-hover:text-white text-sm leading-snug">{tool.label}</p>
+                </span>
+                <div className="relative min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-white">{tool.label}</p>
                     {tool.badge && (
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider
-                        ${tool.badge === "AI"
-                          ? "bg-indigo-500/20 text-indigo-400"
-                          : "bg-emerald-500/15 text-emerald-400"}`}>
+                      <span className="rounded bg-white/10 px-1.5 py-px text-[10px] font-medium text-white/80">
                         {tool.badge}
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-white/35 leading-snug">{tool.desc}</p>
+                  <p className="mt-1 text-sm leading-snug text-white/50">{tool.desc}</p>
+                  <p className={`mt-3 text-[11px] font-medium ${tool.iconColor} opacity-70`}>{tool.tag}</p>
                 </div>
-
-                {/* tag strip */}
-                <p className={`text-[10px] font-medium ${tool.iconColor} opacity-60 group-hover:opacity-100 transition-opacity`}>
-                  {tool.tag}
-                </p>
-
-                {/* hover arrow */}
-                <ArrowRight className={`absolute bottom-4 right-4 h-3.5 w-3.5 ${tool.iconColor} opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0`} />
+                <ArrowRight className="relative mt-1 h-4 w-4 shrink-0 text-white/30 transition-all group-hover:translate-x-0.5 group-hover:text-white" />
               </Link>
             );
           })}
         </div>
 
-        {/* ── Bottom CTA ── */}
-        <div className="mt-16 text-center">
-          <p className="text-sm text-white/30">
-            More tools shipping soon —{" "}
-            <Link href="/register" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors">
-              get notified
+        {/* ── Closing card ── */}
+        <div className="relative mt-16 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center sm:p-12">
+          <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
+          <div className="relative">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-white sm:text-4xl">
+              Want the clipping done for you?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-white/55">
+              AutoClipr finds the best moments, captions them and reframes to 9:16 automatically.
+            </p>
+            <Link
+              href="/register"
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-transform hover:scale-[1.03]"
+            >
+              Try AutoClipr free
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
     </>
+  );
+}
+
+const ACCENTS = {
+  emerald: { glow: "bg-emerald-500/20", tile: "bg-emerald-500/15 text-emerald-300", badge: "bg-emerald-500/20 text-emerald-300", hover: "hover:border-emerald-400/40", link: "text-emerald-300" },
+  violet: { glow: "bg-violet-500/20", tile: "bg-violet-500/15 text-violet-300", badge: "bg-violet-500/20 text-violet-300", hover: "hover:border-violet-400/40", link: "text-violet-300" },
+  orange: { glow: "bg-orange-500/20", tile: "bg-orange-500/15 text-orange-300", badge: "bg-orange-500/20 text-orange-300", hover: "hover:border-orange-400/40", link: "text-orange-300" },
+} as const;
+
+function FeaturedCard({
+  href,
+  icon,
+  title,
+  badge,
+  desc,
+  accent,
+  visual,
+  className = "",
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  badge: string;
+  desc: string;
+  accent: keyof typeof ACCENTS;
+  visual: React.ReactNode;
+  className?: string;
+}) {
+  const a = ACCENTS[accent];
+  return (
+    <Link
+      href={href}
+      className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 transition-all duration-300 hover:-translate-y-1 sm:p-7 ${a.hover} ${className}`}
+    >
+      <div className={`pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full ${a.glow} opacity-70 blur-3xl transition-opacity duration-500 group-hover:opacity-100`} />
+      <div className="relative flex items-center gap-3">
+        <span className={`flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] ${a.tile}`}>{icon}</span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-lg font-bold text-white">{title}</p>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${a.badge}`}>{badge}</span>
+          </div>
+          <p className="text-sm text-white/50">{desc}</p>
+        </div>
+      </div>
+      <div className="relative flex flex-1 items-center py-6">{visual}</div>
+      <span className={`relative inline-flex items-center gap-1.5 text-sm font-semibold ${a.link} transition-all group-hover:gap-2.5`}>
+        Open tool <ArrowRight className="h-4 w-4" />
+      </span>
+    </Link>
   );
 }

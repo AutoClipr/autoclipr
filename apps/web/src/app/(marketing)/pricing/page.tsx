@@ -47,23 +47,18 @@ export default function PricingPage() {
       {/* Hero header */}
       <div className="relative mx-auto max-w-3xl px-4 pb-4 pt-10 text-center sm:px-6">
         {/* Label pill */}
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">
-            Pricing &
-          </span>
-          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-            Plan
-          </span>
-        </div>
+        <p className="section-label-white mb-6">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
+          Pricing
+        </p>
 
-        <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+        <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
           Pay for what you{" "}
-          <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
             actually use
           </span>
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-base text-white/50 sm:text-lg">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/55">
           Start free. Upgrade when you grow. No contracts, no hidden fees —
           just powerful AI video tools at a fair price.
         </p>
@@ -71,18 +66,16 @@ export default function PricingPage() {
         {/* Trust strip */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
           {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center gap-1.5 text-xs text-white/40">
-              <Icon className="h-3.5 w-3.5 text-emerald-500" />
+            <div key={label} className="flex items-center gap-2 text-sm text-white/70">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+                <Icon className="h-3.5 w-3.5" />
+              </span>
               {label}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="relative mx-auto mt-8 max-w-5xl px-4">
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
 
       {/* Pricing cards */}
       <Suspense fallback={<PricingSkeleton showHeader={false} />}>

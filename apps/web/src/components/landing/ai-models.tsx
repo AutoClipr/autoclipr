@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 import { Reveal } from "@/components/ui/motion";
 import { AmbientBg, CroppedLoop, type Region } from "@/components/landing/feature-showcase";
 import { cn } from "@/lib/utils";
@@ -195,10 +194,7 @@ export function AiModels() {
     <section className="relative px-4 py-24 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <Reveal className="mb-12 text-center">
-          <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60 sm:text-sm">
-            <Sparkles className="h-4 w-4" />
-            AI editing models
-          </p>
+          <p className="section-label-white mx-auto mb-4">AI editing models</p>
           <h2 className="mx-auto max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-5xl">
             AI that understands every pixel of
             <br />

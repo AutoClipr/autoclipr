@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Twitter, Youtube, Instagram, Linkedin } from "lucide-react";
+import { Youtube, Instagram, Linkedin } from "lucide-react";
+import { XLogo } from "@/components/landing/feature-showcase";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 import { cn } from "@/lib/utils";
@@ -73,57 +74,100 @@ function RedditIcon({ className }: { className?: string }) {
 }
 
 const socials = [
-  { href: "https://x.com/autocliprai", icon: Twitter, label: "X (Twitter)" },
+  { href: "https://x.com/autocliprai", icon: XLogo, label: "X (Twitter)" },
   { href: "https://www.instagram.com/autoclipr.ai/", icon: Instagram, label: "Instagram" },
   { href: "https://youtube.com/@autoclipr", icon: Youtube, label: "YouTube" },
   { href: "https://www.linkedin.com/in/autoclipr-ai/", icon: Linkedin, label: "LinkedIn" },
   { href: "https://www.reddit.com/user/autoClipr/", icon: RedditIcon, label: "Reddit" },
 ];
 
+/**
+ * Per-platform look for the social buttons: tinted in the brand colour at
+ * rest, then a solid brand fill with a matching glow on hover.
+ */
+const SOCIAL_STYLE: Record<string, string> = {
+  "X (Twitter)":
+    "text-white bg-white/[0.06] ring-white/15 hover:bg-white hover:text-black hover:shadow-[0_8px_24px_-4px_rgba(255,255,255,0.45)]",
+  Instagram:
+    "text-pink-400 bg-pink-500/10 ring-pink-500/25 hover:bg-gradient-to-br hover:from-fuchsia-500 hover:via-pink-500 hover:to-orange-400 hover:text-white hover:shadow-[0_8px_24px_-4px_rgba(236,72,153,0.6)]",
+  YouTube:
+    "text-red-500 bg-red-500/10 ring-red-500/25 hover:bg-red-600 hover:text-white hover:shadow-[0_8px_24px_-4px_rgba(220,38,38,0.6)]",
+  LinkedIn:
+    "text-sky-400 bg-sky-500/10 ring-sky-500/25 hover:bg-sky-600 hover:text-white hover:shadow-[0_8px_24px_-4px_rgba(2,132,199,0.6)]",
+  Reddit:
+    "text-orange-500 bg-orange-500/10 ring-orange-500/25 hover:bg-orange-600 hover:text-white hover:shadow-[0_8px_24px_-4px_rgba(234,88,12,0.6)]",
+};
+
+const LINK_CLASS =
+  "group inline-flex items-center gap-1 text-sm text-white/55 transition-colors hover:text-white";
+
+function FooterLink({ href, label }: { href: string; label: string }) {
+  const body = (
+    <>
+      <span className="transition-transform duration-200 group-hover:translate-x-0.5">{label}</span>
+    </>
+  );
+  // Hash links (e.g. /#feature-clipping) use a plain <a> so the landing
+  // carousel's hashchange listener fires on the home page.
+  return href.includes("#") ? (
+    <a href={href} className={LINK_CLASS}>
+      {body}
+    </a>
+  ) : (
+    <Link href={href} className={LINK_CLASS}>
+      {body}
+    </Link>
+  );
+}
+
 export function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06]">
-      {/* Top glow line */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+    <footer className="relative overflow-hidden border-t border-white/[0.06] bg-[#05060c]">
+      {/* Glows */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[420px]"
+        style={{ background: "radial-gradient(60% 100% at 50% 100%, rgba(16,185,129,0.14), transparent 70%)" }}
+        aria-hidden
+      />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        {/* Newsletter — its own row; the nav columns are too narrow for an input */}
-        <div className="flex flex-col gap-6 border-b border-white/[0.06] py-10 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-md">
-            <h3 className="text-base font-bold text-white">
-              Get clip tips that actually move views
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Short-form strategy and product updates. No spam.
-            </p>
-          </div>
-          <div className="w-full md:max-w-sm">
-            <NewsletterSignup />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Newsletter card */}
+        <div className="relative mt-14 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
+          <div
+            className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl"
+            aria-hidden
+          />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-md">
+              <p className="section-label-white mb-3">Newsletter</p>
+              <h3 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                Get clip tips that actually move views
+              </h3>
+              <p className="mt-2 text-sm text-white/55">Short-form strategy and product updates. No spam.</p>
+            </div>
+            <div className="w-full md:max-w-sm">
+              <NewsletterSignup />
+            </div>
           </div>
         </div>
 
-        {/* Main grid. From xl the brand block takes two of eight tracks so it
-            isn't squeezed against Product. Below that there isn't room for a
-            brand column plus six readable nav columns — at lg the brand spans
-            its own row and the six nav columns get the full width, which keeps
-            labels like "Terms & Conditions" on one line. */}
+        {/* Main grid. From xl the brand block takes two of eight tracks; at lg
+            it spans its own row so the six nav columns get the full width. */}
         <div className="grid gap-x-6 gap-y-12 py-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-8">
           {/* Brand column */}
           <div className="sm:col-span-2 md:col-span-3 lg:col-span-6 xl:col-span-2 xl:pr-6">
-            <Link href="/" className="mb-4 flex items-center gap-2.5">
-              <LogoIcon size={36} className="rounded-xl shadow-lg shadow-emerald-900/40" />
-              <span className="text-lg font-bold text-white">
+            <Link href="/" className="mb-4 inline-flex items-center gap-2.5">
+              <LogoIcon size={38} className="rounded-xl shadow-lg shadow-emerald-500/30" />
+              <span className="text-xl font-bold text-white">
                 Auto<span className="text-emerald-400">Clipr.ai</span>
               </span>
             </Link>
-            {/* Capped at lg, where the brand block spans the full row and the
-                text would otherwise stretch edge to edge. */}
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground xl:max-w-none">
+            <p className="max-w-md text-sm leading-relaxed text-white/55 xl:max-w-none">
               Turn long videos into viral shorts with AI. Monitor channels, detect uploads, auto-clip.
             </p>
 
-            {/* Social icons */}
-            <div className="mt-5 flex gap-2">
+            <div className="mt-6 flex gap-2.5">
               {socials.map(({ href, icon: Icon, label }) => (
                 <a
                   key={label}
@@ -131,9 +175,12 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-muted-foreground transition-colors hover:border-emerald-500/30 hover:text-emerald-400"
+                  className={cn(
+                    "flex h-11 w-11 items-center justify-center rounded-2xl ring-1 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:rotate-[-6deg] hover:ring-transparent",
+                    SOCIAL_STYLE[label],
+                  )}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className="h-[18px] w-[18px]" />
                 </a>
               ))}
             </div>
@@ -142,29 +189,11 @@ export function Footer() {
           {/* Nav columns */}
           {navColumns.map((col) => (
             <div key={col.title}>
-              <h4 className="mb-4 text-xs font-bold uppercase tracking-widest text-white/40">
-                {col.title}
-              </h4>
+              <h4 className="mb-5 text-xs font-semibold uppercase tracking-widest text-white">{col.title}</h4>
               <ul className="space-y-3">
                 {col.links.map((l) => (
                   <li key={l.href}>
-                    {/* Hash links (e.g. /#feature-clipping) use a plain <a> so the
-                        landing carousel's hashchange listener fires on the home page. */}
-                    {l.href.includes("#") ? (
-                      <a
-                        href={l.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-emerald-300"
-                      >
-                        {l.label}
-                      </a>
-                    ) : (
-                      <Link
-                        href={l.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-emerald-300"
-                      >
-                        {l.label}
-                      </Link>
-                    )}
+                    <FooterLink href={l.href} label={l.label} />
                   </li>
                 ))}
               </ul>
@@ -174,16 +203,33 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.06] py-6 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/45">
             © {new Date().getFullYear()} AutoClipr.ai · All rights reserved.
             <span className="sr-only"> Operated by Kishan Kumar Maurya.</span>
           </p>
           <div className="flex gap-5">
-            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-white transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-xs text-muted-foreground hover:text-white transition-colors">Terms</Link>
-            <Link href="/contact" className="text-xs text-muted-foreground hover:text-white transition-colors">Contact</Link>
+            <Link href="/privacy" className="text-xs text-white/45 transition-colors hover:text-white">Privacy</Link>
+            <Link href="/terms" className="text-xs text-white/45 transition-colors hover:text-white">Terms</Link>
+            <Link href="/contact" className="text-xs text-white/45 transition-colors hover:text-white">Contact</Link>
           </div>
         </div>
+      </div>
+
+      {/* Giant outlined wordmark, fading into the page */}
+      <div className="pointer-events-none relative -mt-2 select-none overflow-hidden" aria-hidden>
+        <p
+          className="text-center font-black leading-[0.8] tracking-tighter text-transparent"
+          style={{
+            fontSize: "clamp(4rem, 17vw, 16rem)",
+            WebkitTextStroke: "1px rgba(255,255,255,0.12)",
+            backgroundImage: "linear-gradient(to bottom, rgba(16,185,129,0.18), transparent 85%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            maskImage: "linear-gradient(to bottom, black 35%, transparent 100%)",
+          }}
+        >
+          AutoClipr
+        </p>
       </div>
     </footer>
   );

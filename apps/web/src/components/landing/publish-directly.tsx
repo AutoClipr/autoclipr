@@ -457,7 +457,7 @@ function PlatformCard({ card }: { card: typeof CARDS[number] }) {
 
 export function PublishDirectly() {
   return (
-    <section className="relative border-t border-white/5 px-4 py-24 sm:px-6 overflow-hidden">
+    <section className="relative px-4 py-24 sm:px-6 overflow-hidden">
       {/* background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/3 top-1/4 h-[500px] w-[500px] rounded-full bg-red-500/5 blur-3xl" />
@@ -486,18 +486,6 @@ export function PublishDirectly() {
           ))}
         </Stagger>
 
-        {/* Bottom CTA */}
-        <Reveal className="mt-12 text-center" delay={0.2}>
-          <p className="mb-5 text-sm text-white/30">
-            Connect your accounts once · publish to all platforms in one click
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 transition hover:opacity-90 hover:scale-105"
-          >
-            Start publishing for free →
-          </Link>
-        </Reveal>
       </div>
     </section>
   );
