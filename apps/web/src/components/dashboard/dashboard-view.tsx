@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  User,
   Plus,
   RefreshCw,
   Youtube,
@@ -13,6 +12,7 @@ import {
   Share2,
   Loader2,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch, type Clip, type PlatformConnection, type Video as VideoType, type YoutubeChannel } from "@/lib/api";
@@ -161,89 +161,64 @@ export function DashboardView({
   return (
     <div className="space-y-6">
       {/* Header — hero banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-emerald-950/60 via-zinc-950/80 to-zinc-950 p-6 sm:p-8">
-        {/* Ambient glows */}
-        <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 -bottom-28 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
-        {/* Grid texture */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
+        <div className="pointer-events-none absolute -left-24 -top-32 h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-            backgroundSize: "36px 36px",
-            maskImage: "radial-gradient(ellipse at top left, black 30%, transparent 75%)",
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+            maskImage: "radial-gradient(ellipse at top left, black 25%, transparent 70%)",
           }}
         />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-brand shadow-glow">
-              <User className="h-6 w-6 text-white" />
-              <span className="absolute -inset-1 -z-10 rounded-2xl bg-emerald-500/30 blur-lg" />
-            </div>
-            <div>
-              <p className="section-label mb-2 !px-3 !py-1 !text-[10px]">Dashboard</p>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Your Command{" "}
-                <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-                  Center
-                </span>
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Monitor channels, track clips, and manage your content pipeline
-              </p>
-            </div>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="section-label-white mb-4">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
+              Dashboard
+            </p>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
+              Your command{" "}
+              <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+                center
+              </span>
+            </h1>
+            <p className="mt-2 text-white/55">Monitor channels, track clips, and manage your content pipeline.</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="gradient" size="sm" asChild className="shadow-lg shadow-emerald-500/20">
-              <Link href="/create">
-                <Sparkles className="mr-1.5 h-4 w-4" />
-                Create Viral Shorts
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="border-white/10 bg-white/[0.03] backdrop-blur hover:bg-white/[0.07]">
-              <Link href="/channels">
-                <Plus className="mr-1.5 h-4 w-4" />
-                Connect Channels
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="border-violet-500/25 bg-violet-500/5 backdrop-blur hover:bg-violet-500/10"
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/create"
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-white/10 transition-transform hover:scale-[1.03]"
             >
-              <Link href="/setup/platforms?from=dashboard">
-                <Share2 className="mr-1.5 h-4 w-4" />
-                Platforms
+              <Sparkles className="h-4 w-4" />
+              Create Viral Shorts
+            </Link>
+            {[
+              { href: "/channels", label: "Connect Channels", icon: <Plus className="h-4 w-4" /> },
+              { href: "/setup/platforms?from=dashboard", label: "Platforms", icon: <Share2 className="h-4 w-4" /> },
+              { href: "/pricing", label: "Upgrade", icon: <Zap className="h-4 w-4 text-amber-300" /> },
+            ].map((b) => (
+              <Link
+                key={b.href}
+                href={b.href}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-medium text-white/85 backdrop-blur transition-colors hover:bg-white/[0.1] hover:text-white"
+              >
+                {b.icon}
+                {b.label}
               </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="border-amber-500/25 bg-amber-500/5 backdrop-blur hover:bg-amber-500/10"
-            >
-              <Link href="/pricing">
-                Upgrade
-              </Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
+            ))}
+            <button
               onClick={refreshData}
               disabled={isLoading}
-              className="border-white/10 bg-white/[0.03] backdrop-blur hover:bg-white/[0.07]"
+              aria-label="Refresh"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/70 transition-colors hover:bg-white/[0.1] hover:text-white disabled:opacity-60"
             >
-              {isLoading ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-1.5 h-4 w-4" />
-              )}
-              Refresh
-            </Button>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </button>
           </div>
         </div>
       </div>
@@ -282,11 +257,11 @@ export function DashboardView({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="channels">Channels</TabsTrigger>
-          <TabsTrigger value="platforms">Platforms</TabsTrigger>
-          <TabsTrigger value="runs">Agent Runs</TabsTrigger>
-          <TabsTrigger value="clips">My Clips</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur sm:grid-cols-4">
+          <TabsTrigger value="channels" className={TAB_TRIGGER}>Channels</TabsTrigger>
+          <TabsTrigger value="platforms" className={TAB_TRIGGER}>Platforms</TabsTrigger>
+          <TabsTrigger value="runs" className={TAB_TRIGGER}>Agent Runs</TabsTrigger>
+          <TabsTrigger value="clips" className={TAB_TRIGGER}>My Clips</TabsTrigger>
         </TabsList>
 
         {/* Channels tab */}
@@ -353,7 +328,7 @@ export function DashboardView({
                   .map((v) => (
                     <li
                       key={v.id}
-                      className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:bg-white/[0.05]"
                     >
                       <div>
                         <p className="font-medium">{v.title}</p>
@@ -367,7 +342,7 @@ export function DashboardView({
                   .map((c) => (
                     <li
                       key={c.id}
-                      className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:bg-white/[0.05]"
                     >
                       <div>
                         <p className="font-medium">{c.title}</p>
@@ -384,7 +359,7 @@ export function DashboardView({
         {/* My Clips tab */}
         <TabsContent value="clips">
           <TabPanel title="My Clips" onRefresh={refreshData} refreshing={isLoading}>
-            <div className="mb-4 rounded-xl border border-violet-500/30 bg-violet-950/30 px-4 py-3 text-sm text-violet-200">
+            <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70">
               Clips are not posted automatically yet. Connect platforms below, then use the{" "}
               <span className="font-semibold">Post</span> button on each completed clip.
             </div>
@@ -409,6 +384,9 @@ export function DashboardView({
   );
 }
 
+const TAB_TRIGGER =
+  "rounded-full py-2 text-sm font-semibold text-white/55 transition-all hover:text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow";
+
 function StatCard({
   icon,
   iconClass,
@@ -429,13 +407,13 @@ function StatCard({
   live?: boolean;
 }) {
   return (
-    <Card className="stat-card group relative overflow-hidden border-white/[0.08] transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14]">
+    <Card className="group relative overflow-hidden rounded-3xl border-white/10 bg-white/[0.03] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
       {/* Corner glow on hover */}
       <div
-        className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${glowClass} to-transparent opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100`}
+        className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${glowClass} to-transparent opacity-60 blur-2xl transition-opacity duration-300 group-hover:opacity-100`}
       />
       {/* Accent bar */}
-      <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${barClass}`} />
+      <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${barClass}`} />
 
       <CardContent className="relative flex items-center gap-4 p-6">
         <div
@@ -445,7 +423,7 @@ function StatCard({
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
+            <p className="text-4xl font-extrabold tracking-tight text-white">{value}</p>
             {live && (
               <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400 ring-1 ring-amber-500/25">
                 <span className="relative flex h-1.5 w-1.5">
@@ -476,9 +454,9 @@ function TabPanel({
   refreshing: boolean;
 }) {
   return (
-    <Card className="surface border-white/[0.08]">
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
-        <h2 className="font-semibold">{title}</h2>
+    <Card className="overflow-hidden rounded-3xl border-white/10 bg-white/[0.03] backdrop-blur">
+      <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
+        <h2 className="text-lg font-bold text-white">{title}</h2>
         <Button
           size="sm"
           variant="ghost"
