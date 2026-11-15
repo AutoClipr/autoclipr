@@ -9,7 +9,7 @@ const navColumns = [
   {
     title: "Product",
     links: [
-      { href: "/#features", label: "Features" },
+      { href: "/#feature-clipping", label: "Features" },
       { href: "/#how-it-works", label: "How It Works" },
       { href: "/pricing", label: "Pricing" },
       { href: "/coaching", label: "Coaching" },
@@ -148,12 +148,23 @@ export function Footer() {
               <ul className="space-y-3">
                 {col.links.map((l) => (
                   <li key={l.href}>
-                    <Link
-                      href={l.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-emerald-300"
-                    >
-                      {l.label}
-                    </Link>
+                    {/* Hash links (e.g. /#feature-clipping) use a plain <a> so the
+                        landing carousel's hashchange listener fires on the home page. */}
+                    {l.href.includes("#") ? (
+                      <a
+                        href={l.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-emerald-300"
+                      >
+                        {l.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={l.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-emerald-300"
+                      >
+                        {l.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

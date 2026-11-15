@@ -15,8 +15,6 @@ export const metadata: Metadata = pageMetadata({
     "tiktok clip generator", "instagram reels maker",
   ],
 });
-import { Features } from "@/components/landing/features";
-import { UrlToShorts } from "@/components/landing/url-to-shorts";
 import { AiModels } from "@/components/landing/ai-models";
 import { WorkflowAutomation } from "@/components/landing/workflow-automation";
 import { HowItWorks } from "@/components/landing/how-it-works";
@@ -40,8 +38,6 @@ export default function HomePage() {
       <PlatformMarquee />
       <AiModels />
       <WorkflowAutomation />
-      <UrlToShorts />
-      <Features />
       <HowItWorks />
       <FreeTools />
       <PublishDirectly />
