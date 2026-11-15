@@ -3,17 +3,27 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Link2, Sparkles, Zap } from "lucide-react";
+import { Facebook, Instagram, Link2, Sparkles, Youtube, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FeatureShowcase } from "@/components/landing/feature-showcase";
+import { FeatureShowcase, TikTokLogo } from "@/components/landing/feature-showcase";
 import { motion, Stagger, MotionItem } from "@/components/ui/motion";
 
-const CLIPS = [
-  { id: "LmxTVsJfInQ", score: 94, platform: "TikTok", border: "from-violet-500 to-pink-500" },
-  { id: "mXTlAKm0VEo", score: 88, platform: "Reels",  border: "from-rose-500 to-orange-400" },
-  { id: "Ypbsei0ug7w", score: 91, platform: "Shorts", border: "from-cyan-500 to-blue-500"   },
-  { id: "aiQrLxzu9ug", score: 79, platform: "TikTok", border: "from-emerald-500 to-teal-400" },
+/** Self-hosted 9:16 loops (shared with the platform cards further down). */
+const CLIPS: {
+  src: string;
+  score: number;
+  platform: string;
+  Logo: (p: { className?: string }) => React.ReactNode;
+  logoColor: string;
+  caption: string[];
+}[] = [
+  { src: "/assets/mockups/youtube.mp4", score: 94, platform: "Shorts", Logo: Youtube, logoColor: "text-red-500", caption: ["No", "gear", "needed"] },
+  { src: "/assets/mockups/instagram.mp4", score: 88, platform: "Reels", Logo: Instagram, logoColor: "text-pink-400", caption: ["Pick", "your", "vehicle"] },
+  { src: "/assets/mockups/tiktok.mp4", score: 91, platform: "TikTok", Logo: TikTokLogo, logoColor: "text-white", caption: ["That", "was", "insane"] },
+  { src: "/assets/mockups/facebook.mp4", score: 79, platform: "Reels", Logo: Facebook, logoColor: "text-blue-400", caption: ["Long-term", "high", "status"] },
 ];
+
+const CAPTION_STROKE = { WebkitTextStroke: "1px black", paintOrder: "stroke fill" } as const;
 
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -92,9 +102,22 @@ export function Hero() {
           whileHover={{ y: -4, transition: { duration: 0.3, ease: EASE } }}
         >
           <div className="overflow-hidden p-1">
-            <div className="rounded-[calc(1rem-2px)] bg-gradient-brand-subtle p-6 sm:p-8">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="text-left">
+            <div className="relative overflow-hidden rounded-[calc(1rem-2px)] p-6 sm:p-8">
+              {/* Blurred video background, like the showcase slides */}
+              <div className="pointer-events-none absolute inset-0" aria-hidden>
+                <video
+                  src="/showcase/podcast.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="h-full w-full scale-125 object-cover opacity-45 blur-3xl"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+              </div>
+
+              <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="text-left lg:max-w-[16rem]">
                   <div className="mb-3 flex items-center gap-2">
                     <span className="flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                     <span className="text-xs font-medium uppercase tracking-wider text-emerald-400">
@@ -108,46 +131,51 @@ export function Hero() {
                     Auto subtitles · 9:16 export · TikTok, Reels & Shorts
                   </p>
                 </div>
-                <div className="flex shrink-0 gap-2.5">
+                <div className="flex shrink-0 justify-center gap-2.5 sm:gap-3">
                   {CLIPS.map((clip, i) => (
                     <motion.div
-                      key={clip.id}
-                      className="group relative h-44 w-24 overflow-hidden rounded-2xl bg-black shadow-xl sm:h-52 sm:w-28"
+                      key={clip.src}
+                      className="relative aspect-[9/16] w-[4.6rem] overflow-hidden rounded-2xl border border-white/15 bg-black shadow-xl shadow-black/50 sm:w-32"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.6 + i * 0.12, duration: 0.5, ease: EASE }}
                       whileHover={{ y: -8, scale: 1.03, transition: { duration: 0.25 } }}
                     >
-                      {/* Gradient border ring */}
-                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${clip.border} p-[1.5px]`}>
-                        <div className="h-full w-full rounded-2xl bg-black" />
-                      </div>
-
-                      {/* YouTube Short iframe */}
-                      {/* credentialless attr needed for COEP credentialless policy */}
-                      <iframe
-                        src={`https://www.youtube.com/embed/${clip.id}?autoplay=1&mute=1&loop=1&playlist=${clip.id}&controls=0&modestbranding=1&rel=0&showinfo=0`}
-                        allow="autoplay; encrypted-media"
-                        allowFullScreen
-                        // @ts-expect-error credentialless is a newer attr not yet in React types
-                        credentialless=""
-                        className="absolute inset-0 h-full w-full scale-[1.35] rounded-2xl"
-                        style={{ border: "none", pointerEvents: "none" }}
+                      <video
+                        src={clip.src}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        aria-hidden
+                        className="absolute inset-0 h-full w-full object-cover"
                       />
 
-                      {/* Score badge */}
-                      <div className="absolute left-1.5 top-1.5 z-10 flex items-center gap-0.5 rounded-full bg-black/70 px-1.5 py-0.5 backdrop-blur-sm">
-                        <span className="text-[9px] font-bold text-emerald-400">{clip.score}</span>
-                        <span className="text-[8px]">🔥</span>
-                      </div>
+                      {/* Platform logo in a frosted tile */}
+                      <span className="absolute left-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/15 backdrop-blur-md sm:h-8 sm:w-8">
+                        <clip.Logo className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${clip.logoColor}`} />
+                      </span>
 
-                      {/* Platform badge */}
-                      <div className="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-black/70 px-1.5 py-1 backdrop-blur-sm">
-                        <span className="text-[9px] font-semibold text-white/80">{clip.platform}</span>
-                        <div className="mt-1 h-0.5 w-full overflow-hidden rounded-full bg-white/20">
-                          <div className={`h-full rounded-full bg-gradient-to-r ${clip.border}`} style={{ width: `${clip.score}%` }} />
-                        </div>
-                      </div>
+                      {/* Score — no fire icon */}
+                      <span className="absolute right-1.5 top-1.5 z-10 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-lime-300 sm:text-[11px]">
+                        {clip.score}
+                      </span>
+
+                      {/* White caption with the key word in yellow */}
+                      <p
+                        className="absolute inset-x-1 bottom-[22%] z-10 text-center text-[10px] font-black uppercase leading-tight sm:text-sm"
+                        style={CAPTION_STROKE}
+                      >
+                        {clip.caption.map((w, k) => (
+                          <span key={k} className={k === 1 ? "text-yellow-300" : "text-white"}>
+                            {w}{" "}
+                          </span>
+                        ))}
+                      </p>
+
+                      <span className="absolute bottom-1.5 left-1.5 z-10 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold text-white/85 backdrop-blur-sm sm:text-[10px]">
+                        {clip.platform}
+                      </span>
                     </motion.div>
                   ))}
                 </div>

@@ -17,6 +17,8 @@ export const metadata: Metadata = pageMetadata({
 });
 import { Features } from "@/components/landing/features";
 import { UrlToShorts } from "@/components/landing/url-to-shorts";
+import { AiModels } from "@/components/landing/ai-models";
+import { WorkflowAutomation } from "@/components/landing/workflow-automation";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { Suspense } from "react";
 import { PricingSection } from "@/components/landing/pricing-section";
@@ -36,6 +38,8 @@ export default function HomePage() {
       <Hero />
       <CreatorsMarquee />
       <PlatformMarquee />
+      <AiModels />
+      <WorkflowAutomation />
       <UrlToShorts />
       <Features />
       <HowItWorks />

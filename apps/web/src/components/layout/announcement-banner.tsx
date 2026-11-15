@@ -59,7 +59,7 @@ export function AnnouncementBanner() {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">
-              Start growing your channel today
+              Start growing your social media platform today
             </p>
             <p className="text-xs text-white/40 mt-0.5">
               Free forever &nbsp;·&nbsp; 20M+ creators &nbsp;·&nbsp; No credit card
