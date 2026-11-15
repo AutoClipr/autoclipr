@@ -24,7 +24,7 @@ export async function DashboardShell({
       <ReferralTracker token={token} />
       <Heartbeat />
       <PageBackground variant="dashboard" />
-      <Navbar />
+      <Navbar solid />
       <DashboardSidebar credits={credits} />
       <div className="lg:pl-64">
         <div className="mx-auto max-w-6xl px-4 py-8 pt-20 sm:px-6 lg:pt-8">{children}</div>

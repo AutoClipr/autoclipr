@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * background and a thin bottom line once the page scrolls, so the links stay
  * readable over the hero videos.
  */
-export function NavbarShell({ children }: { children: ReactNode }) {
+export function NavbarShell({ children, solid = false }: { children: ReactNode; solid?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -18,18 +18,22 @@ export function NavbarShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", update);
   }, []);
 
+  // In the dashboard the bar must stay opaque: it sits over the sidebar,
+  // whose own logo would otherwise show through.
+  const opaque = solid || scrolled;
+
   return (
     <header
       className={cn(
         "sticky top-0 z-[100] transition-[background-color,backdrop-filter,box-shadow] duration-300",
-        scrolled ? "bg-[#030014]/80 shadow-lg shadow-black/20 backdrop-blur-2xl" : "bg-transparent",
+        opaque ? "bg-[#030014]/95 shadow-lg shadow-black/20 backdrop-blur-2xl" : "bg-transparent",
       )}
     >
       {/* Thin line under the navbar, only once scrolled */}
       <div
         className={cn(
           "absolute inset-x-0 bottom-0 h-px bg-white/[0.07] transition-opacity duration-300",
-          scrolled ? "opacity-100" : "opacity-0",
+          opaque ? "opacity-100" : "opacity-0",
         )}
       />
       {children}

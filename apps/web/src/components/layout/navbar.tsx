@@ -15,14 +15,14 @@ const linksRight = [
   { href: "/pricing", label: "Pricing" },
 ];
 
-export async function Navbar() {
+export async function Navbar({ solid = false }: { solid?: boolean } = {}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   return (
-    <NavbarShell>
+    <NavbarShell solid={solid}>
 
       <div className="flex h-14 w-full items-center justify-between px-4 sm:h-16 sm:px-6 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:px-8">
         {/* Logo */}
