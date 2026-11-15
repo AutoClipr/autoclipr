@@ -26,23 +26,24 @@ export default function ChangelogPage() {
           <div className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-violet-500/[0.06] blur-[100px]" />
           <div className="absolute right-1/4 top-1/3 h-48 w-48 rounded-full bg-emerald-500/5 blur-[60px]" />
           <div
-            className="absolute inset-0 opacity-[0.012]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
               backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
+                "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+              maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
             }}
           />
         </div>
 
         <div className="mx-auto max-w-2xl">
-          <span className="section-label mx-auto mb-6 inline-flex items-center gap-2">
+          <span className="section-label-white mx-auto mb-6 inline-flex items-center gap-2">
             <Rocket className="h-3.5 w-3.5" />
             Product updates
           </span>
           <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
             What&apos;s{" "}
-            <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
               new
             </span>
           </h1>
@@ -56,7 +57,7 @@ export default function ChangelogPage() {
               { value: `${RELEASES.reduce((s, r) => s + r.changes.length, 0)}+`, label: "Changes shipped" },
               { value: "Feb 2025", label: "Since launch" },
             ].map((s) => (
-              <div key={s.label} className="text-center">
+              <div key={s.label} className="min-w-[9rem] rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-center backdrop-blur">
                 <p className="text-3xl font-black text-white">{s.value}</p>
                 <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-white/30">{s.label}</p>
               </div>

@@ -72,23 +72,24 @@ export default async function AffiliatePage() {
           <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-emerald-500/[0.07] blur-[120px]" />
           <div className="absolute left-1/4 top-1/2 h-64 w-64 rounded-full bg-violet-500/5 blur-[80px]" />
           <div
-            className="absolute inset-0 opacity-[0.012]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
               backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.5) 1px,transparent 1px)",
-              backgroundSize: "60px 60px",
+                "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+              maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
             }}
           />
         </div>
 
         <div className="mx-auto max-w-3xl">
-          <span className="section-label mx-auto mb-6 inline-flex items-center gap-2">
+          <span className="section-label-white mx-auto mb-6 inline-flex items-center gap-2">
             <DollarSign className="h-3.5 w-3.5" />
             Affiliate Program
           </span>
           <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-7xl">
             Earn{" "}
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
               30% recurring
             </span>
             <br />for every referral
@@ -104,7 +105,7 @@ export default async function AffiliatePage() {
               { value: "90 days", label: "Cookie window" },
               { value: "$0", label: "To join" },
             ].map((s) => (
-              <div key={s.label} className="text-center">
+              <div key={s.label} className="min-w-[9rem] rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-center backdrop-blur">
                 <p className="text-3xl font-black text-white">{s.value}</p>
                 <p className="mt-1.5 text-xs font-semibold uppercase tracking-widest text-white/30">{s.label}</p>
               </div>
@@ -114,7 +115,7 @@ export default async function AffiliatePage() {
           <div className="mt-10">
             <a
               href="#apply"
-              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-8 py-4 text-sm font-bold text-white shadow-[0_0_24px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_0_36px_rgba(16,185,129,0.45)]"
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-bold text-black transition-transform hover:scale-[1.03]"
             >
               Join the affiliate program — it&apos;s free
               <TrendingUp className="h-4 w-4" />
@@ -127,7 +128,7 @@ export default async function AffiliatePage() {
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
-            <span className="section-label mb-4 inline-flex items-center gap-2">
+            <span className="section-label-white mb-4 inline-flex items-center gap-2">
               <Gift className="h-3.5 w-3.5" />
               Why promote AutoClipr
             </span>
@@ -181,13 +182,13 @@ export default async function AffiliatePage() {
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-12 text-center">
-            <span className="section-label mb-4 inline-flex items-center gap-2">
+            <span className="section-label-white mb-4 inline-flex items-center gap-2">
               <Zap className="h-3.5 w-3.5" />
               How it works
             </span>
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               Start earning in{" "}
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
                 4 steps
               </span>
             </h2>
@@ -252,7 +253,7 @@ export default async function AffiliatePage() {
         <div className="mx-auto max-w-4xl">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <span className="section-label mb-5 inline-flex items-center gap-2">
+              <span className="section-label-white mb-5 inline-flex items-center gap-2">
                 <Shield className="h-3.5 w-3.5" />
                 Apply now
               </span>

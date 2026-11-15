@@ -32,9 +32,12 @@ export function FAQ() {
     <section id="faq" className="px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-4xl">
         <Reveal className="text-center">
-          <p className="section-label mx-auto mb-6">FAQ</p>
-          <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Questions? <span className="text-aurora">Answered.</span>
+          <p className="section-label-white mx-auto mb-6">FAQ</p>
+          <h2 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Questions?{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              Answered.
+            </span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground sm:text-lg">
             Everything you need to know about AutoClipr.ai. Can&apos;t find what you&apos;re looking for?{" "}

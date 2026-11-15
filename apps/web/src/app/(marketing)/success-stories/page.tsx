@@ -35,17 +35,18 @@ export default function SuccessStoriesPage() {
           <div className="absolute right-[15%] top-[20%] h-48 w-48 rounded-full bg-blue-500/[0.06] blur-[80px]" />
           {/* Faint grid */}
           <div
-            className="absolute inset-0 opacity-[0.015]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
               backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
+                "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+              maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
             }}
           />
         </div>
 
         <div className="mx-auto max-w-4xl">
-          <span className="section-label mx-auto mb-6 inline-flex items-center gap-2">
+          <span className="section-label-white mx-auto mb-6 inline-flex items-center gap-2">
             <TrendingUp className="h-3.5 w-3.5" />
             Real results from real creators
           </span>
@@ -53,7 +54,7 @@ export default function SuccessStoriesPage() {
           <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-6xl lg:text-7xl">
             Creator{" "}
             <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
                 Success Stories
               </span>
               {/* Underline glow */}
@@ -91,7 +92,7 @@ export default function SuccessStoriesPage() {
       <section className="px-4 py-24 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <div className="mb-14 text-center">
-            <span className="section-label mb-5 inline-flex items-center gap-2">
+            <span className="section-label-white mb-5 inline-flex items-center gap-2">
               <Zap className="h-3.5 w-3.5" />
               How it works
             </span>

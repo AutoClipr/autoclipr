@@ -324,7 +324,7 @@ export function StatsRow() {
         { value: 2, suffix: " min", label: "Avg. processing" },
         { value: 99, suffix: "%", label: "Satisfaction rate" },
       ].map((s) => (
-        <div key={s.label} className="text-center">
+        <div key={s.label} className="min-w-[9rem] rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-center backdrop-blur">
           <p className="text-4xl font-black text-white">
             <AnimatedNumber value={s.value} suffix={s.suffix} />
           </p>
@@ -438,7 +438,7 @@ export function CtaSection() {
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Start for free</p>
         <h2 className="text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
           Ready to write your<br />
-          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
             success story?
           </span>
         </h2>
