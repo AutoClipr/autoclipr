@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ChevronDown, X, Menu } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
+import { FEATURE_LINKS } from "./features-dropdown";
 
 const FREE_TOOLS = [
   { href: "/tools/video-trimmer", label: "Video Trimmer" },
@@ -31,6 +32,7 @@ const RESOURCES = [
 
 export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -39,6 +41,7 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   const close = () => {
     setOpen(false);
+    setFeaturesOpen(false);
     setToolsOpen(false);
     setResourcesOpen(false);
   };
@@ -62,10 +65,30 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
           {/* Nav items */}
           <nav className="flex-1 overflow-y-auto divide-y divide-white/[0.06]">
 
-            {/* Features */}
-            <Link href="/#features" onClick={close} className="flex items-center justify-between px-5 py-4 text-base font-medium text-white hover:bg-white/[0.04] transition-colors">
-              Features
-            </Link>
+            {/* Features accordion — one item per landing carousel slide */}
+            <div>
+              <button
+                onClick={() => setFeaturesOpen((p) => !p)}
+                className="flex w-full items-center justify-between px-5 py-4 text-base font-medium text-white hover:bg-white/[0.04] transition-colors"
+              >
+                Features
+                <ChevronDown className={`h-5 w-5 text-white/40 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`} />
+              </button>
+              {featuresOpen && (
+                <div className="divide-y divide-white/[0.04] bg-white/[0.02]">
+                  {FEATURE_LINKS.map((f) => (
+                    <a
+                      key={f.label}
+                      href={f.href}
+                      onClick={close}
+                      className="flex items-center px-8 py-3 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors"
+                    >
+                      {f.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Free Tools accordion */}
             <div>

@@ -60,13 +60,31 @@ export function FeatureShowcase() {
     return () => clearTimeout(t);
   }, [active, paused]);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // The navbar's Features menu links to /#feature-<slide>: open that slide
+  // and bring the carousel into view.
+  useEffect(() => {
+    const openFromHash = () => {
+      const id = window.location.hash.replace("#feature-", "");
+      const tab = TABS.find((t) => t.id === id);
+      if (!window.location.hash.startsWith("#feature-") || !tab) return;
+      setActive(tab.id);
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, []);
+
   const index = TABS.findIndex((tab) => tab.id === active);
   const go = (delta: number) =>
     setActive(TABS[(index + delta + TABS.length) % TABS.length].id);
 
   return (
     <div
-      className="mt-12 w-full text-left"
+      ref={rootRef}
+      className="mt-12 w-full scroll-mt-24 text-left"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Facebook, Instagram, Link2, Sparkles, Youtube, Zap } from "lucide-react";
+import { Facebook, Instagram, Link2, Youtube, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeatureShowcase, TikTokLogo } from "@/components/landing/feature-showcase";
 import { motion, Stagger, MotionItem } from "@/components/ui/motion";
@@ -52,16 +52,6 @@ export function Hero() {
       </div>
 
       <Stagger className="relative mx-auto max-w-[100vw] text-center" amount={0.1}>
-        <MotionItem>
-          <motion.span
-            className="section-label mx-auto mb-8 inline-flex"
-            whileHover={{ scale: 1.04 }}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            AI-Powered Video Clipping
-          </motion.span>
-        </MotionItem>
-
         <MotionItem>
           <h1
             className="font-bold tracking-[-1.28px] leading-[1.1] px-2 text-darks-off-white"
