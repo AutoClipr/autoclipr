@@ -468,7 +468,7 @@ export function PublishDirectly() {
       <div className="relative mx-auto max-w-6xl">
         {/* Header */}
         <Reveal className="mb-14 text-center">
-          <p className="section-label mx-auto mb-4">Multi-platform</p>
+          <p className="section-label-white mx-auto mb-4">Multi-platform</p>
           <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Publish directly to{" "}
             <span className="text-aurora">every platform</span>
