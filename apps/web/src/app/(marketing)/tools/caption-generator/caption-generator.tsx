@@ -333,35 +333,38 @@ export function CaptionGenerator() {
   const isAudio = file?.type.startsWith("audio/");
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(99,102,241,0.22), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(16,185,129,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20">
-              <Captions className="h-7 w-7 text-indigo-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Caption Generator</h1>
-                <span className="rounded-full bg-indigo-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">AI</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Auto-generate captions from any video or audio. Edit inline. Export SRT, VTT or TXT.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-indigo-400/30 bg-gradient-to-br from-indigo-500/30 to-purple-500/20 shadow-[0_0_40px_-8px_rgba(99,102,241,0.7)]">
+            <Captions className="h-8 w-8 text-indigo-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            AI Caption{" "}
+            <span className="bg-gradient-to-r from-indigo-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">Generator</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Drop a video and get accurate, timed captions in minutes. Edit inline, then export SRT, VTT or TXT.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Languages   className="h-3 w-3" />, label: "Whisper AI · 99 languages" },
-              { icon: <FileText    className="h-3 w-3" />, label: "SRT · VTT · TXT" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Languages   className="h-3.5 w-3.5" />, label: "Whisper AI · 99 languages" },
+              { icon: <FileText    className="h-3.5 w-3.5" />, label: "SRT · VTT · TXT" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-indigo-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -374,18 +377,44 @@ export function CaptionGenerator() {
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-indigo-400 bg-indigo-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
+            className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+              ${dragging ? "border-indigo-400/70 shadow-[0_0_60px_-10px_rgba(99,102,241,0.7)]" : "border-white/10 hover:border-indigo-400/40 hover:shadow-[0_0_60px_-16px_rgba(99,102,241,0.6)]"}`}
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-400">
-              <Upload className="h-8 w-8" />
+            <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+              ${dragging ? "border-indigo-400/60 bg-indigo-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/15 blur-3xl" aria-hidden />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/25 to-purple-500/10 text-indigo-200 transition-transform duration-300 group-hover:-translate-y-1">
+                <Upload className="h-9 w-9" />
+              </div>
+              <div className="relative text-center">
+                <p className="text-xl font-bold text-white">Drop your video or audio here</p>
+                <p className="mt-1.5 text-sm text-white/45">or click to browse · MP4, MOV, MKV, WebM, MP3, WAV, M4A…</p>
+              </div>
+              <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                <Upload className="h-4 w-4" /> Choose a file
+              </span>
+              <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video or audio here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, MP3, WAV, M4A…</p>
-            </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+          </div>
+        )}
+
+        {/* ── How it works ── */}
+        {stage === "idle" && (
+          <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+            {[
+              { n: "1", t: "Upload", d: "Pick a video or audio file. It stays on your device." },
+              { n: "2", t: "Transcribe", d: "Whisper AI writes timed captions in your browser." },
+              { n: "3", t: "Export", d: "Fix any word inline, then download SRT, VTT or TXT." },
+            ].map(x => (
+              <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-bold text-indigo-200">{x.n}</span>
+                <div>
+                  <p className="text-sm font-semibold text-white">{x.t}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -397,7 +426,7 @@ export function CaptionGenerator() {
             <div className="space-y-4">
 
               {/* File bar */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -414,18 +443,23 @@ export function CaptionGenerator() {
 
               {/* Video preview */}
               {videoUrl && !isAudio && (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   <video
                     ref={videoRef}
                     src={videoUrl}
                     controls
-                    className="w-full max-h-72"
+                    className="max-h-80 w-full"
                     onLoadedMetadata={e => setDuration((e.target as HTMLVideoElement).duration)}
                   />
-                  {/* Active caption overlay */}
+                  {/* Active caption, burned over the video like a real short */}
                   {activeCap && stage === "done" && (
-                    <div className="bg-black/80 px-4 py-2 text-center text-sm font-semibold text-white whitespace-pre-line">
-                      {activeCap.text}
+                    <div className="pointer-events-none absolute inset-x-4 bottom-14 flex justify-center">
+                      <p
+                        className="whitespace-pre-line text-center text-lg font-black uppercase leading-tight text-white sm:text-xl"
+                        style={{ WebkitTextStroke: "1px black", paintOrder: "stroke fill", textShadow: "0 2px 8px rgba(0,0,0,0.6)" }}
+                      >
+                        {activeCap.text}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -433,7 +467,7 @@ export function CaptionGenerator() {
 
               {/* Audio file preview */}
               {videoUrl && isAudio && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-6">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/15">
                       <Volume2 className="h-6 w-6 text-indigo-400" />
@@ -447,7 +481,7 @@ export function CaptionGenerator() {
 
               {/* Options */}
               {(stage === "ready" || stage === "error") && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-5 p-5">
                   {/* Language */}
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Language</p>
@@ -455,7 +489,7 @@ export function CaptionGenerator() {
                       <select
                         value={opts.language ?? ""}
                         onChange={e => setOpt("language", e.target.value || null)}
-                        className="w-full appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                        className="h-11 w-full appearance-none rounded-xl border border-white/10 bg-black/30 px-4 text-sm text-white focus:border-indigo-400/60 focus:outline-none"
                       >
                         {WHISPER_LANGUAGES.map(l => (
                           <option key={l.label} value={l.code ?? ""} className="bg-[#0d0d1a]">
@@ -463,7 +497,7 @@ export function CaptionGenerator() {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-white/30" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-white/40" />
                     </div>
                   </div>
 
@@ -522,8 +556,8 @@ export function CaptionGenerator() {
                   )}
 
                   <button onClick={generate}
-                    className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 text-sm font-bold text-white transition hover:from-indigo-500 hover:to-purple-500 active:scale-[0.98] flex items-center justify-center gap-2">
-                    <Mic className="h-4 w-4" />
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98]">
+                    <Zap className="h-4 w-4" />
                     Generate Captions
                   </button>
                 </div>
@@ -531,13 +565,13 @@ export function CaptionGenerator() {
 
               {/* Progress */}
               {(stage === "extracting" || stage === "transcribing") && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 shadow-[0_0_12px_rgba(167,139,250,0.8)] transition-all duration-500"
                       style={{ width: `${progress}%` }} />
                   </div>
                   <div className="flex items-center justify-between text-xs text-white/30">
@@ -563,8 +597,8 @@ export function CaptionGenerator() {
                     { label: "Words", value: wordCount },
                     { label: "Duration", value: fmtTime(duration) },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-center">
-                      <p className="text-lg font-bold text-white">{s.value}</p>
+                    <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-center">
+                      <p className="text-2xl font-extrabold tracking-tight text-white">{s.value}</p>
                       <p className="text-xs text-white/40">{s.label}</p>
                     </div>
                   ))}
@@ -574,7 +608,7 @@ export function CaptionGenerator() {
               {/* Re-generate button */}
               {stage === "done" && (
                 <button onClick={() => setStage("ready")}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2.5 text-sm text-white/50 hover:text-white transition-colors flex items-center justify-center gap-2">
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-3 text-sm font-medium text-white/70 transition-colors hover:border-white/25 hover:text-white">
                   <Mic className="h-4 w-4" /> Re-generate captions
                 </button>
               )}
@@ -585,16 +619,16 @@ export function CaptionGenerator() {
 
               {/* Export bar */}
               {captions.length > 0 && (
-                <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-3 pl-5">
                   <p className="flex-1 text-xs text-white/40 font-medium">Export as</p>
                   {(["srt", "vtt", "txt"] as const).map(f => (
                     <button key={f} onClick={() => exportFile(f)}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold uppercase text-white/70 hover:border-indigo-500/40 hover:text-indigo-300 transition-all">
+                      className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-bold uppercase text-white/75 transition-all hover:bg-white hover:text-black">
                       <Download className="h-3 w-3" />{f}
                     </button>
                   ))}
                   <button onClick={copyAll}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-white/50 hover:text-white/80 transition-all">
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/60 transition-all hover:text-white">
                     {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                   </button>
                 </div>
@@ -603,7 +637,7 @@ export function CaptionGenerator() {
               {/* Caption list */}
               <div
                 ref={listRef}
-                className="scrollbar-slim flex-1 overflow-y-auto rounded-2xl border border-white/[0.06] bg-white/[0.02]"
+                className="scrollbar-slim flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur"
                 style={{ maxHeight: "calc(100vh - 280px)", minHeight: 300 }}
               >
                 {captions.length === 0 ? (
@@ -624,14 +658,14 @@ export function CaptionGenerator() {
                         <div
                           id={`cap-${cap.id}`}
                           key={cap.id}
-                          className={`group rounded-xl border px-3 py-2.5 transition-all cursor-pointer
+                          className={`group rounded-2xl border px-3.5 py-3 transition-all cursor-pointer
                             ${isActive
-                              ? "border-indigo-500/50 bg-indigo-500/10"
-                              : "border-white/[0.04] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"}`}
+                              ? "border-indigo-400/50 bg-indigo-500/15 shadow-[0_0_24px_-10px_rgba(129,140,248,0.9)]"
+                              : "border-white/[0.05] bg-white/[0.02] hover:border-white/15 hover:bg-white/[0.05]"}`}
                           onClick={() => !isEditing && seekTo(cap.start)}
                         >
                           <div className="flex items-start gap-2">
-                            <span className="shrink-0 mt-0.5 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-white/30">
+                            <span className="mt-0.5 shrink-0 rounded-md bg-indigo-500/15 px-1.5 py-0.5 font-mono text-[10px] text-indigo-200/80">
                               {fmtTime(cap.start)}
                             </span>
                             <div className="flex-1 min-w-0">
@@ -645,7 +679,7 @@ export function CaptionGenerator() {
                                   className="w-full resize-none rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                                 />
                               ) : (
-                                <p className="text-xs text-white/80 leading-relaxed whitespace-pre-line">{cap.text}</p>
+                                <p className="whitespace-pre-line text-sm leading-relaxed text-white/85">{cap.text}</p>
                               )}
                             </div>
                             <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
@@ -692,18 +726,18 @@ export function CaptionGenerator() {
               body: "Export industry-standard subtitle files ready to upload to YouTube, TikTok, or any platform.",
             },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                 {c.icon}
               </div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
         {/* Model notice */}
-        <div className="mt-6 rounded-2xl border border-indigo-500/15 bg-indigo-500/5 px-5 py-4 flex items-start gap-3">
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-indigo-400/20 bg-indigo-500/[0.07] px-5 py-4">
           <Zap className="h-4 w-4 shrink-0 text-indigo-300 mt-0.5" />
           <p className="text-xs text-indigo-200/70 leading-relaxed">
             <span className="font-semibold text-indigo-200">First run downloads the AI model once</span>{" "}
