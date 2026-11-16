@@ -306,35 +306,38 @@ export function VideoCompressor() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(245,158,11,0.2), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(249,115,22,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/20">
-              <Minimize2 className="h-7 w-7 text-amber-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Video Compressor</h1>
-                <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Reduce video file size without losing quality. H.264, H.265, VP9. MP4, MOV, AVI, MKV, WebM and more.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/30 to-orange-500/15 shadow-[0_0_40px_-8px_rgba(245,158,11,0.7)]">
+            <Minimize2 className="h-8 w-8 text-amber-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Video{" "}
+            <span className="bg-gradient-to-r from-amber-200 via-orange-300 to-rose-300 bg-clip-text text-transparent">Compressor</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Shrink any video without visible quality loss. H.264, H.265 or VP9 — all in your browser.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Browser-side" },
-              { icon: <Gauge       className="h-3 w-3" />, label: "H.264 · H.265 · VP9" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Up to 90% smaller" },
+              { icon: <Gauge       className="h-3.5 w-3.5" />, label: "H.264 · H.265 · VP9" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-amber-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -342,29 +345,54 @@ export function VideoCompressor() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-amber-400 bg-amber-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-amber-400/70 shadow-[0_0_60px_-10px_rgba(245,158,11,0.7)]" : "border-white/10 hover:border-amber-400/40 hover:shadow-[0_0_60px_-16px_rgba(245,158,11,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-amber-400/60 bg-amber-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/15 blur-3xl" aria-hidden />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/25 to-orange-500/10 text-amber-200 transition-transform duration-300 group-hover:-translate-y-1">
+                  <Upload className="h-9 w-9" />
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · it never leaves your device</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <div className="relative flex flex-wrap justify-center gap-1.5">
+                  {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
+                    <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-white/45">{f}</span>
+                  ))}
+                </div>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
-                <span key={f} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/30">{f}</span>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Pick any video. It stays on your device." },
+                { n: "2", t: "Choose a target", d: "A preset, a quality level, or an exact file size." },
+                { n: "3", t: "Compress", d: "See how much you saved, preview, download." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
               ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Workspace ── */}
@@ -375,7 +403,7 @@ export function VideoCompressor() {
             <div className="space-y-4">
 
               {/* File bar */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -392,7 +420,7 @@ export function VideoCompressor() {
 
               {/* Video preview */}
               {videoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   <video src={videoUrl} controls className="w-full max-h-64" onLoadedMetadata={onMeta} />
                 </div>
               )}
@@ -400,13 +428,13 @@ export function VideoCompressor() {
               {/* Estimated size card */}
               {stage === "ready" && file && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-5 py-4">
-                    <p className="text-xs text-white/30 mb-1">Original size</p>
-                    <p className="text-2xl font-bold text-white">{fmtBytes(file.size)}</p>
+                  <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-5">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/40">Original</p>
+                    <p className="text-3xl font-extrabold tracking-tight text-white">{fmtBytes(file.size)}</p>
                   </div>
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
-                    <p className="text-xs text-white/30 mb-1">Est. output size</p>
-                    <p className="text-2xl font-bold text-amber-400">
+                  <div className="rounded-3xl border border-amber-400/30 bg-amber-500/[0.08] px-5 py-5 shadow-[0_0_40px_-16px_rgba(245,158,11,0.8)]">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-200/70">Estimated output</p>
+                    <p className="text-3xl font-extrabold tracking-tight text-amber-300">
                       {estimatedMB != null ? `~${estimatedMB < 1 ? `${Math.round(estimatedMB * 1024)} KB` : `${estimatedMB.toFixed(1)} MB`}` : "—"}
                     </p>
                   </div>
@@ -415,14 +443,14 @@ export function VideoCompressor() {
 
               {/* Progress */}
               {stage === "processing" && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-5">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-5 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
                   {/* Animated bar */}
                   <div className="relative h-3 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 shadow-[0_0_14px_rgba(251,146,60,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent animate-pulse" />
                   </div>
@@ -435,7 +463,7 @@ export function VideoCompressor() {
 
               {/* Error */}
               {stage === "error" && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+                <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
                   <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
                   <div>
                     <p className="font-semibold text-red-300">Compression failed</p>
@@ -448,22 +476,22 @@ export function VideoCompressor() {
               {stage === "done" && outputUrl && (
                 <div className="space-y-4">
                   {/* Result stats */}
-                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+                  <div className="rounded-3xl border border-emerald-400/25 bg-emerald-500/[0.06] p-6 shadow-[0_0_50px_-20px_rgba(16,185,129,0.7)]">
                     <div className="flex items-center gap-2 mb-4">
                       <CheckCircle className="h-5 w-5 text-emerald-400" />
-                      <p className="font-semibold text-emerald-300">Compression complete</p>
+                      <p className="text-base font-bold text-white">Compression complete</p>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-center">
-                        <p className="text-sm font-bold text-white">{fmtBytes(file?.size ?? 0)}</p>
+                      <div className="rounded-2xl border border-white/[0.06] bg-black/20 px-4 py-3.5 text-center">
+                        <p className="text-lg font-extrabold text-white">{fmtBytes(file?.size ?? 0)}</p>
                         <p className="text-[10px] text-white/40 mt-0.5">Original</p>
                       </div>
-                      <div className="rounded-xl bg-white/[0.04] px-4 py-3 text-center">
-                        <p className="text-sm font-bold text-white">{fmtBytes(outputSize)}</p>
+                      <div className="rounded-2xl border border-white/[0.06] bg-black/20 px-4 py-3.5 text-center">
+                        <p className="text-lg font-extrabold text-white">{fmtBytes(outputSize)}</p>
                         <p className="text-[10px] text-white/40 mt-0.5">Compressed</p>
                       </div>
-                      <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-center">
-                        <p className={`text-sm font-bold ${compressionColor(compressionPct)}`}>
+                      <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/15 px-4 py-3.5 text-center">
+                        <p className={`text-lg font-extrabold ${compressionColor(compressionPct)}`}>
                           {compressionPct > 0 ? `-${compressionPct}%` : `+${Math.abs(compressionPct)}%`}
                         </p>
                         <p className="text-[10px] text-white/40 mt-0.5">Saved</p>
@@ -476,24 +504,24 @@ export function VideoCompressor() {
                         <span>Compressed ({compressionPct}% smaller)</span>
                       </div>
                       <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700"
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-300 shadow-[0_0_12px_rgba(45,212,191,0.8)] transition-all duration-700"
                           style={{ width: `${Math.max(5, 100 - compressionPct)}%` }} />
                       </div>
                     </div>
                   </div>
 
                   {/* Output preview */}
-                  <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-black">
                     <video src={outputUrl} controls className="w-full max-h-56" />
                   </div>
 
                   <div className="flex gap-3">
                     <button onClick={download}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 py-4 text-sm font-bold text-white transition hover:from-amber-500 hover:to-orange-500 active:scale-[0.98]">
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                       <Download className="h-4 w-4" /> Download {opts.outputFormat.toUpperCase()} · {fmtBytes(outputSize)}
                     </button>
                     <button onClick={() => setStage("ready")}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/60 transition-colors hover:border-white/25 hover:text-white" title="Compress again">
                       <RefreshCw className="h-4 w-4" />
                     </button>
                   </div>
@@ -505,16 +533,16 @@ export function VideoCompressor() {
             <div className="space-y-4">
 
               {/* Quick presets */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Quick Presets</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Quick Presets</p>
                 <div className="grid grid-cols-1 gap-2">
                   {PRESETS.map(p => (
                     <button key={p.label}
                       onClick={() => { setOpt("crf", p.crf); setOpt("mode", "quality"); }}
-                      className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-left transition-all
+                      className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all
                         ${opts.mode === "quality" && opts.crf === p.crf
-                          ? "border-amber-500/50 bg-amber-500/10"
-                          : "border-white/[0.06] hover:border-white/10"}`}>
+                          ? "border-amber-400/50 bg-amber-500/15 shadow-[0_0_20px_-8px_rgba(251,191,36,0.8)]"
+                          : "border-white/[0.07] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}>
                       <div>
                         <p className={`text-sm font-semibold ${opts.mode === "quality" && opts.crf === p.crf ? "text-amber-300" : "text-white/70"}`}>
                           {p.label}
@@ -530,8 +558,8 @@ export function VideoCompressor() {
               </div>
 
               {/* Mode selector */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Compression Mode</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Compression Mode</p>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: "quality",  label: "Quality",   desc: "CRF" },
@@ -539,8 +567,8 @@ export function VideoCompressor() {
                     { id: "bitrate",  label: "Bitrate",   desc: "kbps" },
                   ] as const).map(m => (
                     <button key={m.id} onClick={() => setOpt("mode", m.id)}
-                      className={`rounded-xl border px-2 py-2.5 text-center transition-all
-                        ${opts.mode === m.id ? "border-amber-500/50 bg-amber-500/10" : "border-white/[0.06] hover:border-white/10"}`}>
+                      className={`rounded-2xl border px-2 py-3 text-center transition-all
+                        ${opts.mode === m.id ? "border-amber-400/50 bg-amber-500/15 shadow-[0_0_20px_-8px_rgba(251,191,36,0.8)]" : "border-white/[0.07] bg-white/[0.02] hover:border-white/20"}`}>
                       <p className={`text-xs font-semibold ${opts.mode === m.id ? "text-amber-300" : "text-white/50"}`}>{m.label}</p>
                       <p className="text-[9px] text-white/25 mt-0.5">{m.desc}</p>
                     </button>
@@ -556,7 +584,7 @@ export function VideoCompressor() {
                     </div>
                     <input type="range" min={opts.codec === "h265" || opts.codec === "vp9" ? 20 : 18} max={51} step={1}
                       value={opts.crf} onChange={e => setOpt("crf", +e.target.value)}
-                      className="w-full accent-amber-500" />
+                      className="w-full accent-amber-400" />
                     <div className="flex justify-between text-[10px] text-white/20 mt-1">
                       <span>Best quality</span>
                       <span>Smallest size</span>
@@ -573,12 +601,12 @@ export function VideoCompressor() {
                     </div>
                     <input type="range" min={1} max={Math.max(500, Math.ceil((file?.size ?? 0) / 1024 / 1024))}
                       step={1} value={opts.targetMB} onChange={e => setOpt("targetMB", +e.target.value)}
-                      className="w-full accent-amber-500" />
+                      className="w-full accent-amber-400" />
                     <div className="mt-2 grid grid-cols-4 gap-1.5">
                       {[8, 16, 50, 100].map(mb => (
                         <button key={mb} onClick={() => setOpt("targetMB", mb)}
                           className={`rounded-lg border py-1 text-[10px] font-semibold transition-all
-                            ${opts.targetMB === mb ? "border-amber-500/50 bg-amber-500/10 text-amber-300" : "border-white/[0.06] text-white/30 hover:text-white/60"}`}>
+                            ${opts.targetMB === mb ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/[0.06] text-white/30 hover:text-white/60"}`}>
                           {mb} MB
                         </button>
                       ))}
@@ -595,12 +623,12 @@ export function VideoCompressor() {
                     </div>
                     <input type="range" min={100} max={10000} step={100}
                       value={opts.videoBitrate} onChange={e => setOpt("videoBitrate", +e.target.value)}
-                      className="w-full accent-amber-500" />
+                      className="w-full accent-amber-400" />
                     <div className="mt-2 grid grid-cols-4 gap-1.5">
                       {[500, 1000, 2500, 5000].map(k => (
                         <button key={k} onClick={() => setOpt("videoBitrate", k)}
                           className={`rounded-lg border py-1 text-[10px] font-semibold transition-all
-                            ${opts.videoBitrate === k ? "border-amber-500/50 bg-amber-500/10 text-amber-300" : "border-white/[0.06] text-white/30 hover:text-white/60"}`}>
+                            ${opts.videoBitrate === k ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/[0.06] text-white/30 hover:text-white/60"}`}>
                           {k >= 1000 ? `${k / 1000}M` : `${k}k`}
                         </button>
                       ))}
@@ -610,8 +638,8 @@ export function VideoCompressor() {
               </div>
 
               {/* Codec */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Video Codec</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Video Codec</p>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: "h264", label: "H.264",  desc: "Fast · Universal" },
@@ -619,8 +647,8 @@ export function VideoCompressor() {
                     { id: "vp9",  label: "VP9",    desc: "Open · WebM" },
                   ] as const).map(c => (
                     <button key={c.id} onClick={() => setOpt("codec", c.id)}
-                      className={`rounded-xl border px-2 py-2.5 text-center transition-all
-                        ${opts.codec === c.id ? "border-amber-500/50 bg-amber-500/10" : "border-white/[0.06] hover:border-white/10"}`}>
+                      className={`rounded-2xl border px-2 py-3 text-center transition-all
+                        ${opts.codec === c.id ? "border-amber-400/50 bg-amber-500/15 shadow-[0_0_20px_-8px_rgba(251,191,36,0.8)]" : "border-white/[0.07] bg-white/[0.02] hover:border-white/20"}`}>
                       <p className={`text-xs font-bold ${opts.codec === c.id ? "text-amber-300" : "text-white/60"}`}>{c.label}</p>
                       <p className="text-[9px] text-white/25 mt-0.5 leading-tight">{c.desc}</p>
                     </button>
@@ -629,9 +657,9 @@ export function VideoCompressor() {
               </div>
 
               {/* Advanced */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                 <button onClick={() => setShowAdvanced(a => !a)}
-                  className="flex w-full items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                  className="flex w-full items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                   <Settings2 className="h-3.5 w-3.5" />
                   Advanced options
                   <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
@@ -646,7 +674,7 @@ export function VideoCompressor() {
                         {RESOLUTIONS.map(r => (
                           <button key={r.value} onClick={() => setOpt("resolution", r.value)}
                             className={`rounded-xl border py-2 text-[10px] font-semibold transition-all
-                              ${opts.resolution === r.value ? "border-amber-500/50 bg-amber-500/10 text-amber-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                              ${opts.resolution === r.value ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
                             {r.label}
                           </button>
                         ))}
@@ -660,7 +688,7 @@ export function VideoCompressor() {
                         {(["original", "60", "30", "24"] as const).map(f => (
                           <button key={f} onClick={() => setOpt("fps", f)}
                             className={`rounded-xl border py-2 text-[10px] font-semibold transition-all
-                              ${opts.fps === f ? "border-amber-500/50 bg-amber-500/10 text-amber-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                              ${opts.fps === f ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
                             {f === "original" ? "Orig." : `${f} fps`}
                           </button>
                         ))}
@@ -675,7 +703,7 @@ export function VideoCompressor() {
                           <button key={b} onClick={() => setOpt("audioBitrate", b)}
                             className={`rounded-xl border py-2 text-[10px] font-semibold transition-all
                               ${opts.audioBitrate === b
-                                ? b === "remove" ? "border-red-500/50 bg-red-500/10 text-red-400" : "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                                ? b === "remove" ? "border-red-500/50 bg-red-500/10 text-red-400" : "border-amber-400/50 bg-amber-500/15 text-amber-200"
                                 : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
                             {b === "remove" ? "Mute" : b}
                           </button>
@@ -690,7 +718,7 @@ export function VideoCompressor() {
                         {["mp4", "webm", "mov", "mkv"].map(f => (
                           <button key={f} onClick={() => setOpt("outputFormat", f)}
                             className={`rounded-xl border py-2 text-[10px] font-bold uppercase transition-all
-                              ${opts.outputFormat === f ? "border-amber-500/50 bg-amber-500/10 text-amber-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                              ${opts.outputFormat === f ? "border-amber-400/50 bg-amber-500/15 text-amber-200" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
                             {f}
                           </button>
                         ))}
@@ -703,11 +731,11 @@ export function VideoCompressor() {
               {/* Compress button */}
               {(stage === "ready" || stage === "error") && (
                 <button onClick={compress}
-                  className="w-full rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 py-4 text-sm font-bold text-white transition hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] flex items-center justify-center gap-2">
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                   <Minimize2 className="h-4 w-4" />
                   Compress Video
                   {estimatedMB != null && (
-                    <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
+                    <span className="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-[10px] font-bold">
                       ~{estimatedMB < 1 ? `${Math.round(estimatedMB * 1024)} KB` : `${estimatedMB.toFixed(0)} MB`}
                     </span>
                   )}
@@ -724,16 +752,16 @@ export function VideoCompressor() {
             { codec: "H.265",  color: "text-purple-400",  bg: "bg-purple-500/10", border: "border-purple-500/20", pros: ["50% smaller than H.264", "Same visual quality", "Great for 4K"], cons: ["Slower to encode"] },
             { codec: "VP9",    color: "text-emerald-400", bg: "bg-emerald-500/10",border: "border-emerald-500/20",pros: ["Open source & free", "Great for web", "YouTube uses VP9"], cons: ["Limited device support"] },
           ].map(c => (
-            <div key={c.codec} className={`rounded-2xl border ${c.border} ${c.bg} p-5`}>
-              <p className={`font-bold text-base ${c.color} mb-3`}>{c.codec}</p>
-              <div className="space-y-1">
+            <div key={c.codec} className={`rounded-3xl border ${c.border} ${c.bg} p-6 transition-transform hover:-translate-y-0.5`}>
+              <p className={`mb-3 text-xl font-extrabold ${c.color}`}>{c.codec}</p>
+              <div className="space-y-1.5">
                 {c.pros.map(p => (
-                  <p key={p} className="text-xs text-white/60 flex items-center gap-1.5">
+                  <p key={p} className="flex items-center gap-1.5 text-sm text-white/70">
                     <span className="h-1 w-1 rounded-full bg-emerald-400 shrink-0" />{p}
                   </p>
                 ))}
                 {c.cons.map(p => (
-                  <p key={p} className="text-xs text-white/30 flex items-center gap-1.5">
+                  <p key={p} className="flex items-center gap-1.5 text-sm text-white/40">
                     <span className="h-1 w-1 rounded-full bg-white/20 shrink-0" />{p}
                   </p>
                 ))}
@@ -749,18 +777,18 @@ export function VideoCompressor() {
             { icon: <BarChart3  className="h-5 w-5 text-orange-400" />, title: "Live Size Estimate",   body: "See the estimated output file size before you compress, based on your settings." },
             { icon: <Minimize2  className="h-5 w-5 text-yellow-400" />, title: "Up to 90% smaller",    body: "Combine codec choice, CRF and resolution downscaling for dramatic file size reductions." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">{c.icon}</div>
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">{c.icon}</div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Processing is 100% in-browser.</span>{" "}
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <p className="text-xs leading-relaxed text-amber-100/70">
+            <span className="font-semibold text-amber-200">Processing is 100% in-browser.</span>{" "}
             Your video never leaves your device. H.265 produces the smallest files but takes longer in WebAssembly — use H.264 for fastest results.
           </p>
         </div>
