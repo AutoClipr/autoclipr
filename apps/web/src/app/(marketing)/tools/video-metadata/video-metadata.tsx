@@ -250,9 +250,9 @@ function parseFFmpegLog(log: string, filename: string, fileSize: number): VideoM
 
 function MetaRow({ label, value, mono = false, accent }: { label: string; value: string; mono?: boolean; accent?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-white/[0.04] last:border-0">
-      <span className="shrink-0 text-xs text-white/35">{label}</span>
-      <span className={`text-right text-xs break-all ${mono ? "font-mono" : ""} ${accent ? "font-semibold text-white" : "text-white/70"}`}>
+    <div className="flex items-start justify-between gap-4 border-b border-white/[0.05] py-2.5 last:border-0">
+      <span className="shrink-0 text-xs text-white/45">{label}</span>
+      <span className={`break-all text-right text-xs ${mono ? "font-mono" : ""} ${accent ? "font-semibold text-sky-100" : "text-white/75"}`}>
         {value}
       </span>
     </div>
@@ -264,12 +264,12 @@ function Section({ title, icon, children, defaultOpen = true }: {
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
       <button onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
-        <span className="text-slate-400">{icon}</span>
+        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.03]">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">{icon}</span>
         <p className="flex-1 text-sm font-semibold text-white">{title}</p>
-        {open ? <ChevronDown className="h-4 w-4 text-white/20" /> : <ChevronRight className="h-4 w-4 text-white/20" />}
+        {open ? <ChevronDown className="h-4 w-4 text-white/40" /> : <ChevronRight className="h-4 w-4 text-white/40" />}
       </button>
       {open && <div className="px-5 pb-4 space-y-0">{children}</div>}
     </div>
@@ -389,35 +389,38 @@ export function VideoMetadataViewer() {
   const audioStream = meta?.audioStreams[0];
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-4xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(14,165,233,0.2), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(99,102,241,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-4xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-500/20 to-zinc-500/20 border border-slate-500/20">
-              <Database className="h-7 w-7 text-slate-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Video Metadata Viewer</h1>
-                <span className="rounded-full bg-slate-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Inspect codec, resolution, bitrate, FPS, audio streams, tags and all technical details of any video or audio file.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-sky-400/30 bg-gradient-to-br from-sky-500/30 to-indigo-500/15 shadow-[0_0_40px_-8px_rgba(14,165,233,0.7)]">
+            <Database className="h-8 w-8 text-sky-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Video{" "}
+            <span className="bg-gradient-to-r from-sky-200 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Metadata</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            See what&apos;s inside any video or audio file — codec, resolution, bitrate, FPS, streams and tags.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Instant Analysis" },
-              { icon: <Layers      className="h-3 w-3" />, label: "All Streams" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Instant Analysis" },
+              { icon: <Layers      className="h-3.5 w-3.5" />, label: "All Streams · JSON" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-sky-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -430,41 +433,54 @@ export function VideoMetadataViewer() {
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-slate-400 bg-slate-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
+            className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+              ${dragging ? "border-sky-400/70 shadow-[0_0_60px_-10px_rgba(14,165,233,0.7)]" : "border-white/10 hover:border-sky-400/40 hover:shadow-[0_0_60px_-16px_rgba(14,165,233,0.6)]"}`}
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-500/15 text-slate-400">
-              <Upload className="h-8 w-8" />
+            <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+              ${dragging ? "border-sky-400/60 bg-sky-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500/15 blur-3xl" aria-hidden />
+              {/* Spec-sheet motif */}
+              <div className="relative w-56 space-y-2 rounded-3xl border border-sky-400/30 bg-gradient-to-br from-sky-500/15 to-indigo-500/10 p-4 text-left shadow-[0_0_30px_-8px_rgba(14,165,233,0.8)] transition-transform duration-300 group-hover:-translate-y-1" aria-hidden>
+                {[["Codec", "h264"], ["Resolution", "1920×1080"], ["Frame rate", "30 fps"]].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between text-[11px]">
+                    <span className="text-white/45">{k}</span>
+                    <span className="font-mono font-semibold text-sky-100">{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="relative text-center">
+                <p className="text-xl font-bold text-white">Drop any video or audio file</p>
+                <p className="mt-1.5 text-sm text-white/45">or click to browse · it never leaves your device</p>
+              </div>
+              <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                <Upload className="h-4 w-4" /> Choose a file
+              </span>
+              <div className="relative flex flex-wrap justify-center gap-1.5">
+                {["MP4","MOV","AVI","MKV","WebM","FLV","TS","MP3","WAV","FLAC","OGG","AAC"].map(f => (
+                  <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-white/45">{f}</span>
+                ))}
+              </div>
+              <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) analyze(f); }} />
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop any video or audio file</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, MP3, WAV, FLAC…</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["MP4","MOV","AVI","MKV","WebM","FLV","TS","MP3","WAV","FLAC","OGG","AAC"].map(f => (
-                <span key={f} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/30">{f}</span>
-              ))}
-            </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) analyze(f); }} />
           </div>
         )}
 
         {/* ── Analyzing ── */}
         {stage === "analyzing" && (
-          <div className="flex flex-col items-center gap-6 rounded-3xl border border-white/[0.06] bg-white/[0.02] py-20">
+          <div className="flex flex-col items-center gap-6 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur py-20">
             <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-500/15">
-                <Database className="h-10 w-10 text-slate-400" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-sky-400/30 bg-sky-500/15 shadow-[0_0_40px_-8px_rgba(14,165,233,0.8)]">
+                <Database className="h-10 w-10 text-sky-200" />
               </div>
-              <Loader2 className="absolute -bottom-1 -right-1 h-6 w-6 animate-spin text-slate-400" />
+              <Loader2 className="absolute -bottom-1 -right-1 h-6 w-6 animate-spin text-sky-300" />
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-white">Analyzing metadata…</p>
-              <p className="mt-1 text-sm text-white/40">{file?.name}</p>
+              <p className="mt-1 text-sm text-white/50">{file?.name}</p>
             </div>
-            <div className="w-48 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-              <div className="h-full rounded-full bg-gradient-to-r from-slate-400 to-zinc-400 transition-all duration-500"
+            <div className="h-2 w-56 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-400 shadow-[0_0_12px_rgba(56,189,248,0.8)] transition-all duration-500"
                 style={{ width: `${progress}%` }} />
             </div>
           </div>
@@ -472,7 +488,7 @@ export function VideoMetadataViewer() {
 
         {/* ── Error ── */}
         {stage === "error" && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+          <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
             <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
             <div className="flex-1">
               <p className="font-semibold text-red-300">Analysis failed</p>
@@ -487,8 +503,8 @@ export function VideoMetadataViewer() {
           <div className="space-y-4">
 
             {/* Top bar */}
-            <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/15 text-slate-400">
+            <div className="flex flex-wrap items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
                 <FileVideo className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -502,12 +518,12 @@ export function VideoMetadataViewer() {
               </div>
               <div className="flex gap-2">
                 <button onClick={copyAsJson}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/50 hover:text-white transition-colors">
-                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.5)] transition-shadow hover:shadow-[0_0_28px_-4px_rgba(255,255,255,0.6)]">
+                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? "Copied!" : "Copy JSON"}
                 </button>
                 <button onClick={reset}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/50 hover:text-white transition-colors">
+                  className="rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-4 py-2 text-xs text-white/70">
                   Analyze another
                 </button>
               </div>
@@ -521,10 +537,10 @@ export function VideoMetadataViewer() {
                 { label: "Resolution", value: videoStream ? `${videoStream.width}×${videoStream.height}` : "—", icon: <Monitor className="h-4 w-4" />, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
                 { label: "Bitrate",    value: meta.overallBitrate ?? "—",     icon: <Gauge className="h-4 w-4" />,  color: "text-emerald-400",bg: "bg-emerald-500/10",border: "border-emerald-500/20" },
               ].map(s => (
-                <div key={s.label} className={`rounded-2xl border ${s.border} ${s.bg} px-4 py-4`}>
-                  <div className={`mb-2 ${s.color}`}>{s.icon}</div>
-                  <p className="text-base font-bold text-white">{s.value}</p>
-                  <p className="text-xs text-white/40">{s.label}</p>
+                <div key={s.label} className={`rounded-3xl border ${s.border} ${s.bg} px-5 py-5 transition-transform hover:-translate-y-0.5`}>
+                  <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-black/20 ${s.color}`}>{s.icon}</div>
+                  <p className="text-xl font-extrabold tracking-tight text-white">{s.value}</p>
+                  <p className="mt-0.5 text-xs text-white/50">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -556,9 +572,9 @@ export function VideoMetadataViewer() {
                 {vs.bitrate && <MetaRow label="Bitrate"        value={vs.bitrate}                   mono accent />}
                 {vs.pixFmt && <MetaRow label="Pixel format"   value={vs.pixFmt}                    mono />}
                 <MetaRow label="Default stream" value={vs.default ? "Yes" : "No"} />
-                <div className="mt-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/20">Raw stream info</p>
-                  <p className="font-mono text-[10px] text-white/40 break-all leading-relaxed">{vs.raw}</p>
+                <div className="mt-3 rounded-2xl border border-white/[0.06] bg-black/30 px-4 py-3">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/35">Raw stream info</p>
+                  <p className="break-all font-mono text-[10px] leading-relaxed text-white/50">{vs.raw}</p>
                 </div>
               </Section>
             ))}
@@ -573,9 +589,9 @@ export function VideoMetadataViewer() {
                 {as.channelLayout && <MetaRow label="Channel layout" value={as.channelLayout} mono />}
                 {as.bitrate && <MetaRow label="Bitrate"      value={as.bitrate}        mono accent />}
                 <MetaRow label="Default"       value={as.default ? "Yes" : "No"} />
-                <div className="mt-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/20">Raw stream info</p>
-                  <p className="font-mono text-[10px] text-white/40 break-all leading-relaxed">{as.raw}</p>
+                <div className="mt-3 rounded-2xl border border-white/[0.06] bg-black/30 px-4 py-3">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/35">Raw stream info</p>
+                  <p className="break-all font-mono text-[10px] leading-relaxed text-white/50">{as.raw}</p>
                 </div>
               </Section>
             ))}
@@ -601,15 +617,15 @@ export function VideoMetadataViewer() {
             )}
 
             {/* Raw log */}
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
               <button onClick={() => setShowRaw(r => !r)}
-                className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
-                <Hash className="h-4 w-4 text-slate-400" />
+                className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.03]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/15"><Hash className="h-4 w-4 text-sky-300" /></span>
                 <p className="flex-1 text-sm font-semibold text-white">Raw FFmpeg Output</p>
-                {showRaw ? <ChevronDown className="h-4 w-4 text-white/20" /> : <ChevronRight className="h-4 w-4 text-white/20" />}
+                {showRaw ? <ChevronDown className="h-4 w-4 text-white/40" /> : <ChevronRight className="h-4 w-4 text-white/40" />}
               </button>
               {showRaw && (
-                <pre className="max-h-80 overflow-y-auto px-5 pb-5 font-mono text-[10px] text-white/35 leading-relaxed whitespace-pre-wrap break-all">
+                <pre className="scrollbar-slim mx-5 mb-5 max-h-80 overflow-y-auto whitespace-pre-wrap break-all rounded-2xl border border-white/[0.06] bg-black/30 p-4 font-mono text-[10px] leading-relaxed text-white/50">
                   {meta.rawLog}
                 </pre>
               )}
@@ -621,23 +637,23 @@ export function VideoMetadataViewer() {
         {stage !== "analyzing" && (
           <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { icon: <Film      className="h-5 w-5 text-slate-400"  />, title: "Full stream analysis",  body: "All video, audio and subtitle streams with codec, bitrate, FPS, resolution, pixel format and more." },
-              { icon: <Tag       className="h-5 w-5 text-zinc-400"   />, title: "Metadata & tags",       body: "Read embedded title, artist, date, encoder, copyright and all custom metadata tags." },
-              { icon: <Database  className="h-5 w-5 text-gray-400"   />, title: "Export as JSON",        body: "Copy all parsed metadata as clean JSON — perfect for logging, scripting, or debugging." },
+              { icon: <Film      className="h-5 w-5 text-sky-300"  />, title: "Full stream analysis",  body: "All video, audio and subtitle streams with codec, bitrate, FPS, resolution, pixel format and more." },
+              { icon: <Tag       className="h-5 w-5 text-indigo-300"   />, title: "Metadata & tags",       body: "Read embedded title, artist, date, encoder, copyright and all custom metadata tags." },
+              { icon: <Database  className="h-5 w-5 text-cyan-300"   />, title: "Export as JSON",        body: "Copy all parsed metadata as clean JSON — perfect for logging, scripting, or debugging." },
             ].map(c => (
-              <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">{c.icon}</div>
+              <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">{c.icon}</div>
                 <p className="font-semibold text-white">{c.title}</p>
-                <p className="mt-1 text-sm text-white/40">{c.body}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
               </div>
             ))}
           </div>
         )}
 
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Zero data collection.</span>{" "}
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sky-400/20 bg-sky-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+          <p className="text-xs leading-relaxed text-sky-100/70">
+            <span className="font-semibold text-sky-200">Zero data collection.</span>{" "}
             Your file is read entirely in-browser using FFmpeg WebAssembly — no bytes are ever sent to a server. Supports MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP, MP3, WAV, FLAC, OGG, AAC and more.
           </p>
         </div>
