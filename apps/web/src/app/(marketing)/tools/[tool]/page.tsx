@@ -10,6 +10,7 @@ const LIVE_TOOLS: Record<string, string> = {
   "format-converter":        "/tools/format-converter",
   "aspect-ratio-converter":  "/tools/aspect-ratio-converter",
   "audio-extractor":         "/tools/audio-extractor",
+  "audio-to-text":           "/tools/audio-to-text",
   "caption-generator":       "/tools/caption-generator",
   "caption-templates":       "/tools/caption-templates",
   "video-compressor":        "/tools/video-compressor",

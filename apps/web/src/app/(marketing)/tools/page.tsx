@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   Scissors, FileVideo, Maximize2, FileArchive, ImageIcon,
   Music, Film, Info, Captions, Type, ArrowRight, Zap,
-  ShieldCheck, Globe, Crop,
+  ShieldCheck, Globe, Crop, Mic,
 } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -127,6 +127,19 @@ const TOOLS = [
     tag: "Duration · FPS · Codec · Bitrate",
   },
   {
+    icon: Mic,
+    label: "Audio to Text",
+    desc: "Extract the spoken text from audio or video",
+    href: "/tools/audio-to-text",
+    badge: "AI",
+    color: "teal",
+    gradient: "from-teal-500/20 to-emerald-500/10",
+    border: "hover:border-teal-500/40",
+    iconBg: "bg-teal-500/15 group-hover:bg-teal-500/25",
+    iconColor: "text-teal-300",
+    tag: "Whisper · TXT · SRT · 99 languages",
+  },
+  {
     icon: Captions,
     label: "Caption Generator",
     desc: "Auto-generate transcripts for free",
@@ -181,6 +194,7 @@ export default function ToolsPage() {
         { "@type": "ListItem", position: 8, name: "Thumbnail Extractor",    url: "https://autoclipr.com/tools/thumbnail-extractor" },
         { "@type": "ListItem", position: 9, name: "Video Metadata Viewer",  url: "https://autoclipr.com/tools/video-metadata" },
         { "@type": "ListItem", position: 10, name: "GIF Generator",         url: "https://autoclipr.com/tools/gif-generator" },
+        { "@type": "ListItem", position: 11, name: "Audio to Text",         url: "https://autoclipr.com/tools/audio-to-text" },
       ],
     }} />
     <div className="relative min-h-screen overflow-hidden bg-[#07080f]">

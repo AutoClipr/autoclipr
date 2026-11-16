@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Scissors, FileVideo, Maximize2, Music, Film, ImageIcon,
-  Captions, FileArchive, Info, Type, ArrowRight,
+  Captions, FileArchive, Info, Type, ArrowRight, Mic,
 } from "lucide-react";
 
 const ALL_TOOLS = [
@@ -9,6 +9,7 @@ const ALL_TOOLS = [
   { slug: "format-converter",       label: "Format Converter",       icon: FileVideo,   color: "text-sky-400",     bg: "bg-sky-500/10"    },
   { slug: "aspect-ratio-converter", label: "Aspect Ratio Converter", icon: Maximize2,   color: "text-orange-400",  bg: "bg-orange-500/10" },
   { slug: "audio-extractor",        label: "Audio Extractor",        icon: Music,       color: "text-emerald-400", bg: "bg-emerald-500/10"},
+  { slug: "audio-to-text",          label: "Audio to Text",          icon: Mic,         color: "text-teal-300",    bg: "bg-teal-500/10"   },
   { slug: "caption-generator",      label: "Caption Generator",      icon: Captions,    color: "text-pink-400",    bg: "bg-pink-500/10"   },
   { slug: "caption-templates",      label: "Caption Templates",      icon: Type,        color: "text-rose-400",    bg: "bg-rose-500/10"   },
   { slug: "video-compressor",       label: "Video Compressor",       icon: FileArchive, color: "text-yellow-400",  bg: "bg-yellow-500/10" },

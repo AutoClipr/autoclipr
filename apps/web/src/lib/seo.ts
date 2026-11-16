@@ -148,6 +148,7 @@ export const SITEMAP_ROUTES = [
   { path: "/tools/video-slicer",            changeFrequency: "monthly" as const, priority: 0.8  },
   { path: "/tools/aspect-ratio-converter",  changeFrequency: "monthly" as const, priority: 0.8  },
   { path: "/tools/audio-extractor",         changeFrequency: "monthly" as const, priority: 0.8  },
+  { path: "/tools/audio-to-text",           changeFrequency: "monthly" as const, priority: 0.8  },
   { path: "/tools/caption-generator",       changeFrequency: "monthly" as const, priority: 0.8  },
   { path: "/tools/caption-templates",       changeFrequency: "monthly" as const, priority: 0.8  },
   { path: "/tools/video-compressor",        changeFrequency: "monthly" as const, priority: 0.8  },

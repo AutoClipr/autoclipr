@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Scissors, FileVideo, Maximize2, FileArchive, Image, Music, Film, Info, Captions, Type } from "lucide-react";
+import { Scissors, FileVideo, Maximize2, FileArchive, Image, Music, Film, Info, Captions, Type, Mic } from "lucide-react";
 import { NavMegaMenu } from "./nav-mega-menu";
 
 const TOOLS = [
@@ -25,6 +25,7 @@ const TOOLS = [
   {
     category: "Captions & Info",
     items: [
+      { icon: Mic, label: "Audio to Text", desc: "Extract the spoken text from any file", href: "/tools/audio-to-text" },
       { icon: Captions, label: "Caption Generator", desc: "Auto-generate transcripts for free", href: "/tools/caption-generator" },
       { icon: Type, label: "Caption Templates", desc: "Simple white caption styles", href: "/tools/caption-templates" },
       { icon: Info, label: "Video Metadata Viewer", desc: "Duration · FPS · Codec · Bitrate", href: "/tools/video-metadata" },
