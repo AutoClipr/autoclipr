@@ -347,35 +347,38 @@ export function FormatConverter() {
     ? Math.round((1 - outputSize / inputSize) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-4xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(139,92,246,0.22), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(217,70,239,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-4xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/20">
-              <RefreshCw className="h-7 w-7 text-violet-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">Video Format Converter</h1>
-              <p className="mt-1 text-white/50 text-sm">
-                Convert any video to MP4, WebM, MOV, AVI, MKV, GIF, MP3, M4A and more — fully in your browser.
-              </p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/15 shadow-[0_0_40px_-8px_rgba(139,92,246,0.7)]">
+            <RefreshCw className="h-8 w-8 text-violet-200" />
           </div>
-          {/* Feature pills */}
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Format{" "}
+            <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-pink-300 bg-clip-text text-transparent">Converter</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Convert any video to MP4, WebM, MOV, AVI, MKV, GIF, MP3, M4A and more — fully in your browser.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Browser-Powered" },
-              { icon: <FileVideo   className="h-3 w-3" />, label: "10+ Formats" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Instant remux when possible" },
+              { icon: <FileVideo   className="h-3.5 w-3.5" />, label: "10+ Formats" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-violet-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -383,24 +386,57 @@ export function FormatConverter() {
 
         {/* ── Drop zone (idle) ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-20 transition-all
-              ${dragging ? "border-violet-400 bg-violet-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-violet-400/70 shadow-[0_0_60px_-10px_rgba(139,92,246,0.7)]" : "border-white/10 hover:border-violet-400/40 hover:shadow-[0_0_60px_-16px_rgba(139,92,246,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-violet-400/60 bg-violet-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/15 blur-3xl" aria-hidden />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/10 text-violet-200 transition-transform duration-300 group-hover:-translate-y-1">
+                  <Upload className="h-9 w-9" />
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <div className="relative flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-semibold text-white/45">
+                  {["MP4", "WebM", "MOV", "GIF", "MP3", "M4A"].map((f, i) => (
+                    <span key={f} className="flex items-center gap-1.5">
+                      {i > 0 && <span className="text-white/20">·</span>}
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5">{f}</span>
+                    </span>
+                  ))}
+                </div>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video here</p>
-              <p className="mt-1 text-sm text-white/40">or click to browse — MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video file. It stays on your device." },
+                { n: "2", t: "Pick a format", d: "Video, GIF or audio, with quality and trim." },
+                { n: "3", t: "Convert", d: "Preview the result and download it." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Main workspace (ready / converting / done / error) ── */}
@@ -408,7 +444,7 @@ export function FormatConverter() {
           <div className="space-y-4">
 
             {/* File info bar */}
-            <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+            <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-400">
                 <FileVideo className="h-4 w-4" />
               </div>
@@ -431,28 +467,28 @@ export function FormatConverter() {
 
             {/* ── Settings panel ── */}
             {(stage === "ready" || stage === "error") && (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-5">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-6 p-6">
 
                 {/* Output format grid */}
                 <div>
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Output Format</p>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Output Format</p>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                     {FORMATS.map(f => (
                       <button
                         key={f.ext}
                         onClick={() => setOpt("outputFormat", f.ext)}
-                        className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-2.5 text-left transition-all
+                        className={`flex flex-col items-start gap-1 rounded-2xl border px-3.5 py-3 text-left transition-all hover:-translate-y-0.5
                           ${opts.outputFormat === f.ext
-                            ? "border-violet-500/50 bg-violet-500/10 text-violet-300"
-                            : "border-white/[0.06] bg-white/[0.02] text-white/60 hover:border-white/15 hover:text-white/80"}`}
+                            ? "border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]"
+                            : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className={`${opts.outputFormat === f.ext ? "text-violet-400" : "text-white/30"}`}>
+                          <span className={`${opts.outputFormat === f.ext ? "text-violet-300" : "text-white/35"}`}>
                             {categoryIcon(f.category)}
                           </span>
                           <span className="text-sm font-bold">{f.label}</span>
                         </div>
-                        <span className="text-[10px] leading-tight text-white/30">{f.description}</span>
+                        <span className="text-[10px] leading-tight text-white/40">{f.description}</span>
                       </button>
                     ))}
                   </div>
@@ -461,12 +497,12 @@ export function FormatConverter() {
                 {/* Quality row */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Quality</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Quality</p>
                     <div className="flex flex-col gap-1.5">
                       {(["lossless", "high", "medium", "compressed"] as const).map(q => (
                         <button key={q} onClick={() => setOpt("quality", q)}
-                          className={`rounded-lg px-3 py-1.5 text-left text-xs transition-all capitalize
-                            ${opts.quality === q ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" : "border border-white/[0.06] bg-white/[0.02] text-white/50 hover:text-white/70"}`}>
+                          className={`rounded-xl px-3 py-2 text-left text-xs font-medium transition-all capitalize
+                            ${opts.quality === q ? "border border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                           {q}
                         </button>
                       ))}
@@ -476,12 +512,12 @@ export function FormatConverter() {
                   {/* Resolution */}
                   {(isVideoOut || isImageOut) && (
                     <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Resolution</p>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Resolution</p>
                       <div className="flex flex-col gap-1.5">
                         {(["original", "1080p", "720p", "480p", "360p"] as const).map(r => (
                           <button key={r} onClick={() => setOpt("resolution", r)}
-                            className={`rounded-lg px-3 py-1.5 text-left text-xs transition-all uppercase
-                              ${opts.resolution === r ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" : "border border-white/[0.06] bg-white/[0.02] text-white/50 hover:text-white/70"}`}>
+                            className={`rounded-xl px-3 py-2 text-left text-xs font-medium transition-all uppercase
+                              ${opts.resolution === r ? "border border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                             {r}
                           </button>
                         ))}
@@ -492,12 +528,12 @@ export function FormatConverter() {
                   {/* FPS */}
                   {(isVideoOut || isImageOut) && (
                     <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Frame Rate</p>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Frame Rate</p>
                       <div className="flex flex-col gap-1.5">
                         {(["original", "60", "30", "24", "15"] as const).map(f => (
                           <button key={f} onClick={() => setOpt("fps", f)}
-                            className={`rounded-lg px-3 py-1.5 text-left text-xs transition-all
-                              ${opts.fps === f ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" : "border border-white/[0.06] bg-white/[0.02] text-white/50 hover:text-white/70"}`}>
+                            className={`rounded-xl px-3 py-2 text-left text-xs font-medium transition-all
+                              ${opts.fps === f ? "border border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                             {f === "original" ? "Original" : `${f} fps`}
                           </button>
                         ))}
@@ -508,12 +544,12 @@ export function FormatConverter() {
                   {/* Audio bitrate */}
                   {!isImageOut && (
                     <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Audio Bitrate</p>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Audio Bitrate</p>
                       <div className="flex flex-col gap-1.5">
                         {(["320k", "192k", "128k", "96k", "64k"] as const).map(b => (
                           <button key={b} onClick={() => setOpt("audioBitrate", b)}
-                            className={`rounded-lg px-3 py-1.5 text-left text-xs transition-all
-                              ${opts.audioBitrate === b ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" : "border border-white/[0.06] bg-white/[0.02] text-white/50 hover:text-white/70"}`}>
+                            className={`rounded-xl px-3 py-2 text-left text-xs font-medium transition-all
+                              ${opts.audioBitrate === b ? "border border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                             {b}
                           </button>
                         ))}
@@ -541,15 +577,15 @@ export function FormatConverter() {
 
                 {/* Trim controls */}
                 {opts.useTrim && duration > 0 && (
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Trim Range</p>
+                  <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Trim Range</p>
                     <div className="flex gap-4">
                       <label className="flex-1">
                         <span className="block mb-1 text-xs text-white/40">Start</span>
                         <input type="range" min={0} max={duration} step={0.1}
                           value={opts.trimStart}
                           onChange={e => setOpt("trimStart", +e.target.value)}
-                          className="w-full accent-violet-500" />
+                          className="w-full accent-violet-400" />
                         <span className="text-xs text-violet-300">{fmtTime(opts.trimStart)}</span>
                       </label>
                       <label className="flex-1">
@@ -557,7 +593,7 @@ export function FormatConverter() {
                         <input type="range" min={0} max={duration} step={0.1}
                           value={opts.trimEnd}
                           onChange={e => setOpt("trimEnd", +e.target.value)}
-                          className="w-full accent-violet-500" />
+                          className="w-full accent-violet-400" />
                         <span className="text-xs text-violet-300">{fmtTime(opts.trimEnd)}</span>
                       </label>
                     </div>
@@ -569,20 +605,20 @@ export function FormatConverter() {
 
                 {/* Advanced toggle */}
                 <button onClick={() => setShowAdvanced(a => !a)}
-                  className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                  className="flex items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                   <Settings2 className="h-3.5 w-3.5" />
                   Advanced options
                   <ChevronDown className={`h-3 w-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
                 </button>
 
                 {showAdvanced && isVideoOut && (
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Video Codec</p>
+                  <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Video Codec</p>
                     <div className="flex flex-wrap gap-2">
                       {(["auto", "libx264", "libx265", "libvpx-vp9"] as const).map(c => (
                         <button key={c} onClick={() => setOpt("videoCodec", c)}
-                          className={`rounded-lg px-3 py-1.5 text-xs transition-all
-                            ${opts.videoCodec === c ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" : "border border-white/[0.06] bg-white/[0.02] text-white/50 hover:text-white/70"}`}>
+                          className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all
+                            ${opts.videoCodec === c ? "border border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                           {c === "auto" ? "Auto" : c}
                         </button>
                       ))}
@@ -596,7 +632,7 @@ export function FormatConverter() {
 
                 {/* Error */}
                 {stage === "error" && (
-                  <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+                  <div className="flex items-start gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] px-4 py-3">
                     <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
                     <p className="text-sm text-red-300">{error}</p>
                   </div>
@@ -604,18 +640,18 @@ export function FormatConverter() {
 
                 {/* Convert button */}
                 <button onClick={convert}
-                  className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-4 text-sm font-bold text-white transition hover:from-violet-500 hover:to-fuchsia-500 active:scale-[0.98]">
-                  Convert to {opts.outputFormat.toUpperCase()}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
+                  <RefreshCw className="h-4 w-4" /> Convert to {opts.outputFormat.toUpperCase()}
                 </button>
               </div>
             )}
 
             {/* ── Progress ── */}
             {stage === "converting" && (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 text-center space-y-5">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-5 p-10 text-center">
                 <div className="flex justify-center">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/15">
-                    <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-500/15 shadow-[0_0_40px_-8px_rgba(139,92,246,0.8)]">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-200" />
                   </div>
                 </div>
                 <div>
@@ -623,12 +659,12 @@ export function FormatConverter() {
                   <p className="mt-1 text-xs text-white/40">{progress}% complete</p>
                 </div>
                 <div className="mx-auto max-w-xs">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-300"
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-fuchsia-400 shadow-[0_0_12px_rgba(192,132,252,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-                <p className="text-xs text-white/25">
+                <p className="text-xs text-white/40">
                   {progressMsg.includes("Remuxing")
                     ? "⚡ Stream copy — no re-encode, almost instant"
                     : "Running in your browser via WebAssembly · files never leave your device"}
@@ -638,10 +674,10 @@ export function FormatConverter() {
 
             {/* ── Done ── */}
             {stage === "done" && outputUrl && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 space-y-5">
+              <div className="space-y-5 rounded-3xl border border-emerald-400/25 bg-emerald-500/[0.06] p-6 shadow-[0_0_50px_-20px_rgba(16,185,129,0.7)]">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-400" />
-                  <p className="font-semibold text-emerald-300">Conversion complete!</p>
+                  <p className="text-base font-bold text-white">Conversion complete!</p>
                 </div>
 
                 {/* Stats */}
@@ -653,8 +689,8 @@ export function FormatConverter() {
                       value: `${Math.abs(savings)}%`,
                       color: savings > 0 ? "text-emerald-400" : "text-amber-400" },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-center">
-                      <p className={`text-lg font-bold ${s.color ?? "text-white"}`}>{s.value}</p>
+                    <div key={s.label} className="rounded-2xl border border-white/[0.06] bg-black/20 px-4 py-3.5 text-center">
+                      <p className={`text-xl font-extrabold ${s.color ?? "text-white"}`}>{s.value}</p>
                       <p className="text-xs text-white/40">{s.label}</p>
                     </div>
                   ))}
@@ -662,7 +698,7 @@ export function FormatConverter() {
 
                 {/* Preview for video/gif */}
                 {(isVideoOut || isImageOut) && !isAudioOut && (
-                  <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
                     {isImageOut
                       /* eslint-disable-next-line @next/next/no-img-element */
                       ? <img src={outputUrl} alt="Converted GIF preview" className="w-full" />
@@ -676,25 +712,25 @@ export function FormatConverter() {
                   <audio src={outputUrl} controls className="w-full" />
                 )}
 
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <button onClick={download}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white transition hover:bg-emerald-500">
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                     <Download className="h-4 w-4" />
                     Download {opts.outputFormat.toUpperCase()}
                   </button>
                   <button onClick={() => setStage("ready")}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white">
+                    className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-5 text-sm text-white/70">
                     <Settings2 className="h-4 w-4" />
                     Re-convert
                   </button>
                   <button onClick={reset}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-white/60 transition hover:bg-white/[0.07] hover:text-white">
+                    className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-5 text-sm text-white/70">
                     <RefreshCw className="h-4 w-4" />
                     New file
                   </button>
                 </div>
 
-                <p className="text-center text-xs text-white/25">
+                <p className="text-center text-xs text-white/45">
                   Converted in {convertTime}s · your file never left your device
                 </p>
               </div>
@@ -721,12 +757,12 @@ export function FormatConverter() {
               body: "Runs entirely in your browser — no software to download, no account required, no file size limits.",
             },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                 {c.icon}
               </div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
@@ -742,8 +778,8 @@ function Toggle({ active, onToggle, icon, label }: {
 }) {
   return (
     <button onClick={() => onToggle(!active)}
-      className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-all
-        ${active ? "border-violet-500/40 bg-violet-500/15 text-violet-300" : "border-white/[0.06] bg-white/[0.02] text-white/40 hover:text-white/70"}`}>
+      className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all
+        ${active ? "border-violet-400/50 bg-violet-500/15 text-violet-100 shadow-[0_0_18px_-8px_rgba(167,139,250,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
       {icon}{label}
     </button>
   );
