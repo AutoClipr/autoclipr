@@ -340,35 +340,38 @@ export function GifGenerator() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(234,179,8,0.18), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(245,158,11,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/20">
-              <Film className="h-7 w-7 text-yellow-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">GIF Generator</h1>
-                <span className="rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Create high-quality GIFs from any video. Trim, resize, set FPS, loop, boomerang, reverse — full control.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-500/30 to-amber-500/15 shadow-[0_0_40px_-8px_rgba(234,179,8,0.7)]">
+            <Film className="h-8 w-8 text-yellow-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            GIF{" "}
+            <span className="bg-gradient-to-r from-yellow-200 via-amber-300 to-orange-300 bg-clip-text text-transparent">Generator</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Turn any video moment into a sharp, looping GIF. Trim, resize, set FPS, boomerang or reverse.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Palette     className="h-3 w-3" />, label: "256-colour palette" },
-              { icon: <Repeat      className="h-3 w-3" />, label: "Loop · Boomerang" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Palette     className="h-3.5 w-3.5" />, label: "256-colour palette" },
+              { icon: <Repeat      className="h-3.5 w-3.5" />, label: "Loop · Boomerang" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-yellow-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -376,29 +379,56 @@ export function GifGenerator() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-yellow-400 bg-yellow-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-yellow-500/15 text-yellow-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-yellow-400/70 shadow-[0_0_60px_-10px_rgba(234,179,8,0.7)]" : "border-white/10 hover:border-yellow-400/40 hover:shadow-[0_0_60px_-16px_rgba(234,179,8,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-yellow-400/60 bg-yellow-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-500/15 blur-3xl" aria-hidden />
+                {/* Looping GIF badge motif */}
+                <div className="relative flex h-20 w-28 items-center justify-center rounded-3xl border border-yellow-400/40 bg-gradient-to-br from-yellow-500/25 to-amber-500/10 shadow-[0_0_30px_-8px_rgba(234,179,8,0.8)] transition-transform duration-300 group-hover:-translate-y-1">
+                  <span className="text-2xl font-black tracking-tight text-yellow-100">GIF</span>
+                  <Repeat className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-[#07080f] p-1 text-yellow-300 ring-1 ring-yellow-400/40" />
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · it never leaves your device</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <div className="relative flex flex-wrap justify-center gap-1.5">
+                  {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
+                    <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-white/45">{f}</span>
+                  ))}
+                </div>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
-                <span key={f} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/30">{f}</span>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video file. It stays on your device." },
+                { n: "2", t: "Trim & tune", d: "Mark IN/OUT, pick size, FPS, loop and speed." },
+                { n: "3", t: "Generate", d: "Preview the GIF and download it." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-xs font-bold text-yellow-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
               ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Workspace ── */}
@@ -409,7 +439,7 @@ export function GifGenerator() {
             <div className="space-y-4">
 
               {/* File bar */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-yellow-500/15 text-yellow-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -424,14 +454,14 @@ export function GifGenerator() {
 
               {/* Video player */}
               {videoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   <video ref={videoRef} src={videoUrl} className="w-full max-h-60" onLoadedMetadata={onMeta} />
                 </div>
               )}
 
               {/* Player controls */}
               {videoDims.dur > 0 && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                   {/* Scrubber */}
                   <div className="relative">
                     {/* Track */}
@@ -448,11 +478,11 @@ export function GifGenerator() {
                       onMouseLeave={() => setHoverTime(null)}
                     >
                       {/* Base track */}
-                      <div className="w-full h-1.5 rounded-full bg-white/[0.08]" />
+                      <div className="h-2 w-full rounded-full bg-white/[0.08]" />
 
                       {/* Trim region highlight */}
                       <div
-                        className="absolute h-1.5 rounded-full bg-yellow-500/40"
+                        className="absolute h-2 rounded-full bg-gradient-to-r from-yellow-400/70 to-amber-400/70 shadow-[0_0_12px_rgba(250,204,21,0.6)]"
                         style={{
                           left: `${(opts.trimStart / videoDims.dur) * 100}%`,
                           width: `${((opts.trimEnd - opts.trimStart) / videoDims.dur) * 100}%`,
@@ -467,12 +497,12 @@ export function GifGenerator() {
 
                       {/* Trim start marker */}
                       <div
-                        className="absolute top-0 h-6 w-1 -translate-x-1/2 rounded-full bg-yellow-400"
+                        className="absolute top-0 h-6 w-1.5 -translate-x-1/2 rounded-full bg-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.9)]"
                         style={{ left: `${(opts.trimStart / videoDims.dur) * 100}%` }}
                       />
                       {/* Trim end marker */}
                       <div
-                        className="absolute top-0 h-6 w-1 -translate-x-1/2 rounded-full bg-yellow-400"
+                        className="absolute top-0 h-6 w-1.5 -translate-x-1/2 rounded-full bg-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.9)]"
                         style={{ left: `${(opts.trimEnd / videoDims.dur) * 100}%` }}
                       />
 
@@ -493,7 +523,7 @@ export function GifGenerator() {
                       <SkipBack className="h-4 w-4" />
                     </button>
                     <button onClick={togglePlay}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.08] text-white hover:bg-white/[0.14] transition-colors">
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.6)] transition-transform hover:scale-105">
                       {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>
                     <button onClick={() => { const v = videoRef.current; if(v) v.currentTime = Math.min(videoDims.dur, v.currentTime + 5); }}
@@ -506,17 +536,17 @@ export function GifGenerator() {
                   {/* Trim controls */}
                   <div className="flex items-center gap-2">
                     <button onClick={setTrimStart}
-                      className="flex items-center gap-1.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/20 transition-all">
+                      className="flex items-center gap-1.5 rounded-full border border-yellow-400/40 bg-yellow-500/15 px-4 py-2 text-xs font-semibold text-yellow-100 transition-all hover:bg-yellow-500/25">
                       Set IN <span className="font-mono text-yellow-400">{fmtSec(opts.trimStart)}</span>
                     </button>
                     <div className="flex-1 text-center">
-                      <span className="text-xs text-white/30">Clip: </span>
-                      <span className="font-mono text-xs font-bold text-yellow-400">
+                      <span className="text-xs text-white/45">Clip </span>
+                      <span className="rounded-full bg-yellow-500/15 px-2.5 py-0.5 font-mono text-xs font-bold text-yellow-200">
                         {fmtSec(opts.trimEnd - opts.trimStart)}
                       </span>
                     </div>
                     <button onClick={setTrimEnd}
-                      className="flex items-center gap-1.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/20 transition-all">
+                      className="flex items-center gap-1.5 rounded-full border border-yellow-400/40 bg-yellow-500/15 px-4 py-2 text-xs font-semibold text-yellow-100 transition-all hover:bg-yellow-500/25">
                       Set OUT <span className="font-mono text-yellow-400">{fmtSec(opts.trimEnd)}</span>
                     </button>
                   </div>
@@ -530,7 +560,7 @@ export function GifGenerator() {
                       </div>
                       <input type="range" min={0} max={videoDims.dur} step={0.1} value={opts.trimStart}
                         onChange={e => setOpt("trimStart", Math.min(+e.target.value, opts.trimEnd - 0.5))}
-                        className="w-full accent-yellow-500" />
+                        className="w-full accent-yellow-400" />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1">
@@ -539,7 +569,7 @@ export function GifGenerator() {
                       </div>
                       <input type="range" min={0} max={videoDims.dur} step={0.1} value={opts.trimEnd}
                         onChange={e => setOpt("trimEnd", Math.max(+e.target.value, opts.trimStart + 0.5))}
-                        className="w-full accent-yellow-500" />
+                        className="w-full accent-yellow-400" />
                     </div>
                   </div>
                 </div>
@@ -547,23 +577,23 @@ export function GifGenerator() {
 
               {/* Progress */}
               {stage === "processing" && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-yellow-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/[0.06] relative">
-                    <div className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 transition-all duration-300"
+                    <div className="h-full rounded-full bg-gradient-to-r from-yellow-300 to-amber-400 shadow-[0_0_12px_rgba(250,204,21,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/10 to-transparent animate-pulse" />
                   </div>
-                  <p className="text-xs text-white/30">{progress}% — 2-pass palette render for best colour quality</p>
+                  <p className="text-xs text-white/45">{progress}% — 2-pass palette render for best colour quality</p>
                 </div>
               )}
 
               {/* Error */}
               {stage === "error" && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+                <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
                   <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
                   <div>
                     <p className="font-semibold text-red-300">Generation failed</p>
@@ -575,11 +605,11 @@ export function GifGenerator() {
               {/* Done */}
               {stage === "done" && outputUrl && (
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-yellow-500/20 bg-black">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
+                  <div className="overflow-hidden rounded-3xl border border-yellow-400/30 bg-black shadow-[0_0_50px_-20px_rgba(234,179,8,0.8)]">
+                    <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-yellow-400" />
-                        <span className="text-xs font-semibold text-yellow-300">GIF Preview</span>
+                        <CheckCircle className="h-4 w-4 text-yellow-300" />
+                        <span className="text-xs font-semibold text-white">Your GIF is ready</span>
                       </div>
                       <span className="text-xs text-white/40">{fmtBytes(outputSize)}</span>
                     </div>
@@ -588,11 +618,11 @@ export function GifGenerator() {
                   </div>
                   <div className="flex gap-3">
                     <button onClick={download}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-600 to-amber-600 py-4 text-sm font-bold text-white transition hover:from-yellow-500 hover:to-amber-500 active:scale-[0.98]">
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                       <Download className="h-4 w-4" /> Download GIF · {fmtBytes(outputSize)}
                     </button>
                     <button onClick={() => setStage("ready")}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white/50 hover:text-white transition-colors">
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white text-white/60" title="Make another">
                       <RefreshCw className="h-4 w-4" />
                     </button>
                   </div>
@@ -606,73 +636,73 @@ export function GifGenerator() {
               {/* Estimated output */}
               {videoDims.dur > 0 && (
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-center">
-                    <p className="text-sm font-bold text-yellow-400">{fmtSec(clipDur)}</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Clip length</p>
+                  <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-3 py-4 text-center">
+                    <p className="text-lg font-extrabold text-yellow-200">{fmtSec(clipDur)}</p>
+                    <p className="mt-0.5 text-[10px] text-white/45">Clip length</p>
                   </div>
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 text-center">
-                    <p className="text-sm font-bold text-white">{Math.round(clipDur * opts.fps)}</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Frames</p>
+                  <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-3 py-4 text-center">
+                    <p className="text-lg font-extrabold text-white">{Math.round(clipDur * opts.fps)}</p>
+                    <p className="mt-0.5 text-[10px] text-white/45">Frames</p>
                   </div>
-                  <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-3 py-3 text-center">
-                    <p className="text-sm font-bold text-yellow-400">~{fmtBytes(estSize)}</p>
-                    <p className="text-[10px] text-white/30 mt-0.5">Est. size</p>
+                  <div className="rounded-3xl border border-yellow-400/30 bg-yellow-500/[0.08] px-3 py-4 text-center shadow-[0_0_30px_-14px_rgba(234,179,8,0.9)]">
+                    <p className="text-lg font-extrabold text-yellow-200">~{fmtBytes(estSize)}</p>
+                    <p className="mt-0.5 text-[10px] text-white/45">Est. size</p>
                   </div>
                 </div>
               )}
 
               {/* Size presets */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Output Size</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Output Size</p>
                 <div className="grid grid-cols-5 gap-1.5 mb-4">
                   {SIZE_PRESETS.map(p => (
                     <button key={p.label} onClick={() => { setOpt("width", p.w); setOpt("height", p.h); }}
-                      className={`rounded-xl border py-2 text-[10px] font-semibold transition-all
+                      className={`rounded-full border py-2 text-[10px] font-semibold transition-all
                         ${opts.width === p.w && opts.height === p.h
-                          ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300"
-                          : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                          ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                       {p.label}
                     </button>
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="mb-1 text-[10px] text-white/30">Width (px, 0=auto)</p>
+                    <p className="mb-1 text-[10px] text-white/45">Width (px, 0=auto)</p>
                     <input type="number" min={0} max={1920} step={10} value={opts.width}
                       onChange={e => setOpt("width", +e.target.value)}
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500/50" />
+                      className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-white focus:border-yellow-400/60 focus:outline-none" />
                   </div>
                   <div>
-                    <p className="mb-1 text-[10px] text-white/30">Height (px, 0=auto)</p>
+                    <p className="mb-1 text-[10px] text-white/45">Height (px, 0=auto)</p>
                     <input type="number" min={0} max={1920} step={10} value={opts.height}
                       onChange={e => setOpt("height", +e.target.value)}
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500/50" />
+                      className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-white focus:border-yellow-400/60 focus:outline-none" />
                   </div>
                 </div>
               </div>
 
               {/* FPS */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Frame Rate</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Frame Rate</p>
                 <div className="grid grid-cols-5 gap-1.5">
                   {[5, 10, 15, 20, 24].map(f => (
                     <button key={f} onClick={() => setOpt("fps", f)}
-                      className={`rounded-xl border py-2 text-xs font-bold transition-all
-                        ${opts.fps === f ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                      className={`rounded-full border py-2 text-xs font-bold transition-all
+                        ${opts.fps === f ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                       {f}
                     </button>
                   ))}
                 </div>
-                <div className="mt-2 flex justify-between text-[10px] text-white/20">
+                <div className="mt-2 flex justify-between text-[10px] text-white/35">
                   <span>Smaller · smoother playback</span><span>Larger file</span>
                 </div>
               </div>
 
               {/* Loop + Speed */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                 {/* Loop */}
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Loop</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Loop</p>
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
                       { label: "∞", value: 0 },
@@ -681,8 +711,8 @@ export function GifGenerator() {
                       { label: "5×", value: 5 },
                     ].map(l => (
                       <button key={l.value} onClick={() => setOpt("loop", l.value)}
-                        className={`rounded-xl border py-2 text-sm font-bold transition-all
-                          ${opts.loop === l.value ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                        className={`rounded-full border py-2 text-sm font-bold transition-all
+                          ${opts.loop === l.value ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {l.label}
                       </button>
                     ))}
@@ -691,12 +721,12 @@ export function GifGenerator() {
 
                 {/* Speed */}
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Speed</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Speed</p>
                   <div className="grid grid-cols-5 gap-1.5">
                     {[0.25, 0.5, 1, 1.5, 2].map(s => (
                       <button key={s} onClick={() => setOpt("speed", s)}
-                        className={`rounded-xl border py-2 text-[10px] font-bold transition-all
-                          ${opts.speed === s ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                        className={`rounded-full border py-2 text-[10px] font-bold transition-all
+                          ${opts.speed === s ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {s}×
                       </button>
                     ))}
@@ -706,14 +736,14 @@ export function GifGenerator() {
                 {/* Boomerang / Reverse */}
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setOpt("boomerang", !opts.boomerang)}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all
-                      ${opts.boomerang ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/50 hover:border-white/10"}`}>
+                    className={`flex items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-xs font-semibold transition-all
+                      ${opts.boomerang ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                     <Repeat className="h-3.5 w-3.5 shrink-0" />
                     Boomerang
                   </button>
                   <button onClick={() => setOpt("reverse", !opts.reverse)}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all
-                      ${opts.reverse ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/50 hover:border-white/10"}`}>
+                    className={`flex items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-xs font-semibold transition-all
+                      ${opts.reverse ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                     <SkipBack className="h-3.5 w-3.5 shrink-0" />
                     Reverse
                   </button>
@@ -721,9 +751,9 @@ export function GifGenerator() {
               </div>
 
               {/* Advanced (dither, colors) */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                 <button onClick={() => setShowAdvanced(a => !a)}
-                  className="flex w-full items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                  className="flex w-full items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                   <Settings2 className="h-3.5 w-3.5" />
                   Advanced (colour quality)
                   <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
@@ -737,8 +767,8 @@ export function GifGenerator() {
                       <div className="grid grid-cols-3 gap-2">
                         {([64, 128, 256] as const).map(c => (
                           <button key={c} onClick={() => setOpt("colors", c)}
-                            className={`rounded-xl border py-2 text-xs font-bold transition-all
-                              ${opts.colors === c ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                            className={`rounded-full border py-2 text-xs font-bold transition-all
+                              ${opts.colors === c ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                             {c} colours
                           </button>
                         ))}
@@ -755,10 +785,10 @@ export function GifGenerator() {
                           { id: "floyd_steinberg", label: "F-S",     desc: "Best" },
                         ] as const).map(d => (
                           <button key={d.id} onClick={() => setOpt("dither", d.id)}
-                            className={`rounded-xl border px-2 py-2.5 text-center transition-all
-                              ${opts.dither === d.id ? "border-yellow-500/50 bg-yellow-500/10" : "border-white/[0.06] hover:border-white/10"}`}>
-                            <p className={`text-xs font-bold ${opts.dither === d.id ? "text-yellow-300" : "text-white/50"}`}>{d.label}</p>
-                            <p className="text-[9px] text-white/25 mt-0.5">{d.desc}</p>
+                            className={`rounded-2xl border px-2 py-2.5 text-center transition-all
+                              ${opts.dither === d.id ? "border-yellow-400/50 bg-yellow-500/15 text-yellow-100 shadow-[0_0_18px_-8px_rgba(250,204,21,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
+                            <p className={`text-xs font-bold ${opts.dither === d.id ? "text-yellow-100" : "text-white/70"}`}>{d.label}</p>
+                            <p className="mt-0.5 text-[10px] text-white/40">{d.desc}</p>
                           </button>
                         ))}
                       </div>
@@ -771,11 +801,11 @@ export function GifGenerator() {
               {(stage === "ready" || stage === "error") && (
                 <button onClick={generate}
                   disabled={opts.trimEnd <= opts.trimStart || opts.trimEnd - opts.trimStart < 0.3}
-                  className="w-full rounded-2xl bg-gradient-to-r from-yellow-600 to-amber-600 py-4 text-sm font-bold text-white transition hover:from-yellow-500 hover:to-amber-500 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold disabled:opacity-40">
                   <Film className="h-4 w-4" />
                   Generate GIF
                   {estSize > 0 && (
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
+                    <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px] font-bold">
                       ~{fmtBytes(estSize)}
                     </span>
                   )}
@@ -792,18 +822,18 @@ export function GifGenerator() {
             { icon: <Palette className="h-5 w-5 text-amber-400"  />, title: "2-pass palette engine",   body: "We generate an optimised colour palette from your exact clip before rendering — far better than single-pass." },
             { icon: <Repeat  className="h-5 w-5 text-orange-400" />, title: "Boomerang mode",          body: "Plays forward then backward in a seamless loop — perfect for reaction GIFs and social content." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">{c.icon}</div>
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">{c.icon}</div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Tip:</span> GIF uses an indexed 256-colour palette, so bright or highly-varied footage can look grainy. For best results, use <span className="text-blue-300">Floyd-Steinberg dithering</span> with 256 colours. Keep clips short — every extra second adds significant file size.
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-yellow-400/20 bg-yellow-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-yellow-300" />
+          <p className="text-xs leading-relaxed text-yellow-100/70">
+            <span className="font-semibold text-yellow-200">Tip:</span> GIF uses an indexed 256-colour palette, so bright or highly-varied footage can look grainy. For best results, use <span className="text-yellow-200">Floyd-Steinberg dithering</span> with 256 colours. Keep clips short — every extra second adds significant file size.
           </p>
         </div>
       </div>
