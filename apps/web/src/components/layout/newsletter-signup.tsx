@@ -76,7 +76,7 @@ export function NewsletterSignup() {
           autoComplete="email"
           aria-invalid={status === "error"}
           aria-describedby={status === "error" ? "newsletter-error" : undefined}
-          className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white placeholder:text-white/35 outline-none"
+          className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white placeholder:text-white/35 border-0 shadow-none outline-none ring-0 focus:border-0 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
         />
         <button
           type="submit"
