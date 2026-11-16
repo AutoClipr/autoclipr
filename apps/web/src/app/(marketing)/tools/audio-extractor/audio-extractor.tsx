@@ -255,35 +255,38 @@ export function AudioExtractor() {
   const compressionPct = outputSize > 0 && file ? Math.round((1 - outputSize / file.size) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(6,182,212,0.2), transparent 70%), radial-gradient(30% 40% at 15% 10%, rgba(20,184,166,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/20">
-              <Music className="h-7 w-7 text-cyan-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Audio Extractor</h1>
-                <span className="rounded-full bg-cyan-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Extract audio from any video or convert between audio formats. MP3, AAC, WAV, FLAC, OGG, Opus, M4A and more.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/30 to-teal-500/15 shadow-[0_0_40px_-8px_rgba(6,182,212,0.7)]">
+            <Music className="h-8 w-8 text-cyan-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Audio{" "}
+            <span className="bg-gradient-to-r from-cyan-200 via-teal-200 to-emerald-300 bg-clip-text text-transparent">Extractor</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Pull the soundtrack out of any video, or convert between audio formats. MP3, AAC, WAV, FLAC, OGG, Opus, M4A.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Browser-side" },
-              { icon: <FileAudio   className="h-3 w-3" />, label: "8 Audio Formats" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Trim · Fade · Normalize" },
+              { icon: <FileAudio   className="h-3.5 w-3.5" />, label: "8 Audio Formats" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-cyan-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -291,29 +294,57 @@ export function AudioExtractor() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-cyan-400 bg-cyan-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-cyan-400/70 shadow-[0_0_60px_-10px_rgba(6,182,212,0.7)]" : "border-white/10 hover:border-cyan-400/40 hover:shadow-[0_0_60px_-16px_rgba(6,182,212,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-cyan-400/60 bg-cyan-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/15 blur-3xl" aria-hidden />
+                {/* Waveform motif */}
+                <div className="relative flex h-20 items-center gap-1 rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/20 to-teal-500/10 px-5 shadow-[0_0_30px_-8px_rgba(6,182,212,0.8)] transition-transform duration-300 group-hover:-translate-y-1" aria-hidden>
+                  {[10, 22, 34, 18, 40, 28, 14, 36, 24, 12, 30, 20].map((h, i) => (
+                    <span key={i} className="w-1 rounded-full bg-gradient-to-t from-cyan-400 to-teal-200" style={{ height: h }} />
+                  ))}
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video or audio here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · it never leaves your device</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <div className="relative flex flex-wrap justify-center gap-1.5">
+                  {["MP4", "MOV", "AVI", "MKV", "WebM", "FLV", "TS", "MP3", "WAV", "FLAC"].map(f => (
+                    <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-white/45">{f}</span>
+                  ))}
+                </div>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video or audio here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, MP3, WAV, FLAC, OGG…</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {["MP4", "MOV", "AVI", "MKV", "WebM", "FLV", "TS", "MP3", "WAV", "FLAC"].map(f => (
-                <span key={f} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/30">{f}</span>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video or audio file. It stays on your device." },
+                { n: "2", t: "Pick a format", d: "MP3, WAV, FLAC and more, with trim and fades." },
+                { n: "3", t: "Extract", d: "Listen to the result, then download it." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-xs font-bold text-cyan-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
               ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Workspace ── */}
@@ -324,7 +355,7 @@ export function AudioExtractor() {
             <div className="space-y-4">
 
               {/* File info */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -339,7 +370,7 @@ export function AudioExtractor() {
 
               {/* Media preview */}
               {videoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   <video
                     src={videoUrl} controls
                     className="w-full max-h-56"
@@ -353,22 +384,22 @@ export function AudioExtractor() {
 
               {/* Progress */}
               {stage === "processing" && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 transition-all duration-300"
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-teal-300 shadow-[0_0_12px_rgba(34,211,238,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                   </div>
-                  <p className="text-xs text-white/30">{progress}% complete</p>
+                  <p className="text-xs text-white/45">{progress}% complete</p>
                 </div>
               )}
 
               {/* Error */}
               {stage === "error" && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+                <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
                   <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
                   <div>
                     <p className="font-semibold text-red-300">Extraction failed</p>
@@ -381,11 +412,11 @@ export function AudioExtractor() {
               {stage === "done" && outputUrl && (
                 <div className="space-y-4">
                   {/* Audio player */}
-                  <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5 space-y-4">
+                  <div className="space-y-4 rounded-3xl border border-cyan-400/30 bg-cyan-500/[0.07] p-5 shadow-[0_0_50px_-20px_rgba(6,182,212,0.8)]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Music className="h-4 w-4 text-cyan-400" />
-                        <span className="text-sm font-semibold text-cyan-300">Extracted Audio</span>
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/20"><Music className="h-4 w-4 text-cyan-200" /></span>
+                        <span className="text-sm font-bold text-white">Your audio is ready</span>
                       </div>
                       <span className="text-xs text-white/40">{fmtBytes(outputSize)} · {opts.format.toUpperCase()}</span>
                     </div>
@@ -394,18 +425,18 @@ export function AudioExtractor() {
 
                   {/* Stats row */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-center">
-                      <p className="text-lg font-bold text-white">{fmtBytes(outputSize)}</p>
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-4 text-center">
+                      <p className="text-xl font-extrabold text-white">{fmtBytes(outputSize)}</p>
                       <p className="text-xs text-white/40">Output size</p>
                     </div>
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-center">
-                      <p className={`text-lg font-bold ${compressionPct > 0 ? "text-emerald-400" : "text-white"}`}>
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-4 text-center">
+                      <p className={`text-xl font-extrabold ${compressionPct > 0 ? "text-emerald-400" : "text-white"}`}>
                         {compressionPct > 0 ? `-${compressionPct}%` : `+${Math.abs(compressionPct)}%`}
                       </p>
                       <p className="text-xs text-white/40">Size change</p>
                     </div>
-                    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-center">
-                      <p className="text-lg font-bold text-white">{opts.format.toUpperCase()}</p>
+                    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-4 text-center">
+                      <p className="text-xl font-extrabold text-white">{opts.format.toUpperCase()}</p>
                       <p className="text-xs text-white/40">Format</p>
                     </div>
                   </div>
@@ -413,11 +444,11 @@ export function AudioExtractor() {
                   {/* Actions */}
                   <div className="flex gap-3">
                     <button onClick={download}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 py-4 text-sm font-bold text-white transition hover:from-cyan-500 hover:to-teal-500 active:scale-[0.98]">
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                       <Download className="h-4 w-4" /> Download {opts.format.toUpperCase()}
                     </button>
                     <button onClick={() => setStage("ready")}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white text-white/60" title="Extract again">
                       <RefreshCw className="h-4 w-4" />
                     </button>
                   </div>
@@ -429,43 +460,43 @@ export function AudioExtractor() {
             <div className="space-y-4">
 
               {/* Output format */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Output Format</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Output Format</p>
                 <div className="grid grid-cols-4 gap-2">
                   {FORMATS.map(f => (
                     <button key={f.ext} onClick={() => setOpt("format", f.ext)}
-                      className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all
+                      className={`flex flex-col items-center gap-1 rounded-2xl border py-3 transition-all
                         ${opts.format === f.ext
-                          ? "border-cyan-500/50 bg-cyan-500/10"
-                          : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"}`}>
-                      <span className={`text-xs font-bold ${opts.format === f.ext ? "text-cyan-300" : "text-white/60"}`}>
+                          ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_-8px_rgba(34,211,238,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
+                      <span className={`text-xs font-bold ${opts.format === f.ext ? "text-cyan-100" : "text-white/75"}`}>
                         {f.label}
                       </span>
-                      <span className={`text-[9px] ${f.lossy ? "text-amber-400/60" : "text-emerald-400/60"}`}>
+                      <span className={`text-[10px] ${f.lossy ? "text-amber-300/70" : "text-emerald-300/70"}`}>
                         {f.lossy ? "lossy" : "lossless"}
                       </span>
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-xs text-white/30">{selectedFmt.description}</p>
+                <p className="mt-3 text-xs leading-relaxed text-white/45">{selectedFmt.description}</p>
               </div>
 
               {/* Quality / Bitrate */}
               {!isLossless && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Bitrate</p>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Bitrate</p>
                   <div className="grid grid-cols-3 gap-2">
                     {BITRATES.map(b => (
                       <button key={b} onClick={() => setOpt("bitrate", b)}
-                        className={`rounded-xl border py-2 text-xs font-semibold transition-all
+                        className={`rounded-full border py-2 text-xs font-semibold transition-all
                           ${opts.bitrate === b
-                            ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-300"
-                            : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                            ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_-8px_rgba(34,211,238,0.9)]"
+                            : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {b}
                       </button>
                     ))}
                   </div>
-                  <div className="mt-2 flex justify-between text-[10px] text-white/20">
+                  <div className="mt-2 flex justify-between text-[10px] text-white/35">
                     <span>Best quality</span>
                     <span>Smallest size</span>
                   </div>
@@ -473,16 +504,16 @@ export function AudioExtractor() {
               )}
 
               {/* Channels */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Channels</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Channels</p>
                 <div className="grid grid-cols-2 gap-2">
                   {(["stereo", "mono"] as const).map(c => (
                     <button key={c} onClick={() => setOpt("channels", c)}
-                      className={`rounded-xl border py-2.5 text-sm font-semibold capitalize transition-all
+                      className={`rounded-full border py-2.5 text-sm font-semibold capitalize transition-all
                         ${opts.channels === c
-                          ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-300"
-                          : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
-                      {c === "stereo" ? "🎧 Stereo" : "🎤 Mono"}
+                          ? "border-cyan-400/50 bg-cyan-500/15 text-cyan-100 shadow-[0_0_18px_-8px_rgba(34,211,238,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
+                      {c === "stereo" ? "Stereo" : "Mono"}
                     </button>
                   ))}
                 </div>
@@ -490,11 +521,11 @@ export function AudioExtractor() {
 
               {/* Trim */}
               {duration > 0 && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-3 p-5">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Trim Audio</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Trim Audio</p>
                     <button onClick={() => setOpt("useTrim", !opts.useTrim)}
-                      className={`relative h-5 w-9 rounded-full transition-colors ${opts.useTrim ? "bg-cyan-500" : "bg-white/10"}`}>
+                      className={`relative h-5 w-9 rounded-full transition-colors ${opts.useTrim ? "bg-cyan-400 shadow-[0_0_14px_rgba(34,211,238,0.7)]" : "bg-white/10"}`}>
                       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${opts.useTrim ? "translate-x-4" : "translate-x-0.5"}`} />
                     </button>
                   </div>
@@ -507,7 +538,7 @@ export function AudioExtractor() {
                         </div>
                         <input type="range" min={0} max={Math.floor(duration)} step={1} value={opts.trimStart}
                           onChange={e => setOpt("trimStart", +e.target.value)}
-                          className="w-full accent-cyan-500" />
+                          className="w-full accent-cyan-400" />
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-1">
@@ -516,7 +547,7 @@ export function AudioExtractor() {
                         </div>
                         <input type="range" min={0} max={Math.floor(duration)} step={1} value={opts.trimEnd}
                           onChange={e => setOpt("trimEnd", +e.target.value)}
-                          className="w-full accent-cyan-500" />
+                          className="w-full accent-cyan-400" />
                       </div>
                       <p className="text-xs text-white/30">Duration: {fmtTime(opts.trimEnd - opts.trimStart)}</p>
                     </div>
@@ -525,9 +556,9 @@ export function AudioExtractor() {
               )}
 
               {/* Advanced toggle */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                 <button onClick={() => setShowAdvanced(a => !a)}
-                  className="flex w-full items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                  className="flex w-full items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                   <Settings2 className="h-3.5 w-3.5" />
                   Advanced options
                   <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
@@ -540,14 +571,14 @@ export function AudioExtractor() {
                       <p className="mb-2 text-xs text-white/40">Sample Rate</p>
                       <div className="relative">
                         <select value={opts.sampleRate} onChange={e => setOpt("sampleRate", e.target.value)}
-                          className="w-full appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-xs text-white focus:outline-none">
+                          className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-black/30 px-4 text-xs text-white focus:border-cyan-400/60 focus:outline-none">
                           <option value="48000" className="bg-[#0d0d1a]">48,000 Hz (HD audio)</option>
                           <option value="44100" className="bg-[#0d0d1a]">44,100 Hz (CD quality)</option>
                           <option value="22050" className="bg-[#0d0d1a]">22,050 Hz</option>
                           <option value="16000" className="bg-[#0d0d1a]">16,000 Hz (speech)</option>
                           <option value="8000"  className="bg-[#0d0d1a]">8,000 Hz (phone)</option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-3 w-3 text-white/30" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-3 w-3 text-white/40" />
                       </div>
                     </div>
 
@@ -558,7 +589,7 @@ export function AudioExtractor() {
                         <p className="text-[10px] text-white/30">Loudness normalize to -16 LUFS</p>
                       </div>
                       <button onClick={() => setOpt("normalize", !opts.normalize)}
-                        className={`relative h-5 w-9 rounded-full transition-colors ${opts.normalize ? "bg-cyan-500" : "bg-white/10"}`}>
+                        className={`relative h-5 w-9 rounded-full transition-colors ${opts.normalize ? "bg-cyan-400 shadow-[0_0_14px_rgba(34,211,238,0.7)]" : "bg-white/10"}`}>
                         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${opts.normalize ? "translate-x-4" : "translate-x-0.5"}`} />
                       </button>
                     </div>
@@ -571,7 +602,7 @@ export function AudioExtractor() {
                       </div>
                       <input type="range" min={0} max={5} step={0.5} value={opts.fadeIn}
                         onChange={e => setOpt("fadeIn", +e.target.value)}
-                        className="w-full accent-cyan-500" />
+                        className="w-full accent-cyan-400" />
                     </div>
 
                     {/* Fade out */}
@@ -582,7 +613,7 @@ export function AudioExtractor() {
                       </div>
                       <input type="range" min={0} max={5} step={0.5} value={opts.fadeOut}
                         onChange={e => setOpt("fadeOut", +e.target.value)}
-                        className="w-full accent-cyan-500" />
+                        className="w-full accent-cyan-400" />
                     </div>
                   </div>
                 )}
@@ -591,7 +622,7 @@ export function AudioExtractor() {
               {/* Extract button */}
               {(stage === "ready" || stage === "error") && (
                 <button onClick={extract}
-                  className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 py-4 text-sm font-bold text-white transition hover:from-cyan-500 hover:to-teal-500 active:scale-[0.98] flex items-center justify-center gap-2">
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                   <Music className="h-4 w-4" />
                   Extract as {opts.format.toUpperCase()}
                 </button>
@@ -608,12 +639,12 @@ export function AudioExtractor() {
             { fmt: "AAC",  desc: "Better than MP3 at same bitrate, iOS default",  tag: "lossy",    color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20"   },
             { fmt: "FLAC", desc: "Lossless compression — smaller than WAV",       tag: "lossless", color: "text-purple-400",  bg: "bg-purple-500/10",  border: "border-purple-500/20" },
           ].map(p => (
-            <div key={p.fmt} className={`rounded-2xl border ${p.border} ${p.bg} p-4`}>
+            <div key={p.fmt} className={`rounded-3xl border ${p.border} ${p.bg} p-5 transition-transform hover:-translate-y-0.5`}>
               <div className="flex items-center justify-between mb-1">
-                <p className={`text-sm font-bold ${p.color}`}>{p.fmt}</p>
+                <p className={`text-lg font-extrabold ${p.color}`}>{p.fmt}</p>
                 <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${p.tag === "lossless" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>{p.tag}</span>
               </div>
-              <p className="text-xs text-white/40 leading-snug">{p.desc}</p>
+              <p className="text-xs leading-relaxed text-white/55">{p.desc}</p>
             </div>
           ))}
         </div>
@@ -625,21 +656,21 @@ export function AudioExtractor() {
             { icon: <Scissors  className="h-5 w-5 text-teal-400"    />, title: "Trim & Fade",       body: "Set in/out points before extraction. Add fade-in / fade-out smoothly." },
             { icon: <AudioLines  className="h-5 w-5 text-emerald-400" />, title: "Lossless Support",  body: "Extract as WAV or FLAC for perfect quality — ideal for music production and editing." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                 {c.icon}
               </div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
         {/* Notice */}
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">100% in-browser processing.</span>{" "}
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+          <p className="text-xs leading-relaxed text-cyan-100/70">
+            <span className="font-semibold text-cyan-200">100% in-browser processing.</span>{" "}
             Your files never leave your device. This tool works with virtually any video or audio format — MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP, MP3, WAV, FLAC, OGG, AIFF and more.
           </p>
         </div>
