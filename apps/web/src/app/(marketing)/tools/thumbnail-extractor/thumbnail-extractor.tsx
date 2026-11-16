@@ -360,35 +360,38 @@ export function ThumbnailExtractor() {
   const activeFrames = selectedIds.size > 0 ? frames.filter(f => selectedIds.has(f.id)) : frames;
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-7xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(236,72,153,0.2), transparent 70%), radial-gradient(30% 40% at 15% 10%, rgba(244,63,94,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-7xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-pink-500/20">
-              <ImageIcon className="h-7 w-7 text-pink-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Thumbnail Extractor</h1>
-                <span className="rounded-full bg-pink-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pink-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Grab any frame from any video as PNG, JPG or WebP. Scrub, snap, batch-scan — instant download.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-pink-400/30 bg-gradient-to-br from-pink-500/30 to-rose-500/15 shadow-[0_0_40px_-8px_rgba(236,72,153,0.7)]">
+            <ImageIcon className="h-8 w-8 text-pink-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Thumbnail{" "}
+            <span className="bg-gradient-to-r from-pink-300 via-rose-300 to-orange-200 bg-clip-text text-transparent">Extractor</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Grab any frame from any video as PNG, JPG or WebP. Scrub, snap or batch-scan — then download.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Camera      className="h-3 w-3" />, label: "PNG · JPG · WebP" },
-              { icon: <Grid3x3    className="h-3 w-3" />, label: "Batch Extract" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Camera      className="h-3.5 w-3.5" />, label: "PNG · JPG · WebP" },
+              { icon: <Grid3x3     className="h-3.5 w-3.5" />, label: "Batch Extract" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-pink-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -396,43 +399,73 @@ export function ThumbnailExtractor() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-pink-400 bg-pink-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            {convertMsg ? (
-              <>
-                <Loader2 className="h-10 w-10 animate-spin text-pink-400" />
-                <p className="text-sm text-white/60">{convertMsg}</p>
-              </>
-            ) : (
-              <>
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-pink-500/15 text-pink-400">
-                  <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-pink-400/70 shadow-[0_0_60px_-10px_rgba(236,72,153,0.7)]" : "border-white/10 hover:border-pink-400/40 hover:shadow-[0_0_60px_-16px_rgba(236,72,153,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-pink-400/60 bg-pink-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/15 blur-3xl" aria-hidden />
+                {convertMsg ? (
+                  <>
+                    <Loader2 className="relative h-10 w-10 animate-spin text-pink-300" />
+                    <p className="relative text-sm text-white/60">{convertMsg}</p>
+                  </>
+                ) : (
+                  <>
+                    {/* Film-strip motif */}
+                    <div className="relative flex items-center gap-1.5 transition-transform duration-300 group-hover:-translate-y-1">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className={`flex h-14 w-20 items-center justify-center rounded-xl border ${i === 1 ? "border-pink-400/60 bg-pink-500/20 shadow-[0_0_24px_-6px_rgba(236,72,153,0.8)]" : "border-white/10 bg-white/[0.04]"}`}>
+                          {i === 1 ? <Camera className="h-6 w-6 text-pink-200" /> : <ImageIcon className="h-5 w-5 text-white/25" />}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="relative text-center">
+                      <p className="text-xl font-bold text-white">Drop your video here</p>
+                      <p className="mt-1.5 text-sm text-white/45">or click to browse · it never leaves your device</p>
+                    </div>
+                    <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                      <Upload className="h-4 w-4" /> Choose a file
+                    </span>
+                    <div className="relative flex flex-wrap justify-center gap-1.5">
+                      {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
+                        <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-white/45">{f}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              </div>
+            </div>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video file. It stays on your device." },
+                { n: "2", t: "Snap or scan", d: "Capture exact frames, or auto-scan up to 60." },
+                { n: "3", t: "Download", d: "Save one, a selection, or all as PNG, JPG or WebP." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pink-500/20 text-xs font-bold text-pink-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-base font-semibold text-white">Drop your video here</p>
-                  <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {["MP4","MOV","AVI","MKV","WebM","FLV","TS","3GP","WMV","M4V"].map(f => (
-                    <span key={f} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/30">{f}</span>
-                  ))}
-                </div>
-              </>
-            )}
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-          </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* ── Converting overlay ── */}
         {convertMsg && stage !== "idle" && (
-          <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/[0.06] bg-white/[0.02] py-20">
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur py-20">
             <Loader2 className="h-10 w-10 animate-spin text-pink-400" />
             <p className="text-sm text-white/60">{convertMsg}</p>
           </div>
@@ -440,7 +473,7 @@ export function ThumbnailExtractor() {
 
         {/* ── Error ── */}
         {stage === "error" && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4 mb-4">
+          <div className="mb-4 flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
             <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
             <div className="flex-1">
               <p className="font-semibold text-red-300">Could not open video</p>
@@ -455,7 +488,7 @@ export function ThumbnailExtractor() {
           <div className="space-y-4">
 
             {/* File bar */}
-            <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+            <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 text-pink-400">
                 <FileVideo className="h-4 w-4" />
               </div>
@@ -476,14 +509,14 @@ export function ThumbnailExtractor() {
               <div className="space-y-3">
 
                 {/* Video */}
-                <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black group">
+                <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   {videoUrl && (
                     <video ref={videoRef} src={videoUrl} className="w-full" onLoadedMetadata={onMeta} />
                   )}
                   {/* Capture overlay button */}
                   <button
                     onClick={() => { videoRef.current?.pause(); setIsPlaying(false); captureCurrentFrame(); }}
-                    className="absolute right-3 top-3 flex items-center gap-1.5 rounded-xl bg-pink-500 px-3 py-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-pink-400 active:scale-95 shadow-lg"
+                    className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-xs font-semibold text-black opacity-0 shadow-[0_0_24px_-4px_rgba(255,255,255,0.6)] transition-all active:scale-95 group-hover:opacity-100"
                   >
                     <Camera className="h-3.5 w-3.5" /> Snap
                   </button>
@@ -499,7 +532,7 @@ export function ThumbnailExtractor() {
                     className="relative h-2 cursor-pointer overflow-visible rounded-full bg-white/[0.08] group"
                   >
                     {/* Fill */}
-                    <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 transition-none"
+                    <div className="h-full rounded-full bg-gradient-to-r from-pink-400 to-rose-400 shadow-[0_0_10px_rgba(244,114,182,0.8)] transition-none"
                       style={{ width: `${pct}%` }} />
                     {/* Thumb */}
                     <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-4 rounded-full border-2 border-pink-400 bg-white shadow-lg transition-none"
@@ -527,7 +560,7 @@ export function ThumbnailExtractor() {
                     <button onClick={() => stepFrame(-1/30)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/[0.06] hover:text-white transition-colors" title="Previous frame">
                       <SkipBack className="h-4 w-4" />
                     </button>
-                    <button onClick={togglePlay} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.08] text-white hover:bg-white/[0.14] transition-colors">
+                    <button onClick={togglePlay} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.6)] transition-transform hover:scale-105">
                       {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>
                     <button onClick={() => stepFrame(1/30)} className="rounded-lg p-1.5 text-white/40 hover:bg-white/[0.06] hover:text-white transition-colors" title="Next frame">
@@ -540,7 +573,7 @@ export function ThumbnailExtractor() {
                     {/* Snap current frame */}
                     <button
                       onClick={() => { videoRef.current?.pause(); setIsPlaying(false); captureCurrentFrame(); }}
-                      className="flex items-center gap-1.5 rounded-xl bg-pink-500/20 border border-pink-500/30 px-3 py-1.5 text-xs font-bold text-pink-300 hover:bg-pink-500/30 transition-all active:scale-95"
+                      className="flex items-center gap-1.5 rounded-full border border-pink-400/40 bg-pink-500/15 px-4 py-2 text-xs font-semibold text-pink-100 shadow-[0_0_20px_-8px_rgba(236,72,153,0.9)] transition-all hover:bg-pink-500/25 active:scale-95"
                     >
                       <Camera className="h-3.5 w-3.5" /> Capture Frame
                     </button>
@@ -557,15 +590,15 @@ export function ThumbnailExtractor() {
                       onChange={e => setTimestampInput(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && captureAtTimestamp()}
                       placeholder="MM:SS.ms or HH:MM:SS (Enter to capture)"
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2 pl-9 pr-4 text-xs text-white placeholder-white/20 focus:outline-none focus:border-pink-500/50"
+                      className="h-10 w-full rounded-full border border-white/10 bg-black/30 pl-9 pr-4 text-xs text-white placeholder-white/30 focus:border-pink-400/60 focus:outline-none"
                     />
                   </div>
                   <button onClick={jumpToTimestamp}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/50 hover:text-white transition-colors">
+                    className="h-10 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-4 text-xs text-white/65">
                     Jump
                   </button>
                   <button onClick={captureAtTimestamp}
-                    className="rounded-xl border border-pink-500/30 bg-pink-500/10 px-3 py-2 text-xs font-semibold text-pink-300 hover:bg-pink-500/20 transition-colors">
+                    className="h-10 rounded-full border border-pink-400/40 bg-pink-500/15 px-4 text-xs font-semibold text-pink-100 transition-colors hover:bg-pink-500/25">
                     Capture
                   </button>
                 </div>
@@ -575,12 +608,12 @@ export function ThumbnailExtractor() {
               <div className="space-y-4">
 
                 {/* Auto Scan */}
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                   <div className="flex items-center gap-2">
-                    <ScanLine className="h-4 w-4 text-pink-400" />
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-pink-500/15"><ScanLine className="h-4 w-4 text-pink-300" /></span>
                     <p className="text-sm font-semibold text-white">Auto-Scan</p>
                   </div>
-                  <p className="text-xs text-white/40">Evenly extract frames across the full video automatically.</p>
+                  <p className="text-xs leading-relaxed text-white/50">Evenly extract frames across the full video automatically.</p>
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
@@ -589,7 +622,7 @@ export function ThumbnailExtractor() {
                     </div>
                     <input type="range" min={2} max={60} step={1} value={scanCount}
                       onChange={e => setScanCount(+e.target.value)}
-                      className="w-full accent-pink-500" />
+                      className="w-full accent-pink-400" />
                     <div className="flex justify-between text-[10px] text-white/20 mt-1">
                       <span>2 frames</span><span>60 frames</span>
                     </div>
@@ -598,8 +631,8 @@ export function ThumbnailExtractor() {
                   <div className="grid grid-cols-4 gap-1.5">
                     {[6, 12, 24, 48].map(n => (
                       <button key={n} onClick={() => setScanCount(n)}
-                        className={`rounded-xl border py-1.5 text-xs font-semibold transition-all
-                          ${scanCount === n ? "border-pink-500/50 bg-pink-500/10 text-pink-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                        className={`rounded-full border py-1.5 text-xs font-semibold transition-all
+                          ${scanCount === n ? "border-pink-400/50 bg-pink-500/15 text-pink-100 shadow-[0_0_18px_-8px_rgba(236,72,153,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {n}
                       </button>
                     ))}
@@ -607,15 +640,15 @@ export function ThumbnailExtractor() {
 
                   {scanning ? (
                     <div className="space-y-2">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                        <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 transition-all duration-300"
+                      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-full rounded-full bg-gradient-to-r from-pink-400 to-rose-400 shadow-[0_0_12px_rgba(244,114,182,0.8)] transition-all duration-300"
                           style={{ width: `${scanProgress}%` }} />
                       </div>
                       <p className="text-xs text-white/30 text-center">{scanProgress}% — scanning…</p>
                     </div>
                   ) : (
                     <button onClick={autoScan}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 py-3 text-xs font-bold text-white hover:from-pink-500 hover:to-rose-500 transition-all active:scale-[0.98]">
+                      className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                       <Layers className="h-3.5 w-3.5" />
                       Scan {scanCount} Frames
                     </button>
@@ -623,15 +656,15 @@ export function ThumbnailExtractor() {
                 </div>
 
                 {/* Export settings */}
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Export Format</p>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Export Format</p>
                   <div className="grid grid-cols-3 gap-2">
                     {(["png", "jpg", "webp"] as ExportFormat[]).map(f => (
                       <button key={f} onClick={() => setOpt("format", f)}
-                        className={`rounded-xl border py-2.5 text-center transition-all
-                          ${opts.format === f ? "border-pink-500/50 bg-pink-500/10" : "border-white/[0.06] hover:border-white/10"}`}>
-                        <p className={`text-xs font-bold uppercase ${opts.format === f ? "text-pink-300" : "text-white/50"}`}>{f}</p>
-                        <p className="text-[9px] text-white/25 mt-0.5">
+                        className={`rounded-2xl border py-3 text-center transition-all
+                          ${opts.format === f ? "border-pink-400/50 bg-pink-500/15 text-pink-100 shadow-[0_0_18px_-8px_rgba(236,72,153,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
+                        <p className={`text-sm font-bold uppercase ${opts.format === f ? "text-pink-100" : "text-white/70"}`}>{f}</p>
+                        <p className="mt-0.5 text-[10px] text-white/40">
                           {f === "png" ? "Lossless" : f === "jpg" ? "Compressed" : "Best ratio"}
                         </p>
                       </button>
@@ -646,12 +679,12 @@ export function ThumbnailExtractor() {
                       </div>
                       <input type="range" min={10} max={100} step={1} value={Math.round(opts.quality * 100)}
                         onChange={e => setOpt("quality", +e.target.value / 100)}
-                        className="w-full accent-pink-500" />
+                        className="w-full accent-pink-400" />
                     </div>
                   )}
 
                   <button onClick={() => setShowOpts(a => !a)}
-                    className="flex w-full items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                    className="flex w-full items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                     <Settings2 className="h-3.5 w-3.5" />
                     More options
                     <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${showOpts ? "rotate-180" : ""}`} />
@@ -664,8 +697,8 @@ export function ThumbnailExtractor() {
                         <div className="grid grid-cols-5 gap-1.5">
                           {[0, 4096, 1920, 1280, 720].map(d => (
                             <button key={d} onClick={() => setOpt("maxDim", d)}
-                              className={`rounded-xl border py-1.5 text-[10px] font-semibold transition-all
-                                ${opts.maxDim === d ? "border-pink-500/50 bg-pink-500/10 text-pink-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                              className={`rounded-full border py-1.5 text-[10px] font-semibold transition-all
+                                ${opts.maxDim === d ? "border-pink-400/50 bg-pink-500/15 text-pink-100 shadow-[0_0_18px_-8px_rgba(236,72,153,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                               {d === 0 ? "Orig" : `${d}`}
                             </button>
                           ))}
@@ -674,7 +707,7 @@ export function ThumbnailExtractor() {
                       <div>
                         <p className="mb-1 text-xs text-white/40">Filename prefix</p>
                         <input type="text" value={opts.prefix} onChange={e => setOpt("prefix", e.target.value)}
-                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500/50" />
+                          className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-white focus:border-pink-400/60 focus:outline-none" />
                       </div>
                     </div>
                   )}
@@ -684,11 +717,11 @@ export function ThumbnailExtractor() {
 
             {/* ── Frame Gallery ── */}
             {frames.length > 0 && (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
                 {/* Gallery toolbar */}
-                <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
+                <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] px-5 py-3.5">
                   <div className="flex items-center gap-2">
-                    <Camera className="h-4 w-4 text-pink-400" />
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-pink-500/15"><Camera className="h-4 w-4 text-pink-300" /></span>
                     <p className="text-sm font-semibold text-white">{frames.length} frame{frames.length !== 1 ? "s" : ""} captured</p>
                   </div>
                   {frames.length > 0 && (
@@ -700,19 +733,19 @@ export function ThumbnailExtractor() {
                   )}
                   {frames.length > 1 && (
                     <button onClick={selectedIds.size === frames.length ? deselectAll : selectAll}
-                      className="rounded-lg border border-white/[0.08] px-2.5 py-1 text-[10px] text-white/40 hover:text-white/70 transition-colors">
+                      className="rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-3 py-1.5 text-[11px] text-white/60">
                       {selectedIds.size === frames.length ? "Deselect all" : "Select all"}
                     </button>
                   )}
                   {selectedIds.size > 0 && (
                     <button onClick={deleteSelected}
-                      className="flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-[10px] font-semibold text-red-400 hover:bg-red-500/10 transition-colors">
+                      className="flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-[11px] font-semibold text-rose-300 transition-colors hover:bg-rose-500/20">
                       <Trash2 className="h-3 w-3" /> Delete ({selectedIds.size})
                     </button>
                   )}
                   <button
                     onClick={selectedIds.size > 0 ? downloadSelected : downloadAll}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-4 py-2 text-xs font-bold text-white hover:from-pink-500 hover:to-rose-500 transition-all"
+                    className="flex items-center gap-1.5 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] px-4 py-2 text-xs font-semibold"
                   >
                     <Download className="h-3.5 w-3.5" />
                     {selectedIds.size > 0 ? `Download ${selectedIds.size}` : `Download all ${frames.length}`}
@@ -728,8 +761,8 @@ export function ThumbnailExtractor() {
                         {/* Thumbnail */}
                         <div
                           onClick={() => toggleSelect(frame.id)}
-                          className={`relative aspect-video overflow-hidden rounded-xl border-2 cursor-pointer transition-all
-                            ${isSelected ? "border-pink-500 shadow-[0_0_0_3px_rgba(236,72,153,0.3)]" : "border-white/[0.06] hover:border-white/20"}`}
+                          className={`relative aspect-video cursor-pointer overflow-hidden rounded-2xl border-2 transition-all
+                            ${isSelected ? "border-pink-400 shadow-[0_0_24px_-4px_rgba(236,72,153,0.7)]" : "border-white/[0.08] hover:-translate-y-0.5 hover:border-white/25"}`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={frame.dataUrl} alt={`Frame at ${fmtTimestampShort(frame.timestamp)}`}
@@ -744,19 +777,19 @@ export function ThumbnailExtractor() {
                           <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={e => { e.stopPropagation(); setLightboxFrame(frame); }}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition-colors hover:bg-white/30"
                             >
                               <ZoomIn className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={e => { e.stopPropagation(); downloadFrame(frame, i); }}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-500/80 text-white hover:bg-pink-500 transition-colors"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black transition-transform hover:scale-105"
                             >
                               <Download className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={e => { e.stopPropagation(); deleteFrame(frame.id); }}
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/70 text-white hover:bg-red-500 transition-colors"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/80 text-white transition-colors hover:bg-rose-500"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -764,9 +797,9 @@ export function ThumbnailExtractor() {
                         </div>
 
                         {/* Caption */}
-                        <div className="mt-1 px-0.5 flex items-center justify-between">
-                          <span className="font-mono text-[10px] text-white/30">{fmtTimestampShort(frame.timestamp)}</span>
-                          <span className="text-[10px] text-white/20">{frame.width}×{frame.height}</span>
+                        <div className="mt-1.5 flex items-center justify-between px-0.5">
+                          <span className="rounded-md bg-pink-500/15 px-1.5 py-0.5 font-mono text-[10px] text-pink-200/80">{fmtTimestampShort(frame.timestamp)}</span>
+                          <span className="text-[10px] text-white/35">{frame.width}×{frame.height}</span>
                         </div>
                       </div>
                     );
@@ -777,13 +810,13 @@ export function ThumbnailExtractor() {
 
             {/* Empty state when no frames yet */}
             {frames.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/[0.06] py-16 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-500/10">
-                  <Camera className="h-7 w-7 text-pink-400/50" />
+              <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-white/[0.015] py-16 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-pink-400/20 bg-pink-500/10">
+                  <Camera className="h-7 w-7 text-pink-300/70" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white/50">No frames captured yet</p>
-                  <p className="mt-1 text-xs text-white/25">Scrub the video and click Capture Frame, or use Auto-Scan to extract frames automatically.</p>
+                  <p className="text-sm font-semibold text-white/70">No frames captured yet</p>
+                  <p className="mt-1 text-xs text-white/40">Scrub the video and click Capture Frame, or use Auto-Scan to extract frames automatically.</p>
                 </div>
               </div>
             )}
@@ -792,12 +825,12 @@ export function ThumbnailExtractor() {
 
         {/* ── Lightbox ── */}
         {lightboxFrame && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
             onClick={() => setLightboxFrame(null)}>
             <div className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={lightboxFrame.dataUrl} alt="Frame preview"
-                className="w-full rounded-2xl shadow-2xl" />
+                className="w-full rounded-3xl border border-white/10 shadow-2xl" />
               <div className="mt-3 flex items-center justify-between">
                 <p className="font-mono text-sm text-white/60">
                   {fmtTimestampShort(lightboxFrame.timestamp)} · {lightboxFrame.width}×{lightboxFrame.height}
@@ -805,11 +838,11 @@ export function ThumbnailExtractor() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => { downloadFrame(lightboxFrame, frames.indexOf(lightboxFrame)); }}
-                    className="flex items-center gap-1.5 rounded-xl bg-pink-500/20 px-4 py-2 text-xs font-semibold text-pink-300 hover:bg-pink-500/30 transition-colors">
+                    className="flex items-center gap-1.5 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] px-4 py-2 text-xs font-semibold">
                     <Download className="h-3.5 w-3.5" /> Download
                   </button>
                   <button onClick={() => setLightboxFrame(null)}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-4 py-2 text-xs text-white/50 hover:text-white transition-colors">
+                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-4 py-2 text-xs text-white/70">
                     <X className="h-3.5 w-3.5" /> Close
                   </button>
                 </div>
@@ -825,18 +858,18 @@ export function ThumbnailExtractor() {
             { icon: <Grid3x3 className="h-5 w-5 text-rose-400"  />, title: "Auto-Scan mode",           body: "Extract 2–60 evenly-spaced frames across your video in one click. Perfect for storyboards." },
             { icon: <ZoomIn  className="h-5 w-5 text-fuchsia-400"/>, title: "Full-res PNG, JPG, WebP", body: "Frames are captured at full video resolution. Resize, adjust quality, and batch-download all at once." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">{c.icon}</div>
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">{c.icon}</div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Tip:</span> AVI, MKV, FLV, TS and other non-native formats are automatically converted for browser playback using FFmpeg — this takes a moment on first load, but all subsequent frame captures are instant.
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-pink-400/20 bg-pink-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-pink-300" />
+          <p className="text-xs leading-relaxed text-pink-100/70">
+            <span className="font-semibold text-pink-200">Tip:</span> AVI, MKV, FLV, TS and other non-native formats are automatically converted for browser playback using FFmpeg — this takes a moment on first load, but all subsequent frame captures are instant.
           </p>
         </div>
       </div>
