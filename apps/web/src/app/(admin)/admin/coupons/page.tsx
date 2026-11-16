@@ -44,7 +44,7 @@ export default async function CouponsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">Coupons</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Coupons</h1>
         <p className="mt-1 text-sm text-white/40">
           Discount codes for campaigns and partnerships. Percentage coupons are registered with
           the payment provider when created.

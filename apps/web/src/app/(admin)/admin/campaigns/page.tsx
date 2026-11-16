@@ -40,7 +40,7 @@ export default async function CampaignsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">Email campaigns</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Email campaigns</h1>
         <p className="mt-1 text-sm text-white/40">
           The Saturday offer emails free-tier users the currently featured coupon. Preview before
           sending — it reaches real customers.

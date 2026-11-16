@@ -87,7 +87,7 @@ export function EarningsCalculator() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6, ease: EASE }}
-      className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0a0a16] p-8"
+      className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-8"
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-64 -translate-x-1/2 rounded-full bg-emerald-500/[0.06] blur-3xl" />
@@ -215,7 +215,7 @@ export function AffiliateSignupForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-colors focus:border-emerald-500/40 focus:bg-white/[0.06]"
+          className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-colors focus:border-emerald-500/40 focus:bg-white/[0.06]"
         />
       </div>
       <div>
@@ -226,7 +226,7 @@ export function AffiliateSignupForm() {
           value={channel}
           onChange={(e) => setChannel(e.target.value)}
           placeholder="https://youtube.com/@yourchannel"
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-colors focus:border-emerald-500/40 focus:bg-white/[0.06]"
+          className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-colors focus:border-emerald-500/40 focus:bg-white/[0.06]"
         />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -263,7 +263,7 @@ export function CopyLink({ refCode }: { refCode?: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
       <code className="flex-1 truncate text-xs text-white/40">{link}</code>
       <button onClick={copy} className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.05] px-3 py-1.5 text-xs font-semibold text-white/60 transition-all hover:bg-white/[0.1] hover:text-white">
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}

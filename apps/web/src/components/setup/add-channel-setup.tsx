@@ -124,7 +124,7 @@ export function AddChannelSetup({ embedded = false }: { embedded?: boolean }) {
 
       <div className="relative text-center">
         <p className="section-label mx-auto mb-4">YouTube</p>
-        <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
           Add Channels To{" "}
           <span className="bg-gradient-to-r from-red-400 via-rose-400 to-orange-300 bg-clip-text text-transparent">
             Clip From

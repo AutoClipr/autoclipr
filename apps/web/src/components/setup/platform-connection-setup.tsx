@@ -279,7 +279,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
           </Badge>
         )}
         <p className="section-label mx-auto mb-4">Platforms</p>
-        <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
           Connect Your{" "}
           <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
             Platforms

@@ -34,7 +34,7 @@ export default async function SubscriptionsPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Subscription Analytics</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Subscription Analytics</h1>
         <p className="mt-1 text-sm text-white/35">Active subscriptions, churn, and renewal rates</p>
       </div>
 
@@ -45,7 +45,7 @@ export default async function SubscriptionsPage() {
           { icon: TrendingDown,label: "Churn Rate",   value: `${subscriptions.churnRate}%`,      color: "bg-rose-500/10 text-rose-400" },
           { icon: RefreshCw,   label: "Refund Rate",  value: `${subscriptions.refundRate}%`,     color: "bg-amber-500/10 text-amber-400" },
         ].map((k) => (
-          <div key={k.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <div key={k.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${k.color}`}>
               <k.icon className="h-4 w-4" />
             </div>
@@ -55,7 +55,7 @@ export default async function SubscriptionsPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Active by Plan</h3>
         <div className="space-y-3">
           {Object.entries(subscriptions.byPlan).map(([plan, count]) => {
@@ -85,7 +85,7 @@ export default async function SubscriptionsPage() {
           { label: "Renewal Rate",  value: `${subscriptions.renewalRate}%`, note: "Auto-renewals processed.", ok: subscriptions.renewalRate > 90 },
           { label: "Refund Rate",   value: `${subscriptions.refundRate}%`,  note: "Refunds / total paid.",    ok: subscriptions.refundRate < 2 },
         ].map((m) => (
-          <div key={m.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5 text-center">
+          <div key={m.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 text-center">
             <p className={`text-3xl font-bold ${m.ok ? "text-emerald-400" : "text-rose-400"}`}>{m.value}</p>
             <p className="mt-1 text-sm font-semibold text-white/70">{m.label}</p>
             <p className="mt-1 text-xs text-white/25">{m.note}</p>

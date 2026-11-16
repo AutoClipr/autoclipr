@@ -29,15 +29,15 @@ export function RelatedTools({ current, limit = 4 }: Props) {
   const related = ALL_TOOLS.filter((t) => t.slug !== current).slice(0, limit);
 
   return (
-    <section className="mt-16 border-t border-white/[0.06] pt-12">
-      <div className="mb-6 flex items-center justify-between">
+    <section className="mt-16 border-t border-white/[0.06] pt-14">
+      <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">More Free Tools</p>
-          <h2 className="mt-1 text-lg font-bold text-white">You might also need</h2>
+          <p className="section-label-white mb-3">More free tools</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white">You might also need</h2>
         </div>
         <Link
           href="/tools"
-          className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/40 transition hover:border-white/[0.14] hover:text-white/70"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-white/25 hover:text-white"
         >
           All tools
           <ArrowRight className="h-3 w-3" />
@@ -51,16 +51,16 @@ export function RelatedTools({ current, limit = 4 }: Props) {
             <Link
               key={tool.slug}
               href={`/tools/${tool.slug}`}
-              className="group flex flex-col gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 transition-all hover:border-white/[0.12] hover:bg-white/[0.04]"
+              className="group flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05]"
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${tool.bg}`}>
-                <Icon className={`h-4 w-4 ${tool.color}`} />
+              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 ${tool.bg}`}>
+                <Icon className={`h-5 w-5 ${tool.color}`} />
               </div>
               <div className="flex items-end justify-between">
-                <p className="text-xs font-semibold leading-tight text-white/80 group-hover:text-white">
+                <p className="text-sm font-semibold leading-tight text-white/85 group-hover:text-white">
                   {tool.label}
                 </p>
-                <ArrowRight className="h-3 w-3 shrink-0 text-white/20 transition group-hover:translate-x-0.5 group-hover:text-white/50" />
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white" />
               </div>
             </Link>
           );

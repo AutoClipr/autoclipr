@@ -76,7 +76,7 @@ export default async function TopCreatorsPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Top Creators</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Top Creators</h1>
         <p className="mt-1 text-sm text-white/35">
           User-connected YouTube channels · ranked by clips generated
         </p>
@@ -90,7 +90,7 @@ export default async function TopCreatorsPage() {
           { icon: Video,    label: "Total Videos",    value: totalVideos,     color: "text-violet-400",  bg: "bg-violet-500/10" },
           { icon: Scissors, label: "Total Clips",     value: totalClips,      color: "text-orange-400",  bg: "bg-orange-500/10" },
         ].map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+          <div key={label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${bg}`}>
               <Icon className={`h-4 w-4 ${color}`} />
             </div>

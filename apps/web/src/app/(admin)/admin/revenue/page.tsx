@@ -45,13 +45,13 @@ export default async function RevenuePage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Revenue Dashboard</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Revenue Dashboard</h1>
         <p className="mt-1 text-sm text-white/35">Financial metrics from DodoPayments</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <div key={k.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${k.color}`}>
               <k.icon className="h-4 w-4" />
             </div>
@@ -61,12 +61,12 @@ export default async function RevenuePage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Revenue by Month</h3>
         <RevenueBarChart data={revenue.byMonth} />
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Recent Transactions</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">

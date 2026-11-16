@@ -171,7 +171,7 @@ export function FeedbackForm({
           value={category}
           onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
           className={cn(
-            "flex h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm text-foreground",
+            "flex h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 text-sm text-foreground",
             "focus-visible:border-emerald-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
           )}
         >
@@ -195,7 +195,7 @@ export function FeedbackForm({
           rows={6}
           placeholder={config.messagePlaceholder}
           className={cn(
-            "flex w-full resize-y rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-foreground",
+            "flex w-full resize-y rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-foreground",
             "placeholder:text-muted-foreground focus-visible:border-emerald-500/40 focus-visible:bg-white/[0.06]",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
           )}

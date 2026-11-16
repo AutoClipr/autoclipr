@@ -10,9 +10,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:opacity-90",
         gradient:
-          "bg-gradient-brand text-white shadow-glow hover:scale-[1.02] hover:shadow-glow-lg active:scale-[0.98]",
+          "bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98]",
         outline:
-          "border border-white/15 bg-white/[0.02] backdrop-blur-sm hover:border-white/25 hover:bg-white/[0.06]",
+          "border border-white/10 bg-white/[0.04] text-white/85 backdrop-blur hover:border-white/25 hover:bg-white/[0.08] hover:text-white",
         ghost: "hover:bg-white/5",
         secondary: "bg-secondary text-secondary-foreground",
       },

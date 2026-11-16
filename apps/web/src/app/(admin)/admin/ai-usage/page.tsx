@@ -34,13 +34,13 @@ export default async function AiUsagePage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">AI Usage Analytics</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">AI Usage Analytics</h1>
         <p className="mt-1 text-sm text-white/35">Credits consumed and feature adoption rates</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {features.map((f) => (
-          <div key={f.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <div key={f.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className="mb-3 inline-flex rounded-lg p-2 bg-white/[0.06]">
               <f.icon className="h-4 w-4 text-white/60" />
             </div>
@@ -51,7 +51,7 @@ export default async function AiUsagePage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Feature Adoption</h3>
         <div className="space-y-4">
           {features.map((f) => (

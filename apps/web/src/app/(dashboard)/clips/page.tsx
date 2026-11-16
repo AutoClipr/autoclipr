@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { PageHero } from "@/components/dashboard/page-hero";
 import { apiFetch, type Clip, type Video } from "@/lib/api";
 import { ClipsList } from "@/components/dashboard/clips-list";
 import { ProcessingVideosPanel } from "@/components/dashboard/processing-videos-panel";
@@ -36,15 +37,13 @@ export default async function ClipsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">My Clips</h1>
-          <p className="text-muted-foreground">
-            AI-generated shorts from your uploaded videos
-          </p>
-        </div>
-        <ReloadButton hasProcessing={processingVideos.length > 0} />
-      </div>
+      <PageHero
+        label="Clips"
+        title="My"
+        highlight="clips"
+        description="AI-generated shorts from your uploaded videos."
+        actions={<ReloadButton hasProcessing={processingVideos.length > 0} />}
+      />
 
       {processingVideos.length > 0 && (
         <ProcessingVideosPanel videos={processingVideos} />
@@ -53,14 +52,16 @@ export default async function ClipsPage() {
       {readyVideos.length > 0 && <ReadyVideosGrid videos={readyVideos} />}
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">All clips</h2>
+        <h2 className="mb-4 text-lg font-bold text-white">All clips</h2>
         {clips.length === 0 ? (
-          <Card className="glass flex flex-col items-center p-8 text-center sm:p-16">
-            <Scissors className="mb-4 h-12 w-12 text-muted-foreground" />
+          <Card className="flex flex-col items-center border-dashed p-8 text-center sm:p-16">
+            <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-emerald-400/30 bg-emerald-500/15 shadow-[0_0_40px_-8px_rgba(16,185,129,0.7)]">
+              <Scissors className="h-7 w-7 text-emerald-200" />
+            </span>
             <p className="text-lg font-medium">
               {processingVideos.length > 0 ? "Clips are on the way" : "No clips yet"}
             </p>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            <p className="mt-2 max-w-sm text-sm text-white/50">
               {processingVideos.length > 0
                 ? "Your videos are still processing. Finished clips will show up here automatically."
                 : "Upload a video or import from YouTube to generate clips."}

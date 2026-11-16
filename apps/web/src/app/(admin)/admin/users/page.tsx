@@ -24,7 +24,7 @@ function KpiCard({ icon: Icon, label, value, sub, color }: {
   icon: React.ElementType; label: string; value: string; sub?: string; color: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
       <div className={`mb-3 inline-flex rounded-lg p-2 ${color}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -44,7 +44,7 @@ export default async function UsersPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">User Analytics</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">User Analytics</h1>
         <p className="mt-1 text-sm text-white/35">All user metrics and growth data</p>
       </div>
 
@@ -56,11 +56,11 @@ export default async function UsersPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5 lg:col-span-2">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 lg:col-span-2">
           <h3 className="mb-4 text-sm font-semibold text-white/70">User Growth (6 months)</h3>
           <UserGrowthChart data={users.growth} />
         </div>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
           <h3 className="mb-4 text-sm font-semibold text-white/70">Free vs Paid Split</h3>
           <FreePaidPieChart free={users.free} paid={users.paid} />
           <div className="mt-2 grid grid-cols-2 gap-4 border-t border-white/[0.06] pt-4">
@@ -76,7 +76,7 @@ export default async function UsersPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Recent Signups</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">

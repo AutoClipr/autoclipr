@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { PageHero } from "@/components/dashboard/page-hero";
 import { apiFetch, type Profile } from "@/lib/api";
 import { resolveUserFullName } from "@/lib/user-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,19 +26,16 @@ export default async function SettingsPage() {
   const needsEmail = !authEmail;
 
   return (
-    <div className="relative mx-auto max-w-2xl space-y-8">
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-48 w-[380px] -translate-x-1/2 rounded-full bg-teal-500/[0.06] blur-3xl" aria-hidden />
-      <div className="relative">
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          <span className="bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-            Settings
-          </span>
-        </h1>
-        <p className="text-muted-foreground">Manage your account and posting identity</p>
-      </div>
+    <div className="relative mx-auto max-w-3xl space-y-6">
+      <PageHero
+        label="Settings"
+        title="Account"
+        highlight="settings"
+        description="Manage your account and posting identity."
+      />
 
       {needsEmail && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-200">
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-100">
           Add and verify your email below to enable Google/YouTube posting and account recovery.
         </div>
       )}

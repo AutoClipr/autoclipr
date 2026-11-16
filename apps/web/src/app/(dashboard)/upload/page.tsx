@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHero } from "@/components/dashboard/page-hero";
 import { useState } from "react";
 import { Upload, Link2 } from "lucide-react";
 import { UploadForm } from "@/components/dashboard/upload-form";
@@ -15,15 +16,15 @@ export default function UploadPage() {
   const [tab, setTab] = useState<"url" | "file">("url");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">Create Viral Shorts</h1>
-        <p className="text-muted-foreground">
-          Paste any video URL or upload a file — AI handles analysis, clips, captions, and export.
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHero
+        label="Create"
+        title="Create viral"
+        highlight="shorts"
+        description="Paste any video URL or upload a file — AI handles analysis, clips, captions, and export."
+      />
 
-      <div className="flex gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1">
+      <div className="flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1 backdrop-blur">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -33,10 +34,10 @@ export default function UploadPage() {
               type="button"
               onClick={() => setTab(t.id)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
+                "flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all",
                 active
-                  ? "create-selected"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.5)]"
+                  : "text-white/55 hover:text-white"
               )}
             >
               <Icon className="h-4 w-4" />

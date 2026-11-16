@@ -34,7 +34,7 @@ export default async function AffiliatesAdminPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Affiliate Program</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Affiliate Program</h1>
         <p className="mt-1 text-sm text-white/35">Program health, referrals, commissions</p>
       </div>
 
@@ -45,7 +45,7 @@ export default async function AffiliatesAdminPage() {
           { icon: TrendingUp, label: "Total Referrals",   value: affiliates.totalReferrals.toLocaleString(), color: "bg-blue-500/10 text-blue-400" },
           { icon: DollarSign, label: "Commissions Paid",  value: fmtInr(totalEarningsRupees),              color: "bg-amber-500/10 text-amber-400" },
         ].map((k) => (
-          <div key={k.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <div key={k.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${k.color}`}>
               <k.icon className="h-4 w-4" />
             </div>
@@ -55,7 +55,7 @@ export default async function AffiliatesAdminPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Top Affiliates by Conversions</h3>
         {affiliates.top.length === 0 ? (
           <p className="py-8 text-center text-sm text-white/25">No affiliate data yet. Share the program!</p>

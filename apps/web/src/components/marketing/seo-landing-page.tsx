@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MarketingHero } from "@/components/marketing/marketing-hero";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   Accordion,
@@ -13,31 +14,26 @@ import type { LandingPage } from "@/lib/landing-pages";
 export function SeoLandingPage({ page }: { page: LandingPage }) {
   return (
     <>
-      <section className="px-4 pb-16 pt-28 sm:px-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="section-label mx-auto mb-6">AutoClipr for creators</p>
-          <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            {page.h1}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            {page.subtitle}
-          </p>
+      <div className="relative isolate">
+        <MarketingHero label="AutoClipr for creators" title={page.h1} description={page.subtitle}>
           <Button variant="gradient" size="lg" className="mt-10" asChild>
             <Link href="/register">
               {page.heroCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
-      </section>
+        </MarketingHero>
+      </div>
 
-      <section className="px-4 py-20 sm:px-6">
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+      <section className="px-4 py-16 sm:px-6">
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
           {page.benefits.map((b) => (
-            <div key={b.title} className="glass-panel rounded-2xl p-6">
-              <CheckCircle2 className="mb-4 h-6 w-6 text-emerald-400" />
-              <h2 className="text-lg font-semibold">{b.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.body}</p>
+            <div key={b.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-white/20">
+              <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/25 bg-emerald-500/15">
+                <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+              </span>
+              <h2 className="text-lg font-bold text-white">{b.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/55">{b.body}</p>
             </div>
           ))}
         </div>
@@ -45,16 +41,17 @@ export function SeoLandingPage({ page }: { page: LandingPage }) {
 
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-bold">How it works</h2>
-          <ol className="mt-12 space-y-8">
+          <p className="section-label-white mx-auto mb-4 flex w-fit">How it works</p>
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Three steps to your first clips</h2>
+          <ol className="mt-12 space-y-4">
             {page.steps.map((step, i) => (
-              <li key={step.title} className="flex gap-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-sm font-bold text-white">
+              <li key={step.title} className="flex gap-5 rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.6)]">
                   {i + 1}
                 </span>
                 <div>
-                  <h3 className="text-lg font-semibold">{step.title}</h3>
-                  <p className="mt-1 text-muted-foreground">{step.body}</p>
+                  <h3 className="text-lg font-bold text-white">{step.title}</h3>
+                  <p className="mt-1 text-white/55">{step.body}</p>
                 </div>
               </li>
             ))}
@@ -64,12 +61,13 @@ export function SeoLandingPage({ page }: { page: LandingPage }) {
 
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-bold">FAQ</h2>
+          <p className="section-label-white mx-auto mb-4 flex w-fit">FAQ</p>
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Questions, answered</h2>
           <Accordion type="single" collapsible className="mt-10">
             {page.faq.map((item, i) => (
-              <AccordionItem key={item.q} value={`faq-${i}`} className="glass-panel mb-3 border-none px-5">
+              <AccordionItem key={item.q} value={`faq-${i}`} className="mb-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 backdrop-blur">
                 <AccordionTrigger className="text-left">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{item.a}</AccordionContent>
+                <AccordionContent className="text-white/55">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

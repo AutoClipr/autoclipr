@@ -112,7 +112,7 @@ export default async function AuditLogsPage({
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Audit Logs</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Audit Logs</h1>
           <p className="mt-1 text-sm text-white/35">
             Unified event timeline · last {days} days
             {data ? ` · ${data.total} events` : ""}

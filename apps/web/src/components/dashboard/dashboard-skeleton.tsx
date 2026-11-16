@@ -16,7 +16,7 @@ export function DashboardSkeleton() {
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
+            className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5"
           >
             <div className="h-9 w-9 animate-pulse rounded-xl bg-white/[0.06]" />
             <div className="mt-4 h-6 w-16 animate-pulse rounded bg-white/[0.06]" />
@@ -29,7 +29,7 @@ export function DashboardSkeleton() {
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5"
+            className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5"
           >
             <div className="aspect-video w-full animate-pulse rounded-xl bg-white/[0.05]" />
             <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-white/[0.06]" />

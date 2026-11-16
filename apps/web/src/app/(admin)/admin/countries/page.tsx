@@ -36,7 +36,7 @@ export default async function CountriesPage() {
   return (
     <div className="space-y-6 pb-12">
       <div>
-        <h1 className="text-[22px] font-bold text-white">Country Analytics</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Country Analytics</h1>
         <p className="mt-0.5 text-sm text-white/40">User distribution and revenue by geography &middot; estimated</p>
       </div>
 

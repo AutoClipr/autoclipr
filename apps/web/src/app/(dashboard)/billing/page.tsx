@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHero } from "@/components/dashboard/page-hero";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -49,23 +50,18 @@ export default async function BillingPage() {
   const creditHistory = creditHistoryRes.data ?? [];
 
   return (
-    <div className="relative mx-auto max-w-3xl space-y-8">
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-52 w-[420px] -translate-x-1/2 rounded-full bg-amber-500/[0.06] blur-3xl" aria-hidden />
-
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">
-            Manage Your{" "}
-            <span className="bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">
-              Membership
-            </span>
-          </h1>
-          <p className="text-muted-foreground">View your subscription and credit usage</p>
-        </div>
-        <Button variant="gradient" asChild className="shrink-0 self-start shadow-lg shadow-emerald-500/20">
-          <Link href="/pricing">Change Subscription</Link>
-        </Button>
-      </div>
+    <div className="relative mx-auto max-w-4xl space-y-6">
+      <PageHero
+        label="Billing"
+        title="Your"
+        highlight="membership"
+        description="View your subscription and credit usage."
+        actions={
+          <Button variant="gradient" asChild className="shrink-0">
+            <Link href="/pricing">Change subscription</Link>
+          </Button>
+        }
+      />
 
       <Card className="glass relative overflow-hidden border-white/[0.08]">
         {/* Accent hairline + corner glow */}

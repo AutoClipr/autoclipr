@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHero } from "@/components/dashboard/page-hero";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, Check, Users, DollarSign, TrendingUp, Clock, ExternalLink, MousePointer } from "lucide-react";
@@ -43,7 +44,7 @@ function StatCard({
     amber:   "from-amber-500 to-orange-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]",
   };
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14]">
+    <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14]">
       <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${colorMap[color]} transition-transform duration-300 group-hover:scale-110`}>
         <Icon className="h-5 w-5 text-white" />
       </div>
@@ -66,7 +67,7 @@ function CopyRefLink({ refCode }: { refCode: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
       <span className="flex-1 truncate font-mono text-sm text-white/60">{link}</span>
       <button
         onClick={copy}
@@ -119,24 +120,16 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {/* Header */}
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="pointer-events-none absolute -left-8 -top-12 h-40 w-64 rounded-full bg-emerald-500/[0.07] blur-3xl" aria-hidden />
-        <div className="relative">
-          <h1 className="text-2xl font-bold sm:text-3xl">
-            Affiliate{" "}
-            <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-              Dashboard
-            </span>
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your referral link earns you <span className="font-semibold text-emerald-400">{stats.commission_rate}% recurring</span> on every active subscriber.
-          </p>
-        </div>
-        <StatusBadge status={affiliate.status} />
-      </div>
+      <PageHero
+        label="Affiliate"
+        title="Affiliate"
+        highlight="dashboard"
+        description={<>Your referral link earns you <span className="font-semibold text-emerald-300">{stats.commission_rate}% recurring</span> on every active subscriber.</>}
+        actions={<StatusBadge status={affiliate.status} />}
+      />
 
       {/* Referral link */}
-      <div className="rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold text-white/60">Your referral link</p>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
@@ -197,7 +190,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-emerald-500/20 bg-[#0a0a16] p-6"
+          className="rounded-2xl border border-emerald-500/20 bg-white/[0.03] p-6"
         >
           <h3 className="mb-4 text-base font-bold">Request payout</h3>
           <form onSubmit={submitPayout} className="space-y-4">
@@ -211,7 +204,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
                 onChange={(e) => setPayoutAmount(e.target.value)}
                 placeholder="1000"
                 required
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
               />
             </div>
             <div>
@@ -219,7 +212,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
               <select
                 value={payoutMethod}
                 onChange={(e) => setPayoutMethod(e.target.value)}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0a0a16] px-4 py-3 text-sm text-white outline-none focus:border-emerald-500/40"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none focus:border-emerald-500/40"
               >
                 <option value="paypal">PayPal</option>
                 <option value="bank_transfer">Bank Transfer (IMPS/NEFT)</option>
@@ -236,7 +229,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
                 onChange={(e) => setPayoutDetails(e.target.value)}
                 placeholder={payoutMethod === "paypal" ? "you@paypal.com" : payoutMethod === "upi" ? "name@upi" : "Account no · IFSC"}
                 required
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
               />
             </div>
             <div className="flex gap-3">
@@ -266,7 +259,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
       )}
 
       {/* Tabs */}
-      <div className="rounded-2xl border border-white/[0.07] bg-[#0a0a16] overflow-hidden">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur overflow-hidden">
         <div className="flex border-b border-white/[0.06]">
           {tabs.map((t) => (
             <button
@@ -313,7 +306,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
               {referrals.length === 0 ? (
                 <p className="py-8 text-center text-sm text-white/30">No referrals yet. Share your link to get started.</p>
               ) : referrals.map((r) => (
-                <div key={r.id} className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
+                <div key={r.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <div>
                     <p className="text-sm font-semibold text-white">New referral</p>
                     <p className="text-xs text-white/30">{new Date(r.created_at).toLocaleDateString("en-IN")}</p>
@@ -329,7 +322,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
               {commissions.length === 0 ? (
                 <p className="py-8 text-center text-sm text-white/30">No commissions yet — they appear when referrals upgrade.</p>
               ) : commissions.map((c) => (
-                <div key={c.id} className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
+                <div key={c.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <div>
                     <p className="text-sm font-semibold text-white capitalize">{c.plan_id} · {c.billing_period}</p>
                     <p className="text-xs text-white/30">{new Date(c.created_at).toLocaleDateString("en-IN")} · {c.commission_rate}% commission</p>
@@ -348,7 +341,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
               {payouts.length === 0 ? (
                 <p className="py-8 text-center text-sm text-white/30">No payouts yet.</p>
               ) : payouts.map((p) => (
-                <div key={p.id} className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] p-4">
+                <div key={p.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <div>
                     <p className="text-sm font-semibold text-white capitalize">{p.payment_method.replace("_", " ")}</p>
                     <p className="text-xs text-white/30">{new Date(p.created_at).toLocaleDateString("en-IN")}</p>
@@ -426,7 +419,7 @@ export function AffiliateApply({ token }: { token: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-6">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-6">
       <h2 className="mb-1 text-xl font-bold text-white">Apply to become an affiliate</h2>
       <p className="mb-6 text-sm text-white/50">Earn 30–40% recurring commission. Free to join, no hidden costs.</p>
 
@@ -436,7 +429,7 @@ export function AffiliateApply({ token }: { token: string }) {
           { value: "90 days", label: "Cookie window" },
           { value: "$0", label: "To join" },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xl font-black text-emerald-400">{s.value}</p>
             <p className="mt-1 text-xs text-white/40">{s.label}</p>
           </div>
@@ -452,7 +445,7 @@ export function AffiliateApply({ token }: { token: string }) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
+            className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
           />
         </div>
         <div>
@@ -463,7 +456,7 @@ export function AffiliateApply({ token }: { token: string }) {
             onChange={(e) => setChannelUrl(e.target.value)}
             placeholder="https://youtube.com/@yourchannel"
             required
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
+            className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-emerald-500/40"
           />
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}

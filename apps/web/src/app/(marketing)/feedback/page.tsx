@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingHero } from "@/components/marketing/marketing-hero";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch, type Profile } from "@/lib/api";
 import { resolveUserFullName } from "@/lib/user-avatar";
@@ -35,14 +36,14 @@ export default async function FeedbackPage() {
   }
 
   return (
-    <div className="pt-16">
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold">Feedback</h1>
-          <p className="mt-4 text-muted-foreground">
-            Help us improve AutoClipr — report bugs, request features, or share your experience.
-          </p>
-        </div>
+    <div className="relative isolate">
+      <MarketingHero
+        label="Feedback"
+        title="Help us build"
+        highlight="better"
+        description="Report bugs, request features, or share your experience. We read every message."
+      />
+      <div className="mx-auto max-w-2xl px-4 pb-20 sm:px-6">
         <FeedbackForm initialName={initialName} initialEmail={initialEmail} />
       </div>
     </div>

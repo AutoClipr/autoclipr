@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHero } from "@/components/dashboard/page-hero";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -70,26 +71,18 @@ export function AnalyticsDashboard({ initialData }: AnalyticsDashboardProps) {
 
   return (
     <div className="space-y-8">
-      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="pointer-events-none absolute -left-10 -top-12 h-44 w-72 rounded-full bg-sky-500/[0.07] blur-3xl" aria-hidden />
-        <div className="relative">
-          <p className="section-label mb-2 !px-3 !py-1 !text-[10px]">Analytics</p>
-          <h1 className="text-3xl font-bold">
-            Posting{" "}
-            <span className="bg-gradient-to-r from-sky-400 to-violet-400 bg-clip-text text-transparent">
-              Analytics
-            </span>
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Track posted clips, platform connections, and view counts.
-          </p>
-        </div>
+      <PageHero
+        label="Analytics"
+        title="Posting"
+        highlight="analytics"
+        description="Track posted clips, platform connections, and view counts."
+        actions={
         <Button
           type="button"
           variant="outline"
           disabled={refreshing}
           onClick={refreshStats}
-          className="border-white/10 bg-white/[0.03] backdrop-blur hover:bg-white/[0.07]"
+          
         >
           {refreshing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -98,7 +91,8 @@ export function AnalyticsDashboard({ initialData }: AnalyticsDashboardProps) {
           )}
           Refresh stats
         </Button>
-      </div>
+        }
+      />
 
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-300">

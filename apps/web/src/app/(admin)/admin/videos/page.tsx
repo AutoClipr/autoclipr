@@ -62,13 +62,13 @@ export default async function VideosPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Videos & Clips Analytics</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Videos & Clips Analytics</h1>
         <p className="mt-1 text-sm text-white/35">Content volume and storage metrics</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <div key={k.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${k.color}`}>
               <k.icon className="h-4 w-4" />
             </div>
@@ -80,7 +80,7 @@ export default async function VideosPage() {
       </div>
 
       {/* Storage gauge */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Storage Usage</h3>
         <div className="mb-2 flex justify-between text-xs">
           <span className="text-white/50">{videos.storageFormatted} used</span>
@@ -101,7 +101,7 @@ export default async function VideosPage() {
       </div>
 
       {/* Placeholder for time-series chart */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Upload Activity</h3>
         <div className="flex h-40 items-center justify-center">
           <p className="text-sm text-white/20">Per-day upload tracking coming soon</p>
@@ -109,7 +109,7 @@ export default async function VideosPage() {
       </div>
 
       {/* Clips created by user */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Clips Created by User</h3>
         {clipsByUser.length === 0 ? (
           <p className="py-8 text-center text-sm text-white/20">No clips generated yet.</p>

@@ -15,7 +15,7 @@ export function ConnectedChannelRow({
   removing,
 }: ConnectedChannelRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-white/[0.12] hover:bg-white/[0.05]">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-white/[0.12] hover:bg-white/[0.05]">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Youtube className="h-5 w-5 shrink-0 text-red-500" />
         <div className="min-w-0">

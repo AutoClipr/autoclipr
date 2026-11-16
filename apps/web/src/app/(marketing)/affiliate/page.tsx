@@ -143,7 +143,7 @@ export default async function AffiliatePage() {
             {PERKS.map((perk, i) => (
               <div
                 key={perk.title}
-                className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-6 transition-all hover:border-white/[0.14]"
+                className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 transition-all hover:border-white/[0.14]"
               >
                 <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${perk.color} opacity-0 transition-opacity group-hover:opacity-60`} />
                 <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${perk.color}`}>
@@ -199,7 +199,7 @@ export default async function AffiliatePage() {
             <div className="absolute left-6 top-8 hidden h-[calc(100%-4rem)] w-px bg-gradient-to-b from-emerald-500/40 via-white/10 to-transparent sm:block" />
             <div className="space-y-6">
               {STEPS.map((step, i) => (
-                <div key={step.n} className="relative flex gap-6 rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-6 sm:pl-8">
+                <div key={step.n} className="relative flex gap-6 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 sm:pl-8">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 text-sm font-black text-white shadow-[0_0_16px_rgba(16,185,129,0.25)]">
                     {step.n}
                   </div>
@@ -222,7 +222,7 @@ export default async function AffiliatePage() {
           </p>
           <div className="grid gap-5 sm:grid-cols-3">
             {SOCIAL_PROOF.map((p, i) => (
-              <div key={p.name} className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0a0a16] p-6 transition-all hover:border-white/[0.14]">
+              <div key={p.name} className="group relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-6 transition-all hover:border-white/[0.14]">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-400 text-xs font-bold text-white">
@@ -287,7 +287,7 @@ export default async function AffiliatePage() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0a0a16] p-7">
+            <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-7">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
               <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-56 -translate-x-1/2 rounded-full bg-emerald-500/[0.06] blur-3xl" />
               <div className="relative">

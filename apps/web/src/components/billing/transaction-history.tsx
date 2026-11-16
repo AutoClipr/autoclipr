@@ -22,7 +22,7 @@ export function TransactionHistory({ transactions }: { transactions: Transaction
   });
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
       {/* Header */}
       <div className="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-2">

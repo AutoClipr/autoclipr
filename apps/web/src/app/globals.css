@@ -38,11 +38,11 @@
 
 @layer components {
   .glass {
-    @apply border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl;
+    @apply border border-white/10 bg-white/[0.03] backdrop-blur-2xl;
   }
 
   .surface {
-    @apply rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl;
+    @apply rounded-3xl border border-white/10 bg-white/[0.03] shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl;
   }
 
   .surface-hover {
@@ -50,12 +50,12 @@
   }
 
   .gradient-border {
-    @apply relative rounded-2xl p-px;
-    background: linear-gradient(135deg, rgba(6, 95, 70, 0.6), rgba(5, 150, 105, 0.45), rgba(16, 185, 129, 0.35));
+    @apply relative rounded-3xl p-px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06), rgba(16, 185, 129, 0.25));
   }
 
   .gradient-border > * {
-    @apply rounded-[calc(1rem-1px)] bg-[#0a0618];
+    @apply rounded-[calc(1.5rem-1px)] bg-[#0b0d14];
   }
 
   .stat-card {
@@ -83,7 +83,7 @@
 
   /* Frosted glass panel with an animated sheen on hover */
   .glass-panel {
-    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-2xl;
+    @apply relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl;
   }
 
   .glass-panel::after {

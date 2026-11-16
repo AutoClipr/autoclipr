@@ -48,7 +48,7 @@ export default async function ErrorsPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Error Dashboard</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Error Dashboard</h1>
         <p className="mt-1 text-sm text-white/35">
           Real failures from processing_jobs &amp; clip_publications · last 7 days
         </p>

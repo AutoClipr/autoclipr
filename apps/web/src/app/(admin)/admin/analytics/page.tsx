@@ -96,7 +96,7 @@ export default async function AnalyticsPage({
       {/* Header + day picker */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Analytics</h1>
           <p className="mt-1 text-sm text-white/35">
             Platform activity derived from DB · last {days} days
           </p>
@@ -125,7 +125,7 @@ export default async function AnalyticsPage({
           {/* KPI row */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {kpis.map(({ icon: Icon, label, value, color, bg }) => (
-              <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-4">
+              <div key={label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
                 <div className={`mb-2 inline-flex rounded-lg p-1.5 ${bg}`}>
                   <Icon className={`h-3.5 w-3.5 ${color}`} />
                 </div>
@@ -138,7 +138,7 @@ export default async function AnalyticsPage({
           </div>
 
           {/* Daily activity chart */}
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
             <h2 className="mb-4 text-sm font-semibold text-white">
               Daily Activity — last {days} days
             </h2>
@@ -147,7 +147,7 @@ export default async function AnalyticsPage({
 
           {/* Row: Clip status + Video status */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-2 text-sm font-semibold text-white">Clip Status</h2>
               <p className="mb-3 text-[11px] text-white/30">Distribution of clip statuses in this period</p>
               {data.clipStatus.length === 0 ? (
@@ -156,7 +156,7 @@ export default async function AnalyticsPage({
                 <StatusDonut data={data.clipStatus} />
               )}
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-2 text-sm font-semibold text-white">Video Status</h2>
               <p className="mb-3 text-[11px] text-white/30">Distribution of video statuses in this period</p>
               {data.videoStatus.length === 0 ? (
@@ -169,7 +169,7 @@ export default async function AnalyticsPage({
 
           {/* Row: Job types + Publications by platform */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-4 text-sm font-semibold text-white">Processing Jobs by Type</h2>
               {data.jobTypes.length === 0 ? (
                 <p className="py-8 text-center text-xs text-white/30">No jobs in this period</p>
@@ -177,7 +177,7 @@ export default async function AnalyticsPage({
                 <DistributionBarChart data={data.jobTypes} />
               )}
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-4 text-sm font-semibold text-white">Publications by Platform</h2>
               {data.publications.length === 0 ? (
                 <p className="py-8 text-center text-xs text-white/30">No publications in this period</p>
@@ -189,7 +189,7 @@ export default async function AnalyticsPage({
 
           {/* Row: Job status + Pub status */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-4 text-sm font-semibold text-white">Job Status Breakdown</h2>
               {data.jobStatus.length === 0 ? (
                 <p className="py-8 text-center text-xs text-white/30">No jobs in this period</p>
@@ -197,7 +197,7 @@ export default async function AnalyticsPage({
                 <DistributionBarChart data={data.jobStatus} />
               )}
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
               <h2 className="mb-4 text-sm font-semibold text-white">Publication Status</h2>
               {data.pubStatus.length === 0 ? (
                 <p className="py-8 text-center text-xs text-white/30">No publications in this period</p>

@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold text-white">Executive Dashboard</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Executive Dashboard</h1>
           <p className="mt-0.5 text-sm text-white/40">Real-time overview &middot; {new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}</p>
         </div>
       </div>

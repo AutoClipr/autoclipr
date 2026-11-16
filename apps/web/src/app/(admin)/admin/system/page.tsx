@@ -53,7 +53,7 @@ export default async function SystemPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">System Health</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">System Health</h1>
         <p className="mt-1 text-sm text-white/35">Infrastructure status &middot; live</p>
       </div>
 
@@ -80,7 +80,7 @@ export default async function SystemPage() {
       </div>
 
       {/* Gauges */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5 space-y-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 space-y-5">
         <h3 className="text-sm font-semibold text-white/70">Resource Usage</h3>
         <Bar label="CPU"     value={system.cpuPercent} />
         <Bar label="Memory"  value={system.memoryPercent} />
@@ -88,7 +88,7 @@ export default async function SystemPage() {
       </div>
 
       {/* Processing queue */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Job Queue</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
@@ -107,7 +107,7 @@ export default async function SystemPage() {
       </div>
 
       {/* Service status */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Services</h3>
         <div className="space-y-2">
           {services.map((svc) => (

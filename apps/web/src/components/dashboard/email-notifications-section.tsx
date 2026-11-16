@@ -88,7 +88,7 @@ export function EmailNotificationsSection({
   return (
     <div className="space-y-5">
       {/* Master toggle */}
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-4">
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
         <div className="flex items-center gap-3">
           {enabled ? (
             <Bell className="h-5 w-5 shrink-0 text-emerald-400" />

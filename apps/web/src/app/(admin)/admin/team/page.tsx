@@ -10,11 +10,11 @@ export default function TeamPage() {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-white">Admin Team</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Admin Team</h1>
         <p className="mt-1 text-sm text-white/35">Admins are controlled via the ADMIN_EMAILS environment variable</p>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-5">
+      <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
         <h3 className="mb-4 text-sm font-semibold text-white/70">Active Admins</h3>
         <div className="space-y-2">
           {adminEmails.map((email) => (

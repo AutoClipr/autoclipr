@@ -37,13 +37,13 @@ function ReleaseCard({ release, index }: { release: Release; index: number }) {
       className="relative pl-8"
     >
       {/* Timeline dot */}
-      <div className={`absolute left-0 top-5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full border-2 ${release.highlight ? "border-emerald-400 bg-emerald-400/20 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : "border-white/20 bg-[#0a0a16]"}`}>
+      <div className={`absolute left-0 top-5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full border-2 ${release.highlight ? "border-emerald-400 bg-emerald-400/20 shadow-[0_0_12px_rgba(16,185,129,0.4)]" : "border-white/20 bg-[#07080f]"}`}>
         {release.highlight && <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
       </div>
 
       {/* Card */}
       <div
-        className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${release.highlight ? "border-emerald-500/20 bg-[#0a0a16] shadow-[0_0_32px_rgba(16,185,129,0.06)]" : "border-white/[0.07] bg-[#0a0a16] hover:border-white/[0.14]"}`}
+        className={`group relative overflow-hidden rounded-3xl border transition-all duration-300 ${release.highlight ? "border-emerald-400/30 bg-white/[0.03] backdrop-blur shadow-[0_0_40px_-12px_rgba(16,185,129,0.5)]" : "border-white/10 bg-white/[0.03] backdrop-blur hover:border-white/20"}`}
       >
         {/* Top gradient line */}
         {release.badgeColor && (
@@ -122,7 +122,7 @@ export function ChangelogClient({ releases }: { releases: Release[] }) {
 
       {/* End of timeline */}
       <div className="relative mt-6 pl-8">
-        <div className="absolute left-0 top-1/2 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[#0a0a16]">
+        <div className="absolute left-0 top-1/2 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-[#07080f]">
           <div className="h-1 w-1 rounded-full bg-white/20" />
         </div>
         <p className="text-xs text-white/20">AutoClipr launched February 2025</p>

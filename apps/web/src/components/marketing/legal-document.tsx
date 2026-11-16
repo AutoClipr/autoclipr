@@ -76,22 +76,25 @@ export function LegalDocument({ document, type = "privacy" }: LegalDocumentProps
     .map((t) => DOC_THEME[t]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+    <div className="relative isolate mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(16,185,129,0.14), transparent 70%)" }}
+        aria-hidden
+      />
       {/* Hero header */}
       <div className="mb-14 text-center">
-        <div className={cn("mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ring-1", badgeBg)}>
+        <div className={cn("mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ring-1 shadow-[0_0_40px_-10px_rgba(16,185,129,0.6)]", badgeBg)}>
           <Icon className="h-8 w-8" />
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{document.title}</h1>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-white/55">
+          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             Last updated: {LEGAL_LAST_UPDATED}
           </span>
-          <span>·</span>
-          <span>{document.sections.length} sections</span>
-          <span>·</span>
-          <Link href={`mailto:${CONTACT_EMAIL}`} className={cn("hover:underline", accentClass)}>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1">{document.sections.length} sections</span>
+          <Link href={`mailto:${CONTACT_EMAIL}`} className={cn("rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 hover:underline", accentClass)}>
             {CONTACT_EMAIL}
           </Link>
         </div>
@@ -131,7 +134,7 @@ export function LegalDocument({ document, type = "privacy" }: LegalDocumentProps
             </nav>
 
             {/* Quick contact in sidebar */}
-            <div className="mt-8 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur">
               <p className="text-xs font-semibold text-white">Questions?</p>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
                 Reach out and we&apos;ll respond within 1–2 business days.
@@ -154,7 +157,7 @@ export function LegalDocument({ document, type = "privacy" }: LegalDocumentProps
               <section
                 key={section.id}
                 id={section.id}
-                className="scroll-mt-24 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 sm:p-8 transition-colors hover:border-white/[0.10]"
+                className="scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur transition-colors hover:border-white/20 sm:p-8"
               >
                 {/* Section header */}
                 <div className="mb-5 flex items-start gap-4">
@@ -187,7 +190,7 @@ export function LegalDocument({ document, type = "privacy" }: LegalDocumentProps
           </div>
 
           {/* Footer contact */}
-          <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center sm:flex-row sm:text-left">
+          <div className="mt-12 flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur sm:flex-row sm:text-left">
             <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1", badgeBg)}>
               <Mail className="h-5 w-5" />
             </div>
@@ -200,13 +203,13 @@ export function LegalDocument({ document, type = "privacy" }: LegalDocumentProps
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className={cn("rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ring-1", badgeBg, "hover:opacity-80")}
+                className={cn("rounded-full border px-4 py-2 text-sm font-semibold transition-colors ring-1", badgeBg, "hover:opacity-80")}
               >
                 Email us
               </a>
               <Link
                 href="/contact"
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/[0.08]"
+                className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.5)]"
               >
                 Contact form
               </Link>
