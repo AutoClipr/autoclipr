@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Flame, ArrowUpCircle } from "lucide-react";
+import { Search, Flame, ArrowUpCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -23,8 +23,11 @@ function formatReason(reason: string): string {
   return REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
+const PAGE_SIZE = 10;
+
 export function CreditHistory({ transactions }: { transactions: CreditTransaction[] }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const filtered = transactions.filter((tx) => {
     const q = search.toLowerCase();
@@ -34,6 +37,12 @@ export function CreditHistory({ transactions }: { transactions: CreditTransactio
       String(tx.amount).includes(q)
     );
   });
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Keep the page in range when a search shrinks the list.
+  const current = Math.min(page, pageCount);
+  const start = (current - 1) * PAGE_SIZE;
+  const pageRows = filtered.slice(start, start + PAGE_SIZE);
 
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
@@ -53,7 +62,10 @@ export function CreditHistory({ transactions }: { transactions: CreditTransactio
           <Input
             placeholder="Search history..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="h-8 pl-8 text-sm"
           />
         </div>
@@ -79,7 +91,7 @@ export function CreditHistory({ transactions }: { transactions: CreditTransactio
               </tr>
             </thead>
             <tbody>
-              {filtered.map((tx, i) => {
+              {pageRows.map((tx, i) => {
                 const date = new Date(tx.created_at).toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
@@ -94,7 +106,7 @@ export function CreditHistory({ transactions }: { transactions: CreditTransactio
                 return (
                   <tr
                     key={tx.id}
-                    className={`border-b border-white/[0.04] transition-colors hover:bg-white/[0.02] ${i === filtered.length - 1 ? "border-0" : ""}`}
+                    className={`border-b border-white/[0.04] transition-colors hover:bg-white/[0.02] ${i === pageRows.length - 1 ? "border-0" : ""}`}
                   >
                     <td className="px-6 py-4 font-medium capitalize">
                       <span className="flex items-center gap-2">
@@ -123,6 +135,49 @@ export function CreditHistory({ transactions }: { transactions: CreditTransactio
               })}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {pageCount > 1 && (
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-3 sm:flex-row sm:px-6">
+              <p className="text-xs text-muted-foreground">
+                Showing {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(current - 1)}
+                  disabled={current === 1}
+                  aria-label="Previous page"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: pageCount }, (_, i) => i + 1)
+                  .filter((n) => n === 1 || n === pageCount || Math.abs(n - current) <= 1)
+                  .map((n, idx, arr) => (
+                    <span key={n} className="flex items-center gap-1">
+                      {idx > 0 && n - arr[idx - 1] > 1 && <span className="px-1 text-xs text-white/30">…</span>}
+                      <button
+                        onClick={() => setPage(n)}
+                        aria-current={n === current ? "page" : undefined}
+                        className={`h-8 min-w-8 rounded-full px-2.5 text-xs font-semibold transition-colors ${
+                          n === current ? "bg-white text-black" : "text-white/60 hover:bg-white/[0.08] hover:text-white"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    </span>
+                  ))}
+                <button
+                  onClick={() => setPage(current + 1)}
+                  disabled={current === pageCount}
+                  aria-label="Next page"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
