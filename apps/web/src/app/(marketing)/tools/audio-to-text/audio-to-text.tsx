@@ -6,6 +6,7 @@ import {
   AlertCircle, ArrowLeft, Check, Copy, Download, FileAudio, FileText, Globe,
   Languages, Loader2, Mic, RotateCcw, ShieldCheck, Upload, Zap,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
 import {
@@ -73,6 +74,22 @@ async function decodeWithFFmpeg(file: File): Promise<Float32Array> {
   const data = (await ff.readFile("out.wav")) as Uint8Array;
   ff.terminate();
   return decodeWithBrowser(data.slice().buffer as ArrayBuffer);
+}
+
+/** Animated equaliser bars shown while the model works. */
+function Waveform() {
+  return (
+    <div className="flex h-14 items-center justify-center gap-1" aria-hidden>
+      {Array.from({ length: 24 }, (_, i) => (
+        <motion.span
+          key={i}
+          className="w-1 rounded-full bg-gradient-to-t from-teal-500 to-emerald-300"
+          animate={{ height: [8, 18 + ((i * 37) % 34), 8] }}
+          transition={{ duration: 0.9 + ((i * 13) % 7) / 10, repeat: Infinity, ease: "easeInOut", delay: (i % 6) * 0.08 }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function AudioToText() {
@@ -199,79 +216,112 @@ export function AudioToText() {
   const busy = stage === "decoding" || stage === "loading-model" || stage === "transcribing";
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-5xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(20,184,166,0.22), transparent 70%), radial-gradient(30% 40% at 15% 10%, rgba(16,185,129,0.14), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-5xl">
         {/* Header */}
-        <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white/70">
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> All Tools
         </Link>
-        <div className="mt-6 flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-teal-500/20 bg-gradient-to-br from-teal-500/20 to-emerald-500/10">
-            <Mic className="h-7 w-7 text-teal-300" />
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-teal-400/30 bg-gradient-to-br from-teal-500/30 to-emerald-500/15 shadow-[0_0_40px_-8px_rgba(20,184,166,0.7)]">
+            <Mic className="h-8 w-8 text-teal-200" />
           </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold sm:text-3xl">Audio to Text</h1>
-              <span className="rounded-full bg-teal-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-teal-300">AI</span>
-            </div>
-            <p className="mt-1 text-sm text-white/50">
-              Extract the spoken text from any audio or video file. Powered by Whisper, running entirely in your browser.
-            </p>
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Audio to{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">Text</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Pull every spoken word out of any audio or video file. Powered by Whisper AI, running entirely in your browser.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {[
+              { icon: ShieldCheck, label: "100% Private" },
+              { icon: Globe, label: "No Upload" },
+              { icon: Languages, label: "Auto language detect" },
+              { icon: FileText, label: "TXT · SRT" },
+            ].map(({ icon: Icon, label }) => (
+              <span key={label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <Icon className="h-3.5 w-3.5 text-teal-300" />
+                {label}
+              </span>
+            ))}
           </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {[
-            { icon: ShieldCheck, label: "100% Private" },
-            { icon: Globe, label: "No Upload" },
-            { icon: Languages, label: "Auto language detect" },
-            { icon: FileText, label: "TXT · SRT" },
-          ].map(({ icon: Icon, label }) => (
-            <span key={label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-              <Icon className="h-3 w-3" />
-              {label}
-            </span>
-          ))}
         </div>
 
         {/* Drop zone */}
         {stage === "idle" && (
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => inputRef.current?.click()}
-            className={`mt-8 flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all ${
-              dragging ? "border-teal-400 bg-teal-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
-            }`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-500/15 text-teal-300">
-              <Upload className="h-8 w-8" />
-            </div>
-            <div className="text-center">
-              <p className="text-base font-semibold">Drop an audio or video file here</p>
-              <p className="mt-1 text-sm text-white/40">MP3, WAV, M4A, OGG, MP4, MOV, WebM, MKV…</p>
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ACCEPT}
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) pick(f);
+          <>
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
               }}
-            />
-          </div>
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300 ${
+                dragging
+                  ? "border-teal-400/70 shadow-[0_0_60px_-10px_rgba(20,184,166,0.7)]"
+                  : "border-white/10 hover:border-teal-400/40 hover:shadow-[0_0_60px_-16px_rgba(20,184,166,0.6)]"
+              }`}
+            >
+              <div
+                className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors ${
+                  dragging ? "border-teal-400/60 bg-teal-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"
+                }`}
+              >
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-500/15 blur-3xl" aria-hidden />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-teal-500/25 to-emerald-500/10 text-teal-200 transition-transform duration-300 group-hover:-translate-y-1">
+                  <Upload className="h-9 w-9" />
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold">Drop an audio or video file here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · MP3, WAV, M4A, OGG, MP4, MOV, WebM, MKV…</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept={ACCEPT}
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) pick(f);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any audio or video file. It never leaves your device." },
+                { n: "2", t: "Transcribe", d: "Whisper AI listens and writes out every word." },
+                { n: "3", t: "Copy or export", d: "Edit the text, add timestamps, save TXT or SRT." },
+              ].map((x) => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-500/20 text-xs font-bold text-teal-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {stage !== "idle" && file && (
-          <div className="mt-8 grid gap-4 lg:grid-cols-[320px_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
             {/* Left: file + settings */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-4 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300">
                   <FileAudio className="h-4 w-4" />
                 </div>
@@ -284,16 +334,16 @@ export function AudioToText() {
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+              <div className="space-y-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/40">Model</p>
-                  <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1">
+                  <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.06] bg-black/30 p-1">
                     {MODELS.map((m) => (
                       <button
                         key={m.id}
                         disabled={busy}
                         onClick={() => setModel(m.id)}
-                        className={`rounded-lg px-2 py-2 text-left transition-colors disabled:opacity-60 ${
+                        className={`rounded-xl px-3 py-2 text-left transition-all disabled:opacity-60 ${
                           model === m.id ? "bg-white text-black" : "text-white/60 hover:text-white"
                         }`}
                       >
@@ -312,7 +362,7 @@ export function AudioToText() {
                     disabled={busy}
                     value={language ?? ""}
                     onChange={(e) => setLanguage(e.target.value || null)}
-                    className="h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none focus:border-teal-400/60"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none focus:border-teal-400/60"
                   >
                     {LANGUAGES.map((l) => (
                       <option key={l.label} value={l.code ?? ""} className="bg-[#0b0d14]">
@@ -325,7 +375,7 @@ export function AudioToText() {
                 <button
                   onClick={transcribe}
                   disabled={busy}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] disabled:opacity-60"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                   {stage === "done" ? "Transcribe again" : busy ? "Working…" : "Extract text"}
@@ -344,33 +394,37 @@ export function AudioToText() {
             </div>
 
             {/* Right: transcript */}
-            <div className="flex min-h-[26rem] flex-col rounded-2xl border border-white/[0.06] bg-white/[0.03]">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-3">
+            <div className="flex min-h-[28rem] flex-col rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-3.5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   Transcript
-                  {words > 0 && <span className="text-xs font-normal text-white/40">{words.toLocaleString()} words</span>}
+                  {words > 0 && (
+                    <span className="rounded-full bg-teal-500/15 px-2 py-0.5 text-[11px] font-semibold text-teal-200">
+                      {words.toLocaleString()} words · ~{Math.max(1, Math.round(words / 200))} min read
+                    </span>
+                  )}
                 </div>
                 {stage === "done" && (
                   <div className="flex items-center gap-2">
                     {chunks.length > 0 && (
                       <button
                         onClick={() => setShowTimes((v) => !v)}
-                        className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                           showTimes ? "border-teal-400/50 bg-teal-500/15 text-teal-200" : "border-white/10 text-white/55 hover:text-white"
                         }`}
                       >
                         Timestamps
                       </button>
                     )}
-                    <button onClick={copy} className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 hover:text-white">
+                    <button onClick={copy} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/75 transition-colors hover:border-white/25 hover:text-white">
                       {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                       {copied ? "Copied" : "Copy"}
                     </button>
-                    <button onClick={() => save("txt")} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-black">
+                    <button onClick={() => save("txt")} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-black shadow-[0_0_20px_-6px_rgba(255,255,255,0.5)]">
                       <Download className="h-3 w-3" /> TXT
                     </button>
                     {chunks.length > 0 && (
-                      <button onClick={() => save("srt")} className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 hover:text-white">
+                      <button onClick={() => save("srt")} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/75 transition-colors hover:border-white/25 hover:text-white">
                         <Download className="h-3 w-3" /> SRT
                       </button>
                     )}
@@ -380,22 +434,25 @@ export function AudioToText() {
 
               <div className="flex flex-1 flex-col p-5">
                 {stage === "ready" && (
-                  <div className="m-auto text-center text-sm text-white/40">
+                  <div className="m-auto flex flex-col items-center text-center text-sm text-white/40">
+                    <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+                      <FileText className="h-6 w-6 text-teal-300/70" />
+                    </span>
                     Pick a model and language, then click <span className="text-white">Extract text</span>.
                   </div>
                 )}
 
                 {busy && (
                   <div className="m-auto w-full max-w-sm text-center">
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-teal-300" />
-                    <p className="mt-4 text-sm font-medium">
+                    <Waveform />
+                    <p className="mt-5 text-sm font-semibold">
                       {stage === "decoding" && "Reading the audio track…"}
                       {stage === "loading-model" && (download > 0 ? `Downloading model… ${download}%` : "Loading model…")}
                       {stage === "transcribing" && `Transcribing… ${fmtTime(elapsed)}`}
                     </p>
                     {stage === "loading-model" && (
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div className="h-full rounded-full bg-teal-400 transition-all" style={{ width: `${download}%` }} />
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 shadow-[0_0_12px_rgba(45,212,191,0.8)] transition-all" style={{ width: `${download}%` }} />
                       </div>
                     )}
                     {stage === "transcribing" && (
