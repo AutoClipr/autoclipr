@@ -331,35 +331,38 @@ export function AspectRatioConverter() {
   const boxW = Math.round(pw * scale); const boxH = Math.round(ph * scale);
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-6xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(249,115,22,0.2), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(244,63,94,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-6xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/20">
-              <Crop className="h-7 w-7 text-orange-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Aspect Ratio Converter</h1>
-                <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Resize any video to any aspect ratio — crop, pad or stretch. MP4, MOV, AVI, MKV, WebM and more.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-400/30 bg-gradient-to-br from-orange-500/30 to-rose-500/15 shadow-[0_0_40px_-8px_rgba(249,115,22,0.7)]">
+            <Crop className="h-8 w-8 text-orange-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Aspect Ratio{" "}
+            <span className="bg-gradient-to-r from-orange-200 via-orange-300 to-rose-300 bg-clip-text text-transparent">Converter</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Turn a 16:9 video into 9:16, 1:1 or any size — crop, pad or stretch, right in your browser.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Browser-side" },
-              { icon: <LayoutTemplate className="h-3 w-3" />, label: "7 Platform Presets" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Crop · Pad · Stretch" },
+              { icon: <LayoutTemplate className="h-3.5 w-3.5" />, label: "7 Platform Presets" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-orange-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -367,24 +370,52 @@ export function AspectRatioConverter() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-orange-400 bg-orange-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/15 text-orange-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-orange-400/70 shadow-[0_0_60px_-10px_rgba(249,115,22,0.7)]" : "border-white/10 hover:border-orange-400/40 hover:shadow-[0_0_60px_-16px_rgba(249,115,22,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-orange-400/60 bg-orange-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-500/15 blur-3xl" aria-hidden />
+                {/* 16:9 → 9:16 motif */}
+                <div className="relative flex items-center gap-3 transition-transform duration-300 group-hover:-translate-y-1">
+                  <div className="flex h-12 w-20 items-center justify-center rounded-xl border border-white/15 bg-white/[0.05] text-[10px] font-bold text-white/50">16:9</div>
+                  <Upload className="h-5 w-5 rotate-90 text-orange-300" />
+                  <div className="flex h-20 w-12 items-center justify-center rounded-xl border border-orange-400/50 bg-orange-500/15 text-[10px] font-bold text-orange-200 shadow-[0_0_24px_-6px_rgba(249,115,22,0.8)]">9:16</div>
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video file. It stays on your device." },
+                { n: "2", t: "Pick a ratio", d: "TikTok, Reels, Shorts, square or custom size." },
+                { n: "3", t: "Convert", d: "Crop, pad or stretch, then download." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-xs font-bold text-orange-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Workspace ── */}
@@ -395,7 +426,7 @@ export function AspectRatioConverter() {
             <div className="space-y-4">
 
               {/* File bar */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -412,16 +443,16 @@ export function AspectRatioConverter() {
 
               {/* Video preview */}
               {videoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                   <video src={videoUrl} controls className="w-full max-h-64" onLoadedMetadata={onMeta} />
                 </div>
               )}
 
               {/* Output preview */}
               {stage === "done" && outputUrl && (
-                <div className="overflow-hidden rounded-2xl border border-orange-500/20 bg-black">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
-                    <span className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Output Preview</span>
+                <div className="overflow-hidden rounded-3xl border border-orange-400/30 bg-black shadow-[0_0_50px_-20px_rgba(249,115,22,0.8)]">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-orange-200"><span className="h-1.5 w-1.5 rounded-full bg-orange-400" />Output preview</span>
                     <span className="text-xs text-white/40">{fmtBytes(outputSize)} · {targetW}×{targetH}</span>
                   </div>
                   <video src={outputUrl} controls className="w-full max-h-64" />
@@ -430,22 +461,22 @@ export function AspectRatioConverter() {
 
               {/* Progress */}
               {stage === "processing" && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-300"
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-rose-400 shadow-[0_0_12px_rgba(251,146,60,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                   </div>
-                  <p className="text-xs text-white/30">{progress}% complete</p>
+                  <p className="text-xs text-white/45">{progress}% complete</p>
                 </div>
               )}
 
               {/* Error */}
               {stage === "error" && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+                <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
                   <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
                   <div>
                     <p className="font-semibold text-red-300">Conversion failed</p>
@@ -458,11 +489,11 @@ export function AspectRatioConverter() {
               {stage === "done" && outputUrl && (
                 <div className="flex gap-3">
                   <button onClick={download}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 py-4 text-sm font-bold text-white transition hover:from-orange-500 hover:to-amber-500 active:scale-[0.98]">
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                     <Download className="h-4 w-4" /> Download {opts.outputFormat.toUpperCase()}
                   </button>
                   <button onClick={() => setStage("ready")}
-                    className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
+                    className="flex h-12 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-5 text-sm text-white/70">
                     <RefreshCw className="h-4 w-4" /> Re-convert
                   </button>
                 </div>
@@ -473,22 +504,22 @@ export function AspectRatioConverter() {
             <div className="space-y-4">
 
               {/* Aspect ratio presets */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Target Ratio</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Target Ratio</p>
                 <div className="grid grid-cols-2 gap-2">
                   {PRESETS.map(p => (
                     <button
                       key={p.id}
                       onClick={() => setOpt("preset", p.id)}
-                      className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-all
+                      className={`flex items-center gap-2.5 rounded-2xl border px-3 py-3 text-left transition-all
                         ${opts.preset === p.id
-                          ? "border-orange-500/50 bg-orange-500/10 text-white"
-                          : "border-white/[0.06] bg-white/[0.02] text-white/50 hover:border-white/10 hover:text-white/80"}`}
+                          ? "border-orange-400/50 bg-orange-500/15 text-orange-100 shadow-[0_0_18px_-8px_rgba(251,146,60,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}
                     >
-                      <span className={opts.preset === p.id ? "text-orange-400" : "text-white/30"}>{p.icon}</span>
+                      <span className={opts.preset === p.id ? "text-orange-300" : "text-white/35"}>{p.icon}</span>
                       <div className="min-w-0">
                         <p className="text-xs font-semibold truncate">{p.label}</p>
-                        <p className="text-[10px] text-white/30 truncate">{p.platform}</p>
+                        <p className="truncate text-[10px] text-white/40">{p.platform}</p>
                       </div>
                     </button>
                   ))}
@@ -501,21 +532,21 @@ export function AspectRatioConverter() {
                       <p className="mb-1 text-xs text-white/40">Width (px)</p>
                       <input type="number" min={2} max={7680} value={opts.customW}
                         onChange={e => setOpt("customW", +e.target.value)}
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50" />
+                        className="h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white focus:border-orange-400/60 focus:outline-none" />
                     </div>
                     <div>
                       <p className="mb-1 text-xs text-white/40">Height (px)</p>
                       <input type="number" min={2} max={7680} value={opts.customH}
                         onChange={e => setOpt("customH", +e.target.value)}
-                        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50" />
+                        className="h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white focus:border-orange-400/60 focus:outline-none" />
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Fit mode */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Fit Mode</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Fit Mode</p>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: "crop",    label: "Crop",    desc: "Fill & cut edges" },
@@ -523,12 +554,12 @@ export function AspectRatioConverter() {
                     { id: "stretch", label: "Stretch", desc: "Distort to fit" },
                   ] as const).map(m => (
                     <button key={m.id} onClick={() => setOpt("fitMode", m.id)}
-                      className={`rounded-xl border px-3 py-2.5 text-center transition-all
+                      className={`rounded-2xl border px-3 py-3 text-center transition-all
                         ${opts.fitMode === m.id
-                          ? "border-orange-500/50 bg-orange-500/10"
-                          : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"}`}>
-                      <p className={`text-xs font-semibold ${opts.fitMode === m.id ? "text-orange-300" : "text-white/60"}`}>{m.label}</p>
-                      <p className="text-[10px] text-white/30 mt-0.5">{m.desc}</p>
+                          ? "border-orange-400/50 bg-orange-500/15 text-orange-100 shadow-[0_0_18px_-8px_rgba(251,146,60,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
+                      <p className={`text-sm font-semibold ${opts.fitMode === m.id ? "text-orange-100" : "text-white/70"}`}>{m.label}</p>
+                      <p className="mt-0.5 text-[10px] text-white/40">{m.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -545,8 +576,8 @@ export function AspectRatioConverter() {
               </div>
 
               {/* Ratio preview box */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Preview</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Preview</p>
                 <div className="flex items-center justify-center gap-6">
                   {/* Original */}
                   {videoDims.w > 0 && (() => {
@@ -557,7 +588,7 @@ export function AspectRatioConverter() {
                     return (
                       <div className="text-center">
                         <div className="flex items-end justify-center" style={{ height: maxPH }}>
-                          <div className="rounded-lg border-2 border-white/20 bg-white/[0.04] flex items-center justify-center"
+                          <div className="flex items-center justify-center rounded-xl border-2 border-white/20 bg-white/[0.04]"
                             style={{ width: ow, height: oh }}>
                             <span className="text-[9px] text-white/30">{videoDims.w}×{videoDims.h}</span>
                           </div>
@@ -567,17 +598,17 @@ export function AspectRatioConverter() {
                     );
                   })()}
 
-                  <div className="text-white/20 text-lg">→</div>
+                  <div className="text-lg text-orange-300/70">→</div>
 
                   {/* Target */}
                   <div className="text-center">
                     <div className="flex items-end justify-center" style={{ height: maxPH }}>
-                      <div className="rounded-lg border-2 border-orange-500/40 bg-orange-500/10 flex items-center justify-center"
+                      <div className="flex items-center justify-center rounded-xl border-2 border-orange-400/60 bg-orange-500/15 shadow-[0_0_30px_-8px_rgba(249,115,22,0.8)] transition-all duration-300"
                         style={{ width: boxW, height: boxH }}>
-                        <span className="text-[9px] text-orange-400/70">{targetW}×{targetH}</span>
+                        <span className="text-[9px] font-semibold text-orange-200">{targetW}×{targetH}</span>
                       </div>
                     </div>
-                    <p className="mt-2 text-[10px] text-orange-400/70">
+                    <p className="mt-2 text-[10px] font-semibold text-orange-200">
                       {opts.preset === "custom" ? "Custom" : selectedPreset.ratio}
                     </p>
                   </div>
@@ -585,16 +616,16 @@ export function AspectRatioConverter() {
               </div>
 
               {/* Output format + quality */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Output Format</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/40">Output Format</p>
                   <div className="grid grid-cols-4 gap-1.5">
                     {OUTPUT_FORMATS.map(f => (
                       <button key={f} onClick={() => setOpt("outputFormat", f)}
-                        className={`rounded-xl border py-2 text-xs font-bold uppercase transition-all
+                        className={`rounded-full border py-2 text-xs font-bold uppercase transition-all
                           ${opts.outputFormat === f
-                            ? "border-orange-500/50 bg-orange-500/10 text-orange-300"
-                            : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                            ? "border-orange-400/50 bg-orange-500/15 text-orange-100 shadow-[0_0_18px_-8px_rgba(251,146,60,0.9)]"
+                            : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {f}
                       </button>
                     ))}
@@ -603,23 +634,23 @@ export function AspectRatioConverter() {
 
                 {/* Advanced */}
                 <button onClick={() => setShowAdvanced(a => !a)}
-                  className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors">
+                  className="flex items-center gap-2 text-xs font-semibold text-white/50 transition-colors hover:text-white">
                   <Settings2 className="h-3.5 w-3.5" />
                   Advanced options
                   <ChevronDown className={`h-3 w-3 transition-transform ${showAdvanced ? "rotate-180" : ""}`} />
                 </button>
 
                 {showAdvanced && (
-                  <div className="space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-black/20 p-4">
                     <div>
                       <p className="mb-2 text-xs text-white/40">Quality</p>
                       <div className="grid grid-cols-3 gap-1.5">
                         {(["high", "medium", "compressed"] as const).map(q => (
                           <button key={q} onClick={() => setOpt("quality", q)}
-                            className={`rounded-xl border py-2 text-xs capitalize transition-all
+                            className={`rounded-full border py-2 text-xs capitalize transition-all
                               ${opts.quality === q
-                                ? "border-orange-500/50 bg-orange-500/10 text-orange-300"
-                                : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                                ? "border-orange-400/50 bg-orange-500/15 text-orange-100 shadow-[0_0_18px_-8px_rgba(251,146,60,0.9)]"
+                                : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                             {q}
                           </button>
                         ))}
@@ -629,13 +660,13 @@ export function AspectRatioConverter() {
                       <p className="mb-2 text-xs text-white/40">Frame Rate</p>
                       <div className="relative">
                         <select value={opts.fps} onChange={e => setOpt("fps", e.target.value as ConvertOpts["fps"])}
-                          className="w-full appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-xs text-white focus:outline-none">
+                          className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-black/30 px-4 text-xs text-white focus:border-orange-400/60 focus:outline-none">
                           <option value="original" className="bg-[#0d0d1a]">Original FPS</option>
                           <option value="60" className="bg-[#0d0d1a]">60 FPS</option>
                           <option value="30" className="bg-[#0d0d1a]">30 FPS</option>
                           <option value="24" className="bg-[#0d0d1a]">24 FPS</option>
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-2.5 h-3 w-3 text-white/30" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-3 w-3 text-white/40" />
                       </div>
                     </div>
                   </div>
@@ -647,7 +678,7 @@ export function AspectRatioConverter() {
                 <button
                   onClick={convert}
                   disabled={videoDims.w === 0}
-                  className="w-full rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 py-4 text-sm font-bold text-white transition hover:from-orange-500 hover:to-amber-500 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Crop className="h-4 w-4" />
                   Convert to {opts.preset === "custom" ? `${opts.customW}×${opts.customH}` : selectedPreset.ratio}
@@ -665,9 +696,9 @@ export function AspectRatioConverter() {
             { label: "Instagram",ratio: "1:1",   res: "1080×1080",  color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
             { label: "Reels",    ratio: "9:16",  res: "1080×1920",  color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
           ].map(p => (
-            <div key={p.label} className={`rounded-2xl border ${p.border} ${p.bg} p-4`}>
-              <p className={`text-sm font-bold ${p.color}`}>{p.label}</p>
-              <p className="mt-1 text-xs text-white/40">{p.ratio} · {p.res}</p>
+            <div key={p.label} className={`rounded-3xl border ${p.border} ${p.bg} p-5 transition-transform hover:-translate-y-0.5`}>
+              <p className={`text-lg font-extrabold ${p.color}`}>{p.label}</p>
+              <p className="mt-1 text-sm text-white/55">{p.ratio} · {p.res}</p>
             </div>
           ))}
         </div>
@@ -679,21 +710,21 @@ export function AspectRatioConverter() {
             { icon: <Maximize2  className="h-5 w-5 text-amber-400"  />, title: "Letterbox / Pillarbox", body: 'Choose Pad mode to add bars instead of cropping. Pick any bar colour — black is default.' },
             { icon: <Film       className="h-5 w-5 text-yellow-400" />, title: "All formats", body: "MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP — any video file, converted in your browser." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                 {c.icon}
               </div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
         {/* Note */}
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Processing happens 100% in your browser.</span>{" "}
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-orange-400/20 bg-orange-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" />
+          <p className="text-xs leading-relaxed text-orange-100/70">
+            <span className="font-semibold text-orange-200">Processing happens 100% in your browser.</span>{" "}
             Your video never leaves your device. Large files (1 GB+) may take a minute — processing time depends on your device.
           </p>
         </div>
