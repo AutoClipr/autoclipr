@@ -10,6 +10,13 @@ import {
 } from "lucide-react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import {
+  WHISPER_LANGUAGES,
+  WHISPER_MODELS,
+  decodeTo16kMono,
+  transcribeWithWhisper,
+  type WhisperChunk,
+} from "@/lib/whisper/transcribe";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,31 +31,16 @@ interface CaptionEntry {
 }
 
 interface TranscribeOpts {
-  language: string;
+  model: string;
+  language: string | null; // null → auto-detect
   maxLineLength: number;
   maxLineDuration: number;
   punctuation: boolean;
 }
 
-// ─── Language map ─────────────────────────────────────────────────────────────
-
-const LANGUAGES: { code: string; label: string; native: string }[] = [
-  { code: "en-US", label: "English (US)", native: "English" },
-  { code: "en-GB", label: "English (UK)", native: "English UK" },
-  { code: "hi-IN", label: "Hindi", native: "हिन्दी" },
-  { code: "es-ES", label: "Spanish", native: "Español" },
-  { code: "fr-FR", label: "French", native: "Français" },
-  { code: "de-DE", label: "German", native: "Deutsch" },
-  { code: "pt-BR", label: "Portuguese", native: "Português" },
-  { code: "ja-JP", label: "Japanese", native: "日本語" },
-  { code: "ko-KR", label: "Korean", native: "한국어" },
-  { code: "zh-CN", label: "Chinese (Simplified)", native: "中文" },
-  { code: "ar-SA", label: "Arabic", native: "العربية" },
-  { code: "ru-RU", label: "Russian", native: "Русский" },
-];
-
 const DEFAULT_OPTS: TranscribeOpts = {
-  language: "en-US",
+  model: WHISPER_MODELS[0].id,
+  language: null,
   maxLineLength: 42,
   maxLineDuration: 5,
   punctuation: true,
@@ -111,91 +103,35 @@ function wrapText(text: string, maxLen: number): string {
   return lines.join("\n");
 }
 
-// ─── Speech Recognition wrapper ──────────────────────────────────────────────
+// ─── Whisper chunks → caption lines ──────────────────────────────────────────
 
-function transcribeAudio(
-  audioUrl: string,
-  language: string,
-  onResult: (entry: CaptionEntry) => void,
-  onDone: () => void,
-  onError: (msg: string) => void,
-): () => void {
-  const SpeechRecognition =
-    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    onError("Speech recognition is not supported in this browser. Try Chrome or Edge.");
-    return () => {};
+/**
+ * Whisper returns sentence-ish chunks. Split any chunk longer than the max
+ * segment duration into evenly timed pieces by word count, then wrap lines.
+ */
+function chunksToCaptions(chunks: WhisperChunk[], opts: TranscribeOpts): CaptionEntry[] {
+  const out: CaptionEntry[] = [];
+  for (const c of chunks) {
+    const text = c.text.trim();
+    if (!text) continue;
+    const start = c.start;
+    const end = Math.max(c.end, start + 0.5);
+    const dur = end - start;
+    const parts = Math.max(1, Math.ceil(dur / opts.maxLineDuration));
+    const words = text.split(/\s+/);
+    const per = Math.ceil(words.length / parts);
+    const n = Math.ceil(words.length / per);
+    for (let i = 0; i < n; i++) {
+      const piece = words.slice(i * per, (i + 1) * per).join(" ");
+      out.push({
+        id: uid(),
+        start: start + (dur * i) / n,
+        end: start + (dur * (i + 1)) / n,
+        text: wrapText(piece, opts.maxLineLength),
+      });
+    }
   }
-
-  const audio = new Audio(audioUrl);
-  audio.preload = "auto";
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = language;
-  recognition.continuous = true;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  let startTime = 0;
-  let running = true;
-  let lastEnd = 0;
-
-  recognition.onresult = (e: any) => {
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) {
-        const text = e.results[i][0].transcript.trim();
-        if (!text) continue;
-        const now = audio.currentTime;
-        const segStart = lastEnd || Math.max(0, now - 3);
-        const segEnd = now;
-        lastEnd = segEnd;
-        onResult({
-          id: uid(),
-          start: segStart,
-          end: segEnd,
-          text,
-        });
-      }
-    }
-  };
-
-  recognition.onerror = (e: any) => {
-    if (e.error === "no-speech" || e.error === "aborted") return;
-    onError(`Recognition error: ${e.error}`);
-  };
-
-  recognition.onend = () => {
-    if (!running) { onDone(); return; }
-    // Auto-restart until audio ends
-    if (audio.currentTime < audio.duration - 0.5) {
-      try { recognition.start(); } catch { /* already started */ }
-    } else {
-      running = false;
-      onDone();
-    }
-  };
-
-  audio.oncanplay = () => {
-    startTime = Date.now();
-    audio.play();
-    recognition.start();
-  };
-
-  audio.onended = () => {
-    running = false;
-    try { recognition.stop(); } catch { /* ok */ }
-    setTimeout(onDone, 500);
-  };
-
-  audio.onerror = () => onError("Failed to load audio for transcription.");
-
-  return () => {
-    running = false;
-    try { recognition.abort(); } catch { /* ok */ }
-    audio.pause();
-    audio.src = "";
-  };
+  return out;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -316,45 +252,48 @@ export function CaptionGenerator() {
     setStage("extracting");
     setProgress(5);
     setCaptions([]);
+    setError("");
 
     try {
-      // Check browser support first
-      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (!SR) throw new Error("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
-
       const aUrl = await extractAudio(file);
       setAudioUrl(aUrl);
-      setProgress(30);
-      setStage("transcribing");
-      setProgressMsg("Listening and transcribing…");
+      const samples = await decodeTo16kMono(await (await fetch(aUrl)).arrayBuffer());
+      setProgress(25);
+      setProgressMsg("Loading Whisper AI model…");
 
-      const collected: CaptionEntry[] = [];
+      const job = transcribeWithWhisper(samples, {
+        model: opts.model,
+        language: opts.language,
+        onDownload: (pct) => {
+          setProgressMsg(`Downloading Whisper model… ${pct}% (one-time)`);
+          setProgress(25 + Math.round(pct * 0.35));
+        },
+        onReady: () => {
+          setStage("transcribing");
+          setProgress(65);
+          setProgressMsg("Transcribing with Whisper AI…");
+        },
+      });
+      stopRef.current = job.cancel;
 
-      stopRef.current = transcribeAudio(
-        aUrl,
-        opts.language,
-        (entry) => {
-          entry.text = wrapText(entry.text, opts.maxLineLength);
-          collected.push(entry);
-          setCaptions([...collected]);
-          setProgress(Math.min(95, 30 + (collected.length * 3)));
-        },
-        () => {
-          setProgress(100);
-          setWordCount(collected.reduce((n, c) => n + c.text.split(/\s+/).length, 0));
-          setStage("done");
-        },
-        (msg) => { setError(msg); setStage("error"); }
-      );
-    } catch (e: any) {
-      setError(e?.message ?? "Something went wrong.");
+      const res = await job.promise;
+      const caps = chunksToCaptions(res.chunks, opts);
+      setCaptions(caps);
+      setWordCount(caps.reduce((n, c) => n + c.text.split(/\s+/).filter(Boolean).length, 0));
+      setProgress(100);
+      setStage("done");
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message === "cancelled") return;
+      setError(e instanceof Error ? e.message : "Something went wrong.");
       setStage("error");
+    } finally {
+      stopRef.current = null;
     }
   };
 
   const stopTranscription = () => {
     stopRef.current?.();
-    setStage("done");
+    setStage("ready");
   };
 
   // ── Export ──
@@ -418,7 +357,7 @@ export function CaptionGenerator() {
             {[
               { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
               { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Languages   className="h-3 w-3" />, label: "12 Languages" },
+              { icon: <Languages   className="h-3 w-3" />, label: "Whisper AI · 99 languages" },
               { icon: <FileText    className="h-3 w-3" />, label: "SRT · VTT · TXT" },
             ].map(p => (
               <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
@@ -514,17 +453,35 @@ export function CaptionGenerator() {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">Language</p>
                     <div className="relative">
                       <select
-                        value={opts.language}
-                        onChange={e => setOpt("language", e.target.value)}
+                        value={opts.language ?? ""}
+                        onChange={e => setOpt("language", e.target.value || null)}
                         className="w-full appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50"
                       >
-                        {LANGUAGES.map(l => (
-                          <option key={l.code} value={l.code} className="bg-[#0d0d1a]">
-                            {l.label} ({l.native})
+                        {WHISPER_LANGUAGES.map(l => (
+                          <option key={l.label} value={l.code ?? ""} className="bg-[#0d0d1a]">
+                            {l.label}
                           </option>
                         ))}
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-white/30" />
+                    </div>
+                  </div>
+
+                  {/* Model */}
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/30">AI model</p>
+                    <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1">
+                      {WHISPER_MODELS.map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setOpt("model", m.id)}
+                          className={`rounded-lg px-3 py-2 text-left transition-colors ${opts.model === m.id ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
+                        >
+                          <span className="block text-sm font-semibold">{m.label}</span>
+                          <span className={`block text-[10px] ${opts.model === m.id ? "text-black/55" : "text-white/35"}`}>{m.note}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -584,7 +541,7 @@ export function CaptionGenerator() {
                       style={{ width: `${progress}%` }} />
                   </div>
                   <div className="flex items-center justify-between text-xs text-white/30">
-                    <span>{progress}% complete · {captions.length} segments captured</span>
+                    <span>{progress}% complete</span>
                     {stage === "transcribing" && (
                       <button onClick={stopTranscription}
                         className="rounded-lg border border-white/[0.08] px-3 py-1 text-white/50 hover:text-white transition-colors">
@@ -592,8 +549,8 @@ export function CaptionGenerator() {
                       </button>
                     )}
                   </div>
-                  {stage === "transcribing" && captions.length > 0 && (
-                    <p className="text-xs text-white/20">Captions are appearing live on the right →</p>
+                  {stage === "transcribing" && (
+                    <p className="text-xs text-white/30">Runs on your device — long videos can take a few minutes. Keep this tab open.</p>
                   )}
                 </div>
               )}
@@ -721,8 +678,8 @@ export function CaptionGenerator() {
           {[
             {
               icon: <Mic className="h-5 w-5 text-indigo-400" />,
-              title: "Browser Speech AI",
-              body: "Uses the Web Speech API built into Chrome and Edge — no server, no upload, instant results.",
+              title: "Whisper AI, in your browser",
+              body: "OpenAI's open Whisper model runs on your device — accurate, ~99 languages, and your file is never uploaded.",
             },
             {
               icon: <Edit3 className="h-5 w-5 text-purple-400" />,
@@ -745,13 +702,12 @@ export function CaptionGenerator() {
           ))}
         </div>
 
-        {/* Browser notice */}
-        <div className="mt-6 rounded-2xl border border-amber-500/15 bg-amber-500/5 px-5 py-4 flex items-start gap-3">
-          <Zap className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-          <p className="text-xs text-amber-300/70 leading-relaxed">
-            <span className="font-semibold text-amber-300">Best results in Chrome or Edge.</span>{" "}
-            The Web Speech API requires microphone permission on your browser — this is used to process the video audio, not to record you.
-            For the best accuracy, use clear audio with minimal background noise.
+        {/* Model notice */}
+        <div className="mt-6 rounded-2xl border border-indigo-500/15 bg-indigo-500/5 px-5 py-4 flex items-start gap-3">
+          <Zap className="h-4 w-4 shrink-0 text-indigo-300 mt-0.5" />
+          <p className="text-xs text-indigo-200/70 leading-relaxed">
+            <span className="font-semibold text-indigo-200">First run downloads the AI model once</span>{" "}
+            (about 40–80 MB) and your browser caches it. No microphone access needed — the audio is read straight from your file.
           </p>
         </div>
       </div>

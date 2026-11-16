@@ -8,32 +8,15 @@ import {
 } from "lucide-react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile } from "@ffmpeg/util";
+import {
+  WHISPER_LANGUAGES as LANGUAGES,
+  WHISPER_MODELS as MODELS,
+  decodeTo16kMono as decodeWithBrowser,
+  transcribeWithWhisper,
+} from "@/lib/whisper/transcribe";
 
 type Stage = "idle" | "ready" | "decoding" | "loading-model" | "transcribing" | "done" | "error";
 type Chunk = { start: number; end: number; text: string };
-
-const MODELS = [
-  { id: "onnx-community/whisper-base", label: "Accurate", note: "~80 MB, one-time" },
-  { id: "onnx-community/whisper-tiny", label: "Fast", note: "~40 MB, one-time" },
-];
-
-const LANGUAGES: { code: string | null; label: string }[] = [
-  { code: null, label: "Auto-detect" },
-  { code: "english", label: "English" },
-  { code: "hindi", label: "Hindi" },
-  { code: "spanish", label: "Spanish" },
-  { code: "french", label: "French" },
-  { code: "german", label: "German" },
-  { code: "portuguese", label: "Portuguese" },
-  { code: "italian", label: "Italian" },
-  { code: "japanese", label: "Japanese" },
-  { code: "korean", label: "Korean" },
-  { code: "chinese", label: "Chinese" },
-  { code: "arabic", label: "Arabic" },
-  { code: "russian", label: "Russian" },
-  { code: "turkish", label: "Turkish" },
-  { code: "indonesian", label: "Indonesian" },
-];
 
 const ACCEPT =
   "audio/*,video/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.mp4,.mov,.webm,.mkv,.avi,.m4v";
@@ -57,22 +40,6 @@ function srtTime(s: number) {
 
 function fmtBytes(b: number) {
   return b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`;
-}
-
-/** Decode any audio/video file to 16 kHz mono samples, which Whisper expects. */
-async function decodeWithBrowser(buf: ArrayBuffer): Promise<Float32Array> {
-  const ctx = new AudioContext({ sampleRate: 16000 });
-  try {
-    const decoded = await ctx.decodeAudioData(buf);
-    if (decoded.numberOfChannels === 1) return decoded.getChannelData(0);
-    const a = decoded.getChannelData(0);
-    const b = decoded.getChannelData(1);
-    const mono = new Float32Array(a.length);
-    for (let i = 0; i < a.length; i++) mono[i] = (a[i] + b[i]) / 2;
-    return mono;
-  } finally {
-    void ctx.close();
-  }
 }
 
 async function loadFFmpeg(): Promise<FFmpeg> {
@@ -111,7 +78,7 @@ async function decodeWithFFmpeg(file: File): Promise<Float32Array> {
 export function AudioToText() {
   const [stage, setStage] = useState<Stage>("idle");
   const [file, setFile] = useState<File | null>(null);
-  const [model, setModel] = useState(MODELS[0].id);
+  const [model, setModel] = useState<string>(MODELS[0].id);
   const [language, setLanguage] = useState<string | null>(null);
   const [download, setDownload] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -123,11 +90,10 @@ export function AudioToText() {
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const workerRef = useRef<Worker | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const downloads = useRef(new Map<string, { loaded: number; total: number }>());
 
-  useEffect(() => () => workerRef.current?.terminate(), []);
+  useEffect(() => () => cancelRef.current?.(), []);
 
   // Tick a timer while transcribing so long files don't look frozen.
   useEffect(() => {
@@ -151,13 +117,6 @@ export function AudioToText() {
     const f = e.dataTransfer.files[0];
     if (f) pick(f);
   }, []);
-
-  function getWorker() {
-    if (!workerRef.current) {
-      workerRef.current = new Worker(new URL("./whisper.worker.ts", import.meta.url), { type: "module" });
-    }
-    return workerRef.current;
-  }
 
   async function transcribe() {
     if (!file) return;
@@ -183,35 +142,30 @@ export function AudioToText() {
 
     setStage("loading-model");
     setDownload(0);
-    downloads.current.clear();
 
-    const worker = getWorker();
-    worker.onmessage = (e: MessageEvent) => {
-      const m = e.data;
-      if (m.type === "download") {
-        downloads.current.set(m.file, { loaded: m.loaded, total: m.total });
-        let loaded = 0;
-        let total = 0;
-        downloads.current.forEach((d) => {
-          loaded += d.loaded;
-          total += d.total;
-        });
-        setDownload(total ? Math.round((loaded / total) * 100) : 0);
-      } else if (m.type === "ready") {
-        setStage("transcribing");
-      } else if (m.type === "done") {
-        setText(String(m.text).trim());
-        setChunks(m.chunks);
-        setStage("done");
-      } else if (m.type === "error") {
-        setError(m.message);
-        setStage("error");
-      }
-    };
-    worker.postMessage({ type: "transcribe", audio, model, language }, [audio.buffer]);
+    const job = transcribeWithWhisper(audio, {
+      model,
+      language,
+      onDownload: setDownload,
+      onReady: () => setStage("transcribing"),
+    });
+    cancelRef.current = job.cancel;
+    try {
+      const res = await job.promise;
+      setText(res.text);
+      setChunks(res.chunks);
+      setStage("done");
+    } catch (e) {
+      if (e instanceof Error && e.message === "cancelled") return;
+      setError(e instanceof Error ? e.message : "Transcription failed.");
+      setStage("error");
+    } finally {
+      cancelRef.current = null;
+    }
   }
 
   function reset() {
+    cancelRef.current?.();
     setStage("idle");
     setFile(null);
     setText("");

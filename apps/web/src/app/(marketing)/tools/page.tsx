@@ -150,7 +150,7 @@ const TOOLS = [
     border: "hover:border-indigo-500/40",
     iconBg: "bg-indigo-500/15 group-hover:bg-indigo-500/25",
     iconColor: "text-indigo-400",
-    tag: "SRT · VTT · 6 languages",
+    tag: "Whisper · SRT · VTT · TXT",
   },
   {
     icon: Type,
