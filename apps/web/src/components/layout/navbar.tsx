@@ -82,7 +82,7 @@ export async function Navbar({ solid = false }: { solid?: boolean } = {}) {
             </div>
           ) : (
             <div className="hidden items-center gap-4 md:flex">
-              <Link href="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/login" className="text-sm font-semibold text-white transition-all [text-shadow:0_0_12px_rgba(255,255,255,0.55)] hover:[text-shadow:0_0_18px_rgba(255,255,255,0.9)]">
                 Sign in
               </Link>
               <Link
