@@ -668,35 +668,38 @@ export function CaptionTemplates() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080f] px-4 py-10 text-white">
-      <div className="mx-auto max-w-7xl">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] px-4 py-10 text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[560px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(244,63,94,0.2), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(217,70,239,0.12), transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-7xl">
 
         {/* ── Header ── */}
-        <div className="mb-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
-            <ArrowLeft className="h-4 w-4" /> All Tools
-          </Link>
-          <div className="mt-6 flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-rose-500/20">
-              <Type className="h-7 w-7 text-rose-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold sm:text-3xl">Caption Templates</h1>
-                <span className="rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">Free</span>
-              </div>
-              <p className="mt-1 text-white/50 text-sm">Burn stylish captions into any video. Choose a template, add captions, export in seconds.</p>
-            </div>
+        <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+          <ArrowLeft className="h-4 w-4" /> All Tools
+        </Link>
+        <div className="mx-auto mb-10 mt-8 max-w-2xl text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-500/30 to-fuchsia-500/15 shadow-[0_0_40px_-8px_rgba(244,63,94,0.7)]">
+            <Type className="h-8 w-8 text-rose-200" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Caption{" "}
+            <span className="bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 bg-clip-text text-transparent">Templates</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
+            Burn stylish captions into any video. Pick a template, add or import captions, export in seconds.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
             {[
-              { icon: <ShieldCheck className="h-3 w-3" />, label: "100% Private" },
-              { icon: <Globe       className="h-3 w-3" />, label: "No Upload" },
-              { icon: <Zap         className="h-3 w-3" />, label: "Browser-side" },
-              { icon: <Type        className="h-3 w-3" />, label: "8 Templates" },
+              { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: "100% Private" },
+              { icon: <Globe       className="h-3.5 w-3.5" />, label: "No Upload" },
+              { icon: <Zap         className="h-3.5 w-3.5" />, label: "Live preview" },
+              { icon: <Type        className="h-3.5 w-3.5" />, label: "8 Templates · SRT import" },
             ].map(p => (
-              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-white/50">
-                {p.icon}{p.label}
+              <span key={p.label} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <span className="text-rose-300">{p.icon}</span>{p.label}
               </span>
             ))}
           </div>
@@ -704,24 +707,52 @@ export function CaptionTemplates() {
 
         {/* ── Drop zone ── */}
         {stage === "idle" && (
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`relative flex cursor-pointer flex-col items-center justify-center gap-5 rounded-3xl border-2 border-dashed py-24 transition-all
-              ${dragging ? "border-rose-400 bg-rose-500/10" : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"}`}
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400">
-              <Upload className="h-8 w-8" />
+          <>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-[2rem] border p-2 transition-all duration-300
+                ${dragging ? "border-rose-400/70 shadow-[0_0_60px_-10px_rgba(244,63,94,0.7)]" : "border-white/10 hover:border-rose-400/40 hover:shadow-[0_0_60px_-16px_rgba(244,63,94,0.6)]"}`}
+            >
+              <div className={`relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed px-6 py-20 transition-colors
+                ${dragging ? "border-rose-400/60 bg-rose-500/10" : "border-white/10 bg-white/[0.02] group-hover:bg-white/[0.035]"}`}>
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-500/15 blur-3xl" aria-hidden />
+                {/* Styled-caption motif */}
+                <div className="relative flex h-24 w-44 items-end justify-center overflow-hidden rounded-3xl border border-rose-400/30 bg-gradient-to-br from-rose-500/20 to-fuchsia-500/10 pb-4 shadow-[0_0_30px_-8px_rgba(244,63,94,0.8)] transition-transform duration-300 group-hover:-translate-y-1" aria-hidden>
+                  <p className="text-lg font-black uppercase leading-none" style={{ WebkitTextStroke: "1px black", paintOrder: "stroke fill" }}>
+                    <span className="text-white">Your </span><span className="text-yellow-300">captions</span>
+                  </p>
+                </div>
+                <div className="relative text-center">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">Drop your video here</p>
-              <p className="mt-1 text-sm text-white/40">MP4, MOV, AVI, MKV, WebM, FLV, TS, 3GP…</p>
+
+            <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Any video file. It stays on your device." },
+                { n: "2", t: "Style", d: "Pick a template, edit captions or import an SRT." },
+                { n: "3", t: "Burn & download", d: "Captions are encoded right into the video." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-xs font-bold text-rose-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) pickFile(f); }} />
-          </div>
+          </>
         )}
 
         {/* ── Workspace ── */}
@@ -732,7 +763,7 @@ export function CaptionTemplates() {
             <div className="space-y-4">
 
               {/* File bar */}
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-5 py-3.5">
+              <div className="flex items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur px-5 py-3.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400">
                   <FileVideo className="h-4 w-4" />
                 </div>
@@ -746,7 +777,7 @@ export function CaptionTemplates() {
               </div>
 
               {/* Canvas live preview */}
-              <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-black">
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
                 {/* Hidden video for canvas source */}
                 {videoUrl && (
                   <video
@@ -767,7 +798,7 @@ export function CaptionTemplates() {
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
                     {captions.map((_, i) => (
                       <button key={i} onClick={() => setPreviewCap(i)}
-                        className={`h-1.5 rounded-full transition-all ${previewCap === i ? "w-6 bg-rose-400" : "w-1.5 bg-white/30"}`} />
+                        className={`h-1.5 rounded-full transition-all ${previewCap === i ? "w-6 bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]" : "w-1.5 bg-white/30"}`} />
                     ))}
                   </div>
                 )}
@@ -775,22 +806,22 @@ export function CaptionTemplates() {
 
               {/* Progress */}
               {stage === "processing" && (
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-4">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-rose-400" />
                     <p className="font-semibold text-white">{progressMsg}</p>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-300"
+                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-fuchsia-400 shadow-[0_0_12px_rgba(251,113,133,0.8)] transition-all duration-300"
                       style={{ width: `${progress}%` }} />
                   </div>
-                  <p className="text-xs text-white/30">{progress}% complete</p>
+                  <p className="text-xs text-white/45">{progress}% complete</p>
                 </div>
               )}
 
               {/* Error */}
               {stage === "error" && (
-                <div className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+                <div className="flex items-start gap-3 rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] px-5 py-5">
                   <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
                   <div>
                     <p className="font-semibold text-red-300">Processing failed</p>
@@ -802,20 +833,20 @@ export function CaptionTemplates() {
               {/* Done */}
               {stage === "done" && outputUrl && (
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-rose-500/20 bg-black">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
-                      <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider">Output Preview</span>
+                  <div className="overflow-hidden rounded-3xl border border-rose-400/30 bg-black shadow-[0_0_50px_-20px_rgba(244,63,94,0.8)]">
+                    <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-white"><span className="h-1.5 w-1.5 rounded-full bg-rose-400" />Your captioned video is ready</span>
                       <span className="text-xs text-white/40">{fmtBytes(outputSize)}</span>
                     </div>
                     <video src={outputUrl} controls className="w-full max-h-64" />
                   </div>
                   <div className="flex gap-3">
                     <button onClick={download}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 py-4 text-sm font-bold text-white transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98]">
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold">
                       <Download className="h-4 w-4" /> Download Video
                     </button>
                     <button onClick={() => setStage("ready")}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
+                      className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white text-white/60" title="Burn again">
                       <RefreshCw className="h-4 w-4" />
                     </button>
                   </div>
@@ -823,20 +854,20 @@ export function CaptionTemplates() {
               )}
 
               {/* Caption list */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Captions ({captions.length})</p>
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-5 py-3.5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Captions ({captions.length})</p>
                   <div className="flex items-center gap-2">
                     <button onClick={() => srtFile.current?.click()}
-                      className="rounded-lg border border-white/[0.08] px-2.5 py-1 text-[10px] font-semibold text-white/40 hover:text-white/70 transition-colors">
+                      className="rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-3 py-1.5 text-[11px] font-semibold text-white/60">
                       Import SRT
                     </button>
                     <button onClick={() => setShowSrtInput(s => !s)}
-                      className="rounded-lg border border-white/[0.08] px-2.5 py-1 text-[10px] font-semibold text-white/40 hover:text-white/70 transition-colors">
+                      className="rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-3 py-1.5 text-[11px] font-semibold text-white/60">
                       Paste SRT
                     </button>
                     <button onClick={addCaption}
-                      className="flex items-center gap-1 rounded-lg bg-rose-500/20 px-2.5 py-1 text-[10px] font-semibold text-rose-400 hover:bg-rose-500/30 transition-colors">
+                      className="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-black shadow-[0_0_16px_-4px_rgba(255,255,255,0.5)]">
                       <Plus className="h-3 w-3" /> Add
                     </button>
                   </div>
@@ -851,15 +882,15 @@ export function CaptionTemplates() {
                       onChange={e => setSrtInput(e.target.value)}
                       placeholder={"1\n00:00:01,000 --> 00:00:04,000\nYour caption text here\n\n2\n..."}
                       rows={6}
-                      className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 font-mono text-xs text-white/70 placeholder-white/20 focus:outline-none focus:border-rose-500/50"
+                      className="scrollbar-slim w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 font-mono text-xs text-white/75 placeholder-white/25 focus:border-rose-400/60 focus:outline-none"
                     />
                     <div className="flex gap-2">
                       <button onClick={importSrt}
-                        className="rounded-xl bg-rose-500/20 px-4 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/30 transition-colors">
+                        className="rounded-full border border-rose-400/40 bg-rose-500/15 text-rose-100 transition-colors hover:bg-rose-500/25 px-4 py-1.5 text-xs font-semibold">
                         Import
                       </button>
                       <button onClick={() => setShowSrtInput(false)}
-                        className="rounded-xl border border-white/[0.08] px-4 py-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
+                        className="rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 hover:text-white px-4 py-1.5 text-xs text-white/60">
                         Cancel
                       </button>
                     </div>
@@ -867,39 +898,39 @@ export function CaptionTemplates() {
                 )}
 
                 {/* Caption rows */}
-                <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
+                <div className="scrollbar-slim max-h-72 divide-y divide-white/[0.05] overflow-y-auto">
                   {captions.map((cap, i) => (
                     <div key={cap.id}
                       onClick={() => setPreviewCap(i)}
                       className={`group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors
-                        ${previewCap === i ? "bg-rose-500/5" : "hover:bg-white/[0.02]"}`}>
-                      <span className="shrink-0 mt-1 font-mono text-[10px] text-white/25">{String(i + 1).padStart(2, "0")}</span>
+                        ${previewCap === i ? "bg-rose-500/[0.08] shadow-[inset_3px_0_0_rgba(251,113,133,0.9)]" : "hover:bg-white/[0.03]"}`}>
+                      <span className="mt-0.5 shrink-0 rounded-md bg-rose-500/15 px-1.5 py-0.5 font-mono text-[10px] text-rose-200/80">{String(i + 1).padStart(2, "0")}</span>
                       <div className="flex-1 min-w-0">
                         {editId === cap.id ? (
                           <div className="space-y-2" onClick={e => e.stopPropagation()}>
                             <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={2}
-                              className="w-full resize-none rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-rose-500/50" />
+                              className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs text-white focus:border-rose-400/60 focus:outline-none" />
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <p className="text-[9px] text-white/30 mb-0.5">Start (s)</p>
                                 <input type="number" step="0.1" value={editStart} onChange={e => setEditStart(+e.target.value)}
-                                  className="w-full rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white focus:outline-none" />
+                                  className="w-full rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs text-white focus:border-rose-400/60 focus:outline-none" />
                               </div>
                               <div>
                                 <p className="text-[9px] text-white/30 mb-0.5">End (s)</p>
                                 <input type="number" step="0.1" value={editEnd} onChange={e => setEditEnd(+e.target.value)}
-                                  className="w-full rounded-lg bg-white/[0.06] px-2 py-1 text-xs text-white focus:outline-none" />
+                                  className="w-full rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 text-xs text-white focus:border-rose-400/60 focus:outline-none" />
                               </div>
                             </div>
                             <button onClick={saveEdit}
-                              className="flex items-center gap-1 rounded-lg bg-rose-500/20 px-3 py-1 text-[10px] font-semibold text-rose-400 hover:bg-rose-500/30">
+                              className="flex items-center gap-1 rounded-full border border-rose-400/40 bg-rose-500/15 text-rose-100 transition-colors hover:bg-rose-500/25 px-3 py-1 text-[11px] font-semibold">
                               <Save className="h-3 w-3" /> Save
                             </button>
                           </div>
                         ) : (
                           <>
-                            <p className="text-xs text-white/80 leading-relaxed whitespace-pre-line">{cap.text}</p>
-                            <p className="mt-0.5 font-mono text-[10px] text-white/25">
+                            <p className="whitespace-pre-line text-sm leading-relaxed text-white/85">{cap.text}</p>
+                            <p className="mt-0.5 font-mono text-[10px] text-white/40">
                               {fmtTime(cap.start)} → {fmtTime(cap.end)}
                             </p>
                           </>
@@ -928,19 +959,19 @@ export function CaptionTemplates() {
             <div className="space-y-4">
 
               {/* Template picker */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Style Template</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/40">Style Template</p>
                 <div className="grid grid-cols-2 gap-2">
                   {TEMPLATES.map(t => (
                     <button key={t.id} onClick={() => setOpt("template", t.id)}
-                      className={`relative overflow-hidden rounded-xl border px-3 py-3 text-left transition-all
+                      className={`relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition-all hover:-translate-y-0.5
                         ${opts.template === t.id
-                          ? "border-rose-500/50 bg-rose-500/10"
-                          : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"}`}>
+                          ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                       {/* Mini style preview */}
-                      <div className="mb-2 flex h-8 items-center justify-center rounded-lg overflow-hidden"
+                      <div className="mb-2 flex h-10 items-center justify-center overflow-hidden rounded-xl ring-1 ring-white/[0.06]"
                         style={{ background: t.canvasBg !== "transparent" && t.canvasBg ? t.canvasBg : "#111" }}>
-                        <span className="text-[11px] font-black px-1"
+                        <span className="px-1 text-sm font-black"
                           style={{
                             color: t.canvasText,
                             textShadow: t.canvasGlow
@@ -950,16 +981,16 @@ export function CaptionTemplates() {
                           Aa
                         </span>
                       </div>
-                      <p className={`text-[11px] font-semibold ${opts.template === t.id ? "text-rose-300" : "text-white/60"}`}>{t.label}</p>
-                      <p className="text-[9px] text-white/25 leading-tight mt-0.5">{t.description}</p>
+                      <p className={`text-xs font-semibold ${opts.template === t.id ? "text-rose-100" : "text-white/75"}`}>{t.label}</p>
+                      <p className="mt-0.5 text-[10px] leading-tight text-white/40">{t.description}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Text style */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Text Style</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-4 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Text Style</p>
 
                 {/* Font size */}
                 <div>
@@ -969,7 +1000,7 @@ export function CaptionTemplates() {
                   </div>
                   <input type="range" min={50} max={200} step={5} value={opts.fontSize}
                     onChange={e => setOpt("fontSize", +e.target.value)}
-                    className="w-full accent-rose-500" />
+                    className="w-full accent-rose-400" />
                 </div>
 
                 {/* Align */}
@@ -978,8 +1009,8 @@ export function CaptionTemplates() {
                   <div className="grid grid-cols-3 gap-2">
                     {(["left", "center", "right"] as Align[]).map(a => (
                       <button key={a} onClick={() => setOpt("align", a)}
-                        className={`flex items-center justify-center rounded-xl border py-2 transition-all
-                          ${opts.align === a ? "border-rose-500/50 bg-rose-500/10 text-rose-300" : "border-white/[0.06] text-white/40 hover:border-white/10"}`}>
+                        className={`flex items-center justify-center rounded-full border py-2 transition-all
+                          ${opts.align === a ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {a === "left" ? <AlignLeft className="h-4 w-4" /> : a === "center" ? <AlignCenter className="h-4 w-4" /> : <AlignRight className="h-4 w-4" />}
                       </button>
                     ))}
@@ -992,8 +1023,8 @@ export function CaptionTemplates() {
                   <div className="grid grid-cols-3 gap-2">
                     {(["top", "middle", "bottom"] as VAlign[]).map(v => (
                       <button key={v} onClick={() => setOpt("vAlign", v)}
-                        className={`rounded-xl border py-2 text-xs capitalize transition-all
-                          ${opts.vAlign === v ? "border-rose-500/50 bg-rose-500/10 text-rose-300" : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                        className={`rounded-full border py-2 text-xs capitalize transition-all
+                          ${opts.vAlign === v ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                         {v}
                       </button>
                     ))}
@@ -1003,13 +1034,13 @@ export function CaptionTemplates() {
                 {/* Bold / Italic */}
                 <div className="flex gap-2">
                   <button onClick={() => setOpt("bold", !opts.bold)}
-                    className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold transition-all
-                      ${opts.bold ? "border-rose-500/50 bg-rose-500/10 text-rose-300" : "border-white/[0.06] text-white/40 hover:border-white/10"}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold transition-all
+                      ${opts.bold ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                     <Bold className="h-3.5 w-3.5" /> Bold
                   </button>
                   <button onClick={() => setOpt("italic", !opts.italic)}
-                    className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs italic transition-all
-                      ${opts.italic ? "border-rose-500/50 bg-rose-500/10 text-rose-300" : "border-white/[0.06] text-white/40 hover:border-white/10"}`}>
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs italic transition-all
+                      ${opts.italic ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]" : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                     <Italic className="h-3.5 w-3.5" /> Italic
                   </button>
                 </div>
@@ -1022,13 +1053,13 @@ export function CaptionTemplates() {
                   </div>
                   <input type="range" min={0} max={200} step={5} value={opts.marginV}
                     onChange={e => setOpt("marginV", +e.target.value)}
-                    className="w-full accent-rose-500" />
+                    className="w-full accent-rose-400" />
                 </div>
               </div>
 
               {/* Colors */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Colors</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-3 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Colors</p>
                 {[
                   { label: "Text", key: "textColor" as const },
                   { label: "Outline / Shadow", key: "outlineColor" as const },
@@ -1038,8 +1069,8 @@ export function CaptionTemplates() {
                     <p className="w-28 text-xs text-white/40">{c.label}</p>
                     <input type="color" value={opts[c.key] as string}
                       onChange={e => setOpt(c.key, e.target.value)}
-                      className="h-8 w-12 cursor-pointer rounded-lg border-0 bg-transparent" />
-                    <span className="font-mono text-xs text-white/30">{opts[c.key] as string}</span>
+                      className="h-9 w-12 cursor-pointer rounded-xl border border-white/10 bg-black/30 p-1" />
+                    <span className="font-mono text-xs text-white/50">{opts[c.key] as string}</span>
                   </div>
                 ))}
 
@@ -1051,20 +1082,20 @@ export function CaptionTemplates() {
                   </div>
                   <input type="range" min={0} max={255} value={opts.bgOpacity}
                     onChange={e => setOpt("bgOpacity", +e.target.value)}
-                    className="w-full accent-rose-500" />
+                    className="w-full accent-rose-400" />
                 </div>
               </div>
 
               {/* Output format */}
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/30">Output Format</p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur space-y-3 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Output Format</p>
                 <div className="grid grid-cols-4 gap-2">
                   {["mp4", "webm", "mov", "mkv"].map(f => (
                     <button key={f} onClick={() => setOpt("outputFormat", f)}
-                      className={`rounded-xl border py-2 text-xs font-bold uppercase transition-all
+                      className={`rounded-full border py-2 text-xs font-bold uppercase transition-all
                         ${opts.outputFormat === f
-                          ? "border-rose-500/50 bg-rose-500/10 text-rose-300"
-                          : "border-white/[0.06] text-white/40 hover:border-white/10 hover:text-white/60"}`}>
+                          ? "border-rose-400/50 bg-rose-500/15 text-rose-100 shadow-[0_0_18px_-8px_rgba(244,63,94,0.9)]"
+                          : "border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/20 hover:text-white"}`}>
                       {f}
                     </button>
                   ))}
@@ -1075,14 +1106,14 @@ export function CaptionTemplates() {
               {(stage === "ready" || stage === "error") && (
                 <button onClick={burnCaptions}
                   disabled={captions.length === 0}
-                  className="w-full rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 py-4 text-sm font-bold text-white transition hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2">
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] active:scale-[0.98] text-sm font-semibold disabled:opacity-40">
                   <Film className="h-4 w-4" />
                   Burn Captions into Video
                 </button>
               )}
 
               {/* Info */}
-              <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] px-4 py-3">
                 <Info className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
                 <p className="text-xs text-amber-300/70 leading-relaxed">
                   Captions are <span className="font-semibold text-amber-300">permanently burned</span> into the video using the ASS subtitle format — no separate file needed for playback.
@@ -1099,20 +1130,20 @@ export function CaptionTemplates() {
             { icon: <Film     className="h-5 w-5 text-pink-400"    />, title: "Permanently Burned", body: "Captions are encoded directly into the video — no subtitle file needed for sharing." },
             { icon: <Zap      className="h-5 w-5 text-fuchsia-400" />, title: "Import SRT / VTT",  body: "Already have subtitles? Import your SRT or paste the content directly to style them." },
           ].map(c => (
-            <div key={c.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
+            <div key={c.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-colors hover:border-white/20">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]">
                 {c.icon}
               </div>
               <p className="font-semibold text-white">{c.title}</p>
-              <p className="mt-1 text-sm text-white/40">{c.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/50">{c.body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-5 py-4 flex items-start gap-3">
-          <Info className="h-4 w-4 shrink-0 text-blue-400 mt-0.5" />
-          <p className="text-xs text-blue-300/70 leading-relaxed">
-            <span className="font-semibold text-blue-300">Tip:</span> Use the Caption Generator tool to auto-transcribe your video first, then export as SRT and import it here to apply a style template.
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-rose-400/20 bg-rose-500/[0.06] px-5 py-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-rose-300" />
+          <p className="text-xs leading-relaxed text-rose-100/70">
+            <span className="font-semibold text-rose-200">Tip:</span> Use the Caption Generator tool to auto-transcribe your video first, then export as SRT and import it here to apply a style template.
           </p>
         </div>
       </div>
