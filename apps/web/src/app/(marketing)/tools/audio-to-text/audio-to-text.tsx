@@ -421,7 +421,8 @@ export function AudioToText() {
                         setShowTimes(false);
                         setText(e.target.value);
                       }}
-                      className="min-h-[22rem] flex-1 resize-none bg-transparent text-[15px] leading-relaxed text-white/85 outline-none"
+                      spellCheck={false}
+                      className="scrollbar-slim min-h-[22rem] flex-1 resize-none bg-transparent pr-3 text-[15px] leading-relaxed text-white/85 outline-none"
                     />
                   ) : (
                     <p className="m-auto text-sm text-white/40">No speech was detected in this file.</p>

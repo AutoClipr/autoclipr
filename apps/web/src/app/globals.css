@@ -267,3 +267,23 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #0b0d14 inset;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+/* Slim, dark scrollbar for in-card scroll areas (transcripts, lists) */
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.scrollbar-slim::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 9999px;
+}
+.scrollbar-slim:hover::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.55);
+}

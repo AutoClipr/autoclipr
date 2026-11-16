@@ -603,7 +603,7 @@ export function CaptionGenerator() {
               {/* Caption list */}
               <div
                 ref={listRef}
-                className="flex-1 overflow-y-auto rounded-2xl border border-white/[0.06] bg-white/[0.02]"
+                className="scrollbar-slim flex-1 overflow-y-auto rounded-2xl border border-white/[0.06] bg-white/[0.02]"
                 style={{ maxHeight: "calc(100vh - 280px)", minHeight: 300 }}
               >
                 {captions.length === 0 ? (
