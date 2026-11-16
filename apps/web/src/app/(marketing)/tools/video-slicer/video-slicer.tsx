@@ -201,9 +201,9 @@ function OptionPill({ active, onClick, children }: { active: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${active
-        ? "bg-emerald-500 text-white shadow-md shadow-emerald-900/40"
-        : "border border-white/[0.08] bg-white/[0.04] text-white/50 hover:border-emerald-500/30 hover:text-emerald-400"}`}
+      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${active
+        ? "bg-white text-black shadow-[0_0_16px_-4px_rgba(255,255,255,0.5)]"
+        : "border border-white/10 bg-white/[0.04] text-white/55 hover:border-emerald-400/40 hover:text-white"}`}
     >
       {children}
     </button>
@@ -211,7 +211,7 @@ function OptionPill({ active, onClick, children }: { active: boolean; onClick: (
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/25">{children}</p>;
+  return <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">{children}</p>;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -467,58 +467,91 @@ export function VideoSlicer() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-[#07080f] text-white">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[600px]"
+        style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(16,185,129,0.22), transparent 70%), radial-gradient(30% 40% at 85% 10%, rgba(34,211,238,0.12), transparent 70%)" }}
+        aria-hidden
+      />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-4 pb-12 pt-20 text-center">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent" />
-        <div className="relative mx-auto max-w-3xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-4 py-1.5">
-            <Scissors className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Free · No signup · Browser-based</span>
+      <section className="relative px-4 pb-10 pt-10 text-center">
+        <div className="mx-auto max-w-4xl text-left">
+          <Link href="/tools" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-sm text-white/55 transition-colors hover:border-white/20 hover:text-white">
+            <ArrowLeft className="h-4 w-4" /> All Tools
+          </Link>
+        </div>
+        <div className="relative mx-auto mt-8 max-w-3xl">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/30 to-cyan-500/15 shadow-[0_0_40px_-8px_rgba(16,185,129,0.7)]">
+            <Scissors className="h-8 w-8 text-emerald-200" />
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Video Slicer{" "}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Online</span>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Video{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">Slicer</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-white/45">
+          <p className="mx-auto mt-4 max-w-xl text-base text-white/55">
             Trim, crop, rotate, apply social presets and export — all in your browser, no upload required.
           </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {["100% Private", "No Upload", "Up to 5 segments", "MP4 · WebM · GIF · M4A"].map(t => (
+              <span key={t} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-medium text-white/65 backdrop-blur">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-300" />{t}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Tool ── */}
-      <section className="mx-auto max-w-4xl px-4 pb-24 space-y-3">
+      <section className="relative mx-auto max-w-4xl space-y-4 px-4 pb-24">
 
         {/* Upload drop zone */}
         {stage === "idle" && (
-          <div
-            className="group relative flex cursor-pointer flex-col items-center justify-center gap-6 rounded-3xl border-2 border-dashed border-white/[0.08] bg-white/[0.015] px-8 py-20 text-center transition-all hover:border-emerald-500/35 hover:bg-emerald-500/[0.025]"
-            onDrop={onDrop} onDragOver={e => e.preventDefault()} onClick={() => fileRef.current?.click()}
-          >
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/10 ring-1 ring-emerald-500/20 transition-all group-hover:ring-emerald-500/40">
-              <Upload className="h-8 w-8 text-emerald-400" />
-              <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-black">
-                <Plus className="h-3 w-3 text-white" />
+          <>
+            <div
+              className="group relative cursor-pointer overflow-hidden rounded-[2rem] border border-white/10 p-2 transition-all duration-300 hover:border-emerald-400/40 hover:shadow-[0_0_60px_-16px_rgba(16,185,129,0.6)]"
+              onDrop={onDrop} onDragOver={e => e.preventDefault()} onClick={() => fileRef.current?.click()}
+            >
+              <div className="relative flex flex-col items-center justify-center gap-6 rounded-[1.6rem] border border-dashed border-white/10 bg-white/[0.02] px-8 py-20 text-center transition-colors group-hover:bg-white/[0.035]">
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/25 to-cyan-500/10 text-emerald-200 transition-transform duration-300 group-hover:-translate-y-1">
+                  <Upload className="h-9 w-9" />
+                </div>
+                <div className="relative">
+                  <p className="text-xl font-bold text-white">Drop your video here</p>
+                  <p className="mt-1.5 text-sm text-white/45">or click to browse · MP4, MOV, AVI, MKV, WebM, WMV, FLV &amp; more</p>
+                </div>
+                <span className="relative inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.5)] transition-shadow group-hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.65)]">
+                  <Upload className="h-4 w-4" /> Choose a file
+                </span>
+                <p className="relative text-xs text-white/35">Your video never leaves your device</p>
+                <input ref={fileRef} type="file" accept={ACCEPTED} className="hidden" onChange={onFileChange} />
               </div>
             </div>
-            <div>
-              <p className="text-xl font-bold text-white">Drop your video here</p>
-              <p className="mt-2 text-sm text-white/35">or click to browse · MP4, MOV, AVI, MKV, WebM, WMV, FLV &amp; more</p>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { n: "1", t: "Upload", d: "Pick any video. It stays on your device." },
+                { n: "2", t: "Trim & style", d: "Drag the handles, add segments, crop or rotate." },
+                { n: "3", t: "Export", d: "Download MP4, WebM, GIF or audio-only M4A." },
+              ].map(x => (
+                <div key={x.n} className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-bold text-emerald-200">{x.n}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{x.t}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-white/45">{x.d}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <button type="button" className="rounded-2xl bg-emerald-500 px-8 py-3 text-sm font-bold text-white shadow-xl shadow-emerald-900/30 transition-all hover:bg-emerald-400 hover:shadow-emerald-900/50">
-              Choose File
-            </button>
-            <p className="text-xs text-white/20">🔒 Your video never leaves your device</p>
-            <input ref={fileRef} type="file" accept={ACCEPTED} className="hidden" onChange={onFileChange} />
-          </div>
+          </>
         )}
 
         {/* ── Editor ── */}
         {(stage === "ready" || stage === "done" || stage === "processing") && file && (
           <>
             {/* ── Video preview with overlay ── */}
-            <div className="group relative overflow-hidden rounded-2xl bg-black ring-1 ring-white/[0.07]">
+            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-black/50">
               <video
                 ref={videoRef} src={videoUrl}
                 className="max-h-[420px] w-full object-contain"
@@ -560,7 +593,7 @@ export function VideoSlicer() {
             </div>
 
             {/* ── Timeline card ── */}
-            <div className="rounded-2xl bg-[#0d1117] ring-1 ring-white/[0.07] overflow-hidden">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
 
               {/* Time ruler */}
               <div className="relative h-6 border-b border-white/[0.05] px-3">
@@ -597,7 +630,7 @@ export function VideoSlicer() {
 
                   <div
                     ref={timelineRef}
-                    className="relative h-14 cursor-pointer select-none overflow-hidden rounded-xl"
+                    className="relative h-16 cursor-pointer select-none overflow-hidden rounded-2xl ring-1 ring-white/[0.06]"
                     style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)" }}
                     onClick={onTimelineClick}
                     onMouseMove={onTimelineMouseMove}
@@ -608,7 +641,7 @@ export function VideoSlicer() {
                       <div className="absolute inset-0 flex pointer-events-none">
                         {thumbs.map((th, i) => (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img key={i} src={th.url} className="h-full flex-1 object-cover opacity-[0.32]" alt="" draggable={false} />
+                          <img key={i} src={th.url} className="h-full flex-1 object-cover opacity-40" alt="" draggable={false} />
                         ))}
                         {/* vignette overlay */}
                         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/30" />
@@ -682,8 +715,8 @@ export function VideoSlicer() {
                     return (
                       <div
                         key={seg.id}
-                        className={`flex items-center gap-3 rounded-xl border px-3 py-2 cursor-pointer transition-all ${isActive
-                          ? `${c.border} bg-white/[0.04]`
+                        className={`flex items-center gap-3 rounded-2xl border px-3.5 py-2.5 cursor-pointer transition-all ${isActive
+                          ? `${c.border} bg-white/[0.05]`
                           : "border-white/[0.05] bg-transparent hover:border-white/10"}`}
                         onClick={() => setActiveId(seg.id)}
                       >
@@ -735,7 +768,7 @@ export function VideoSlicer() {
                   {segments.length < 5 && (
                     <button
                       onClick={addSegment}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.07] py-2 text-[11px] font-semibold text-white/25 hover:border-emerald-500/30 hover:text-emerald-400 transition-all"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 py-2.5 text-xs font-semibold text-white/45 transition-all hover:border-emerald-400/40 hover:bg-emerald-500/[0.04] hover:text-emerald-300"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add segment
                     </button>
@@ -743,7 +776,7 @@ export function VideoSlicer() {
                 </div>
 
                 {/* Total duration bar */}
-                <div className="flex items-center justify-between rounded-xl bg-white/[0.03] px-4 py-2.5 text-xs border border-white/[0.05]">
+                <div className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-black/20 px-4 py-3 text-xs">
                   <div className="flex items-center gap-2 text-white/35">
                     <span>{segments.length} segment{segments.length > 1 ? "s" : ""}</span>
                     {opts.speed !== 1 && <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">{opts.speed}x</span>}
@@ -752,38 +785,38 @@ export function VideoSlicer() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white/30">Selected</span>
-                    <span className="font-mono font-bold text-emerald-400 tabular-nums">{fmt(totalSelected)}</span>
+                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 font-mono font-bold text-emerald-300 tabular-nums">{fmt(totalSelected)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ── Social Presets ── */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {SOCIAL_PRESETS.map(p => (
                 <button
                   key={p.id}
                   onClick={() => applyPreset(p)}
-                  className="group flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-left transition-all hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
+                  className="group flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-400/40 hover:bg-emerald-500/[0.05] hover:shadow-[0_8px_30px_-12px_rgba(16,185,129,0.6)]"
                 >
                   <div className="flex items-center gap-2">
-                    <p.icon className="h-3.5 w-3.5 text-white/35 group-hover:text-emerald-400 transition-colors" />
-                    <span className="text-xs font-bold text-white/70 group-hover:text-white transition-colors">{p.label}</span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] transition-colors group-hover:bg-emerald-500/20"><p.icon className="h-3.5 w-3.5 text-white/60 transition-colors group-hover:text-emerald-300" /></span>
+                    <span className="text-sm font-bold text-white/85 transition-colors group-hover:text-white">{p.label}</span>
                   </div>
-                  <span className="text-[10px] font-semibold text-white/25">{p.sub}</span>
+                  <span className="text-[11px] font-medium text-white/40">{p.sub}</span>
                 </button>
               ))}
             </div>
 
             {/* ── Export options toggle ── */}
-            <div className="rounded-2xl bg-[#0d1117] ring-1 ring-white/[0.07] overflow-hidden">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
               <button
                 onClick={() => setShowOpts(v => !v)}
                 className="flex w-full items-center justify-between px-5 py-4"
               >
                 <div className="flex items-center gap-2.5">
-                  <Settings2 className="h-4 w-4 text-white/40" />
-                  <span className="text-sm font-semibold text-white/70">Export Settings</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.06]"><Settings2 className="h-4 w-4 text-white/60" /></span>
+                  <span className="text-sm font-semibold text-white">Export settings</span>
                   {/* Active setting badges */}
                   <div className="flex items-center gap-1.5">
                     {opts.format !== "mp4" && <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-white/50 uppercase">{opts.format}</span>}
@@ -909,10 +942,10 @@ export function VideoSlicer() {
             </div>
 
             {/* ── Action buttons ── */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={togglePlay} disabled={stage === "processing"}
-                className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/[0.09] disabled:opacity-40 transition-colors"
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
               >
                 {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 {playing ? "Pause" : "Preview"}
@@ -920,19 +953,19 @@ export function VideoSlicer() {
               {stage !== "processing" && (
                 <button
                   onClick={() => { if (videoRef.current) { videoRef.current.currentTime = activeSeg.start; setCurrentTime(activeSeg.start); } }}
-                  className="flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors"
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 px-4 py-2.5 text-sm font-semibold text-white/60 hover:text-white"
                 >
                   <RotateCcw className="h-4 w-4" /> Jump to start
                 </button>
               )}
               <div className="ml-auto flex gap-2.5">
-                <button onClick={reset} className="rounded-xl border border-white/[0.09] px-4 py-2.5 text-sm font-semibold text-white/40 hover:text-white transition-colors">
+                <button onClick={reset} className="rounded-full px-4 py-2.5 text-sm font-semibold text-white/45 transition-colors hover:text-white">
                   Change file
                 </button>
                 {stage !== "processing" && stage !== "done" && (
                   <button
                     onClick={processVideo}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400 transition-all"
+                    className="flex items-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] px-6 py-2.5 text-sm font-semibold"
                   >
                     <Scissors className="h-4 w-4" />
                     {segments.length > 1 ? `Export ${segments.length} Segments` : "Export Video"}
@@ -943,7 +976,7 @@ export function VideoSlicer() {
 
             {/* ── Processing bar ── */}
             {stage === "processing" && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5">
+              <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.05] p-6 backdrop-blur">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
@@ -953,24 +986,24 @@ export function VideoSlicer() {
                 </div>
                 <div className="relative h-2 overflow-hidden rounded-full bg-white/[0.06]">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300"
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 shadow-[0_0_12px_rgba(45,212,191,0.8)] transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className="mt-2.5 text-xs text-white/20">First run downloads the FFmpeg engine (~30 MB). Subsequent exports are instant.</p>
+                <p className="mt-3 text-xs text-white/40">First run downloads the FFmpeg engine (~30 MB). Subsequent exports are instant.</p>
               </div>
             )}
 
             {/* ── Done banner ── */}
             {stage === "done" && outputUrl && (
-              <div className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05]">
-                <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+              <div className="overflow-hidden rounded-3xl border border-emerald-400/25 bg-emerald-500/[0.06] shadow-[0_0_50px_-20px_rgba(16,185,129,0.7)]">
+                <div className="flex items-center gap-4 px-5 py-5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 ring-1 ring-emerald-400/30">
                     <CheckCircle className="h-5 w-5 text-emerald-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-emerald-400">Your clip is ready!</p>
-                    <p className="mt-0.5 text-xs text-white/35 truncate">
+                    <p className="text-base font-bold text-white">Your clip is ready!</p>
+                    <p className="mt-0.5 truncate text-xs text-white/50">
                       {segments.length} segment{segments.length > 1 ? "s" : ""} · {fmt(totalSelected / opts.speed)} · {opts.format.toUpperCase()}
                       {opts.crop !== "original" ? ` · ${opts.crop}` : ""}
                       {opts.rotate !== "none" ? ` · ${opts.rotate}` : ""}
@@ -978,17 +1011,17 @@ export function VideoSlicer() {
                   </div>
                   <a
                     href={outputUrl} download={outputName}
-                    className="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400 transition-all"
+                    className="flex shrink-0 items-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] px-5 py-2.5 text-sm font-semibold"
                   >
                     <Download className="h-4 w-4" /> Download
                   </a>
                 </div>
                 <div className="flex gap-2 border-t border-white/[0.05] px-5 py-3">
-                  <button onClick={processVideo} className="text-xs font-semibold text-white/30 hover:text-white transition-colors">
+                  <button onClick={processVideo} className="text-xs font-semibold text-white/50 transition-colors hover:text-white">
                     Re-export with different settings →
                   </button>
                   <span className="text-white/15">·</span>
-                  <button onClick={reset} className="text-xs font-semibold text-white/30 hover:text-white transition-colors">
+                  <button onClick={reset} className="text-xs font-semibold text-white/50 transition-colors hover:text-white">
                     New file
                   </button>
                 </div>
@@ -999,7 +1032,7 @@ export function VideoSlicer() {
 
         {/* ── Error ── */}
         {stage === "error" && (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.05] p-5">
+          <div className="rounded-3xl border border-rose-500/25 bg-rose-500/[0.06] p-6">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-400" />
               <div>
@@ -1008,7 +1041,7 @@ export function VideoSlicer() {
                 <p className="mt-2 text-xs text-white/25">Use Chrome or Edge. SharedArrayBuffer must be supported.</p>
               </div>
             </div>
-            <button onClick={() => { setStage("ready"); setError(""); }} className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white/50 hover:text-white transition-colors">
+            <button onClick={() => { setStage("ready"); setError(""); }} className="mt-4 rounded-full border border-white/10 bg-white/[0.04] transition-colors hover:border-white/25 px-4 py-2 text-sm font-semibold text-white/70 hover:text-white">
               Try again
             </button>
           </div>
@@ -1016,19 +1049,19 @@ export function VideoSlicer() {
       </section>
 
       {/* ── Features ── */}
-      <section className="border-t border-white/[0.05] px-4 py-20">
+      <section className="relative border-t border-white/[0.06] px-4 py-20">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center text-2xl font-black text-white sm:text-3xl">
+          <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             Why use AutoClipr Video Slicer?
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(f => (
-              <div key={f.title} className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition-all hover:border-emerald-500/20 hover:bg-white/[0.04]">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/15">
+              <div key={f.title} className="group rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-all hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.05]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
                   <f.icon className="h-5 w-5 text-emerald-400" />
                 </div>
                 <p className="font-bold text-white">{f.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-white/40">{f.desc}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/50">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -1036,31 +1069,32 @@ export function VideoSlicer() {
       </section>
 
       {/* ── Formats ── */}
-      <section className="border-t border-white/[0.05] px-4 py-16">
+      <section className="relative border-t border-white/[0.06] px-4 py-16">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-2 text-xl font-black text-white">Supported Input Formats</h2>
-          <p className="mb-8 text-sm text-white/35">All popular video formats — no conversion needed before importing</p>
+          <h2 className="mb-2 text-2xl font-extrabold tracking-tight text-white">Supported input formats</h2>
+          <p className="mb-8 text-sm text-white/50">All popular video formats — no conversion needed before importing</p>
           <div className="flex flex-wrap justify-center gap-2">
             {["MP4","MOV","AVI","MKV","WebM","WMV","FLV","M4V","TS","3GP","OGV","RM","RMVB"].map(f => (
-              <span key={f} className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white/50">{f}</span>
+              <span key={f} className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/65">{f}</span>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section className="border-t border-white/[0.05] px-4 py-20 text-center">
-        <div className="mx-auto max-w-xl">
-          <h2 className="text-2xl font-black text-white sm:text-3xl">Ready to edit your video?</h2>
-          <p className="mt-3 text-white/40">Free, instant, private. No account required.</p>
+      <section className="relative border-t border-white/[0.06] px-4 py-20 text-center">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72" style={{ background: "radial-gradient(50% 80% at 50% 100%, rgba(16,185,129,0.16), transparent 70%)" }} aria-hidden />
+        <div className="relative mx-auto max-w-xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Ready to edit your video?</h2>
+          <p className="mt-3 text-white/55">Free, instant, private. No account required.</p>
           <button
             onClick={() => { reset(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-10 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-900/30 transition-all hover:bg-emerald-400 hover:shadow-emerald-900/50"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] px-8 py-3.5 text-sm font-semibold"
           >
             <Scissors className="h-4 w-4" /> Edit Video Now
           </button>
           <div className="mt-6">
-            <Link href="/tools" className="inline-flex items-center gap-1.5 text-sm text-white/30 hover:text-white/60 transition-colors">
+            <Link href="/tools" className="inline-flex items-center gap-1.5 text-sm text-white/45 transition-colors hover:text-white">
               <ArrowLeft className="h-4 w-4" /> Back to all free tools
             </Link>
           </div>
