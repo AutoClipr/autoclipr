@@ -101,6 +101,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const passwordValid =
     mode === "register" && isPasswordRegistrationValid(password, confirmPassword);
   const passwordInputClassName = cn(
+    AUTH_FIELD,
     passwordValid &&
       "border-emerald-500/50 bg-emerald-950/20 focus-visible:border-emerald-500 focus-visible:bg-emerald-950/30 focus-visible:ring-emerald-500/30",
   );
@@ -341,7 +342,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   if (emailSent) {
     return (
-      <div className="gradient-border w-full max-w-md shadow-glow">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl lg:max-w-[34rem] 2xl:max-w-xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-black/50 backdrop-blur-xl">
         <div className="flex flex-col items-center p-8 text-center">
           {/* Animated icon */}
           <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
@@ -380,10 +381,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="gradient-border w-full max-w-md shadow-glow">
-      <div className="p-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-balance text-2xl font-bold leading-tight sm:text-[1.7rem]">
+    <div className="relative w-full max-w-md overflow-hidden rounded-3xl lg:max-w-[34rem] 2xl:max-w-xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-black/50 backdrop-blur-xl">
+      <div className="p-7 sm:p-10 2xl:p-12">
+        <div className="mb-7 text-center">
+          <h1 className="text-balance text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl 2xl:text-4xl">
             {fromClipLink
               ? mode === "login"
                 ? "Sign in to get your free clips"
@@ -402,7 +403,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         <Button
           type="button"
           variant="outline"
-          className="mb-4 h-12 w-full rounded-xl border-white/[0.06] bg-white/[0.07] text-[15px] font-medium hover:bg-white/[0.12]"
+          className="mb-4 h-12 w-full rounded-full border-white/15 bg-white/[0.06] text-[15px] font-semibold text-white hover:border-white/25 hover:bg-white/[0.1]"
           onClick={handleGoogle}
           disabled={loading}
         >
@@ -410,9 +411,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
           Continue with Google
         </Button>
 
-        <div className="relative py-2 text-center text-xs text-muted-foreground">
-          <span className="relative z-10 bg-[#0a0618] px-3">or continue with email</span>
-          <div className="absolute inset-x-0 top-1/2 h-px bg-white/[0.08]" />
+        <div className="my-2 flex items-center gap-3 text-xs text-white/40">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/15" />
+          or continue with email
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/15" />
         </div>
 
         {phoneAuthEnabled && (
@@ -465,6 +467,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Your name"
+                  className={AUTH_FIELD}
                 />
               </div>
             )}
@@ -477,6 +480,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
+                className={AUTH_FIELD}
               />
             </div>
             <div className="space-y-2">
@@ -512,7 +516,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             )}
             {error && <AuthMessage variant="error">{error}</AuthMessage>}
             {info && <AuthMessage variant="info">{info}</AuthMessage>}
-            <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
+            <Button type="submit" className={AUTH_SUBMIT} disabled={loading}>
               {loading
                 ? "Please wait…"
                 : mode === "login"
@@ -530,6 +534,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
+                  className={AUTH_FIELD}
                 />
               </div>
             )}
@@ -578,7 +583,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             )}
             {error && <AuthMessage variant="error">{error}</AuthMessage>}
             {info && <AuthMessage variant="info">{info}</AuthMessage>}
-            <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
+            <Button type="submit" className={AUTH_SUBMIT} disabled={loading}>
               {loading ? "Sending…" : "Send OTP"}
             </Button>
           </form>
@@ -595,6 +600,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 placeholder="6-digit OTP"
                 maxLength={6}
                 disabled={loading}
+                className={AUTH_FIELD}
               />
             </div>
 
@@ -628,7 +634,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             )}
 
             {error && <AuthMessage variant="error">{error}</AuthMessage>}
-            <Button type="submit" variant="gradient" className="w-full" disabled={loading}>
+            <Button type="submit" className={AUTH_SUBMIT} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -704,6 +710,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
     </div>
   );
 }
+
+const AUTH_FIELD =
+  "h-12 rounded-xl border-white/10 bg-black/30 px-4 text-[15px] text-white placeholder:text-white/30 transition-colors focus-visible:border-emerald-400/60 focus-visible:bg-black/40 focus-visible:ring-0 focus-visible:ring-offset-0";
+
+const AUTH_SUBMIT =
+  "h-12 w-full rounded-full bg-white text-[15px] font-semibold text-black shadow-[0_0_30px_-6px_rgba(255,255,255,0.45)] transition-all hover:bg-white hover:shadow-[0_0_40px_-4px_rgba(255,255,255,0.6)] disabled:opacity-60";
 
 function GoogleIcon() {
   return (
