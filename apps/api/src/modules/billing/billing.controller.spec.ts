@@ -38,6 +38,8 @@ describe('BillingController', () => {
       getTransactions: jest.fn(),
       activatePlanForUser: jest.fn(),
       handleWebhookEvent: jest.fn(),
+      cancelSubscription: jest.fn(),
+      resumeSubscription: jest.fn(),
       logger: { log: jest.fn() },
     } as unknown as jest.Mocked<SubscriptionsService>;
 
@@ -190,6 +192,29 @@ describe('BillingController', () => {
           userName: 'Customer',
         }),
       );
+    });
+  });
+
+  describe('cancelSubscription', () => {
+    it('cancels the current user\'s subscription with the optional reason', async () => {
+      const state = { plan_id: 'creator', status: 'active', cancel_at_period_end: true, access_until: '2026-12-01' };
+      subscriptions.cancelSubscription.mockResolvedValue(state as never);
+
+      const result = await controller.cancelSubscription(user, { reason: 'too_expensive' });
+
+      expect(subscriptions.cancelSubscription).toHaveBeenCalledWith(user.sub, { reason: 'too_expensive' });
+      expect(result).toEqual(expect.objectContaining({ success: true, data: state }));
+    });
+  });
+
+  describe('resumeSubscription', () => {
+    it('resumes the current user\'s subscription', async () => {
+      subscriptions.resumeSubscription.mockResolvedValue({ cancel_at_period_end: false } as never);
+
+      const result = await controller.resumeSubscription(user);
+
+      expect(subscriptions.resumeSubscription).toHaveBeenCalledWith(user.sub);
+      expect(result).toEqual(expect.objectContaining({ success: true }));
     });
   });
 

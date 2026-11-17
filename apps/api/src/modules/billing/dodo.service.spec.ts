@@ -2,6 +2,9 @@ const mockSubscriptionsCreate = jest.fn();
 const mockSubscriptionsRetrieve = jest.fn();
 const mockSubscriptionsUpdate = jest.fn();
 const mockWebhooksUnwrap = jest.fn();
+const mockDiscountsCreate = jest.fn();
+const mockDiscountsUpdate = jest.fn();
+const mockDiscountsDelete = jest.fn();
 
 const mockCheckoutSessionsCreate = jest.fn();
 
@@ -16,6 +19,11 @@ const MockDodoPayments = jest.fn().mockImplementation(() => ({
   },
   webhooks: {
     unwrap: mockWebhooksUnwrap,
+  },
+  discounts: {
+    create: mockDiscountsCreate,
+    update: mockDiscountsUpdate,
+    delete: mockDiscountsDelete,
   },
 }));
 
@@ -211,6 +219,73 @@ describe('DodoService', () => {
 
       expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_123', { status: 'cancelled' });
       expect(result).toEqual({ id: 'sub_123', status: 'cancelled' });
+    });
+  });
+
+  describe('discounts', () => {
+    it('creates a percentage discount, defaulting optional limits to null', async () => {
+      await service.createDiscount({ code: 'SAVE20', amount: 2000 });
+      expect(mockDiscountsCreate).toHaveBeenCalledWith({
+        code: 'SAVE20',
+        amount: 2000,
+        type: 'percentage',
+        expires_at: null,
+        usage_limit: null,
+      });
+    });
+
+    it('passes expiry and usage limit through when set', async () => {
+      await service.createDiscount({ code: 'SAVE20', amount: 2000, expiresAt: '2027-01-01', usageLimit: 5 });
+      expect(mockDiscountsCreate).toHaveBeenCalledWith(expect.objectContaining({ expires_at: '2027-01-01', usage_limit: 5 }));
+    });
+
+    it('sends only the changed fields on update', async () => {
+      await service.updateDiscount('d1', { amount: 1500 });
+      expect(mockDiscountsUpdate).toHaveBeenCalledWith('d1', { amount: 1500 });
+
+      await service.updateDiscount('d1', { expiresAt: null, usageLimit: 3 });
+      expect(mockDiscountsUpdate).toHaveBeenLastCalledWith('d1', { expires_at: null, usage_limit: 3 });
+    });
+
+    it('deletes a discount', async () => {
+      await service.deleteDiscount('d1');
+      expect(mockDiscountsDelete).toHaveBeenCalledWith('d1');
+    });
+  });
+
+  describe('scheduleCancellation', () => {
+    it('schedules a period-end cancellation with the feedback and comment', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({ cancel_at_next_billing_date: true });
+
+      await service.scheduleCancellation('sub_1', { feedback: 'too_expensive', comment: 'pricey' });
+
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_1', {
+        cancel_at_next_billing_date: true,
+        cancel_reason: 'cancelled_by_customer',
+        cancellation_feedback: 'too_expensive',
+        cancellation_comment: 'pricey',
+      });
+    });
+
+    it('omits feedback and comment when not given', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({});
+
+      await service.scheduleCancellation('sub_1');
+
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_1', {
+        cancel_at_next_billing_date: true,
+        cancel_reason: 'cancelled_by_customer',
+      });
+    });
+  });
+
+  describe('resumeSubscription', () => {
+    it('clears the scheduled cancellation', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({ cancel_at_next_billing_date: false });
+
+      await service.resumeSubscription('sub_1');
+
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_1', { cancel_at_next_billing_date: false });
     });
   });
 

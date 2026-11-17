@@ -1053,5 +1053,112 @@ describe('SubscriptionsService', () => {
       expect(profileBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ subscription_tier: 'starter' }));
       expect((email as any).sendSubscriptionEnded).toHaveBeenCalledTimes(1);
     });
+    it('releases a webhook id when processing fails, so the retry runs', async () => {
+      const { webhookBuilder, subBuilder } = mockTables(activeRow);
+      subBuilder.maybeSingle = jest.fn(() => Promise.reject(new Error('db down')));
+
+      await expect(
+        service.handleWebhookEvent(
+          { event_type: 'subscription.updated', timestamp: '2026-11-18T10:00:00Z', data: { metadata: { user_id: 'user-1' } } },
+          'wh_9',
+        ),
+      ).rejects.toThrow('db down');
+      expect(webhookBuilder.delete).toHaveBeenCalled();
+    });
+
+    it('ignores subscription.cancelled without a user id', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      await service.handleWebhookEvent({ event_type: 'subscription.cancelled', data: { metadata: {} } });
+      expect(subBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it('ignores subscription.updated without a user id', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      await service.handleWebhookEvent({ event_type: 'subscription.updated', data: {} });
+      expect(subBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it('clears the cancellation when subscription.updated says it is no longer scheduled', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      await service.handleWebhookEvent({
+        event_type: 'subscription.updated',
+        data: { metadata: { user_id: 'user-1' }, cancel_at_next_billing_date: false },
+      });
+      expect(subBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({ cancel_at_period_end: false, cancellation_effective_at: null, cancellation_requested_at: null }),
+      );
+    });
+
+    it('applies events about a different subscription regardless of time', async () => {
+      const { subBuilder } = mockTables({ ...activeRow, last_webhook_at: '2026-11-18T10:00:00Z' });
+      await service.handleWebhookEvent({
+        event_type: 'subscription.active',
+        timestamp: '2026-11-18T09:00:00Z',
+        data: { metadata: { user_id: 'user-1', plan_id: 'creator' }, subscription_id: 'sub_other' },
+      });
+      expect(subBuilder.upsert).toHaveBeenCalled();
+    });
+
+    it('asks the user to contact support when no Dodo id is stored', async () => {
+      mockTables({ ...activeRow, stripe_subscription_id: null });
+      await expect(service.cancelSubscription('user-1')).rejects.toThrow(/contact support/);
+    });
+
+    it('rejects when the user has no subscription row', async () => {
+      mockTables(null);
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('drops an unknown reason and trims the comment', async () => {
+      mockTables(activeRow);
+      await service.cancelSubscription('user-1', { reason: 'bogus', comment: '  hi  ' });
+      expect((dodo as any).scheduleCancellation).toHaveBeenCalledWith('sub_1', { feedback: null, comment: 'hi' });
+    });
+
+    it('does not claim success when Dodo did not schedule the cancellation', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      (dodo as any).scheduleCancellation.mockResolvedValueOnce({ cancel_at_next_billing_date: false });
+
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(BadGatewayException);
+      expect(subBuilder.update).toHaveBeenCalledWith({ cancellation_requested_at: null });
+      expect((email as any).sendSubscriptionCancelled).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the stored period end when Dodo returns no date', async () => {
+      mockTables(activeRow);
+      (dodo as any).scheduleCancellation.mockResolvedValueOnce({ cancel_at_next_billing_date: true });
+      const result = await service.cancelSubscription('user-1');
+      expect(result.access_until).toBe(periodEnd);
+    });
+
+    it('refuses to resume when nothing is scheduled', async () => {
+      mockTables(activeRow);
+      await expect(service.resumeSubscription('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('refuses to resume once the period has ended', async () => {
+      mockTables({ ...activeRow, cancel_at_period_end: true, cancellation_effective_at: '2020-01-01T00:00:00Z' });
+      await expect(service.resumeSubscription('user-1')).rejects.toThrow(/already ended/);
+    });
+
+    it('refuses to resume someone else\'s subscription', async () => {
+      const future = new Date(Date.now() + 5 * 86400000).toISOString();
+      mockTables({ ...activeRow, cancel_at_period_end: true, cancellation_effective_at: future });
+      dodo.getSubscription.mockResolvedValueOnce(paidSubscription('creator', 'yearly', 'someone-else'));
+      await expect(service.resumeSubscription('user-1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('reports an error when Dodo does not clear the cancellation', async () => {
+      const future = new Date(Date.now() + 5 * 86400000).toISOString();
+      mockTables({ ...activeRow, cancel_at_period_end: true, cancellation_effective_at: future });
+      (dodo as any).resumeSubscription.mockResolvedValueOnce({ cancel_at_next_billing_date: true });
+      await expect(service.resumeSubscription('user-1')).rejects.toBeInstanceOf(BadGatewayException);
+    });
+
+    it('the sweep does nothing when no cancellation has ended', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      subBuilder.__setResult({ data: null, error: null });
+      await expect(service.endExpiredCancellations()).resolves.toBe(0);
+    });
   });
 });
