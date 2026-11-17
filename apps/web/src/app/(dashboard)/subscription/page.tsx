@@ -101,7 +101,7 @@ export default async function BillingPage() {
           </UpgradeButton>
         </div>
 
-        {scheduled && <CancellationScheduled accessUntil={accessUntil} />}
+        {scheduled && <CancellationScheduled accessUntilLabel={accessUntil ? fmt(accessUntil) : null} />}
 
         <div className="grid gap-1.5 md:grid-cols-2">
           {/* Credits & features */}
@@ -144,7 +144,7 @@ export default async function BillingPage() {
             )}
             {isPaid && status === "active" && !scheduled && (
               <div className="mt-auto border-t border-white/[0.06] px-4 py-3 text-right">
-                <CancelSubscriptionButton planName={planName} accessUntil={periodEnd ?? null} />
+                <CancelSubscriptionButton planName={planName} accessUntilLabel={periodEnd ? fmt(periodEnd) : null} />
               </div>
             )}
           </div>

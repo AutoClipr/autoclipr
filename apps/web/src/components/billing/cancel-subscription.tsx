@@ -17,15 +17,11 @@ const REASONS: { value: string; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-function fmt(d: string) {
-  return new Date(d).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
-
 /**
  * "Cancel subscription" link + confirmation modal. Nothing is cancelled until
  * the user presses Confirm Cancellation; the reason question is optional.
  */
-export function CancelSubscriptionButton({ planName, accessUntil }: { planName: string; accessUntil?: string | null }) {
+export function CancelSubscriptionButton({ planName, accessUntilLabel }: { planName: string; accessUntilLabel?: string | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string | null>(null);
@@ -105,7 +101,7 @@ export function CancelSubscriptionButton({ planName, accessUntil }: { planName: 
                 <li className="flex gap-2">
                   <span className="text-emerald-400">•</span>
                   Your plan stays active until the end of your billing period
-                  {accessUntil ? ` (${fmt(accessUntil)})` : ""}.
+                  {accessUntilLabel ? ` (${accessUntilLabel})` : ""}.
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emerald-400">•</span>
@@ -184,7 +180,7 @@ export function CancelSubscriptionButton({ planName, accessUntil }: { planName: 
 }
 
 /** Banner shown while a cancellation is scheduled, with a way to undo it. */
-export function CancellationScheduled({ accessUntil }: { accessUntil?: string | null }) {
+export function CancellationScheduled({ accessUntilLabel }: { accessUntilLabel?: string | null }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -210,7 +206,7 @@ export function CancellationScheduled({ accessUntil }: { accessUntil?: string | 
         <div>
           <p className="font-semibold text-amber-100">Subscription Cancellation Scheduled</p>
           <p className="mt-0.5 text-sm text-amber-100/70">
-            Your subscription will remain active until {accessUntil ? fmt(accessUntil) : "the end of your billing period"}.
+            Your subscription will remain active until {accessUntilLabel ?? "the end of your billing period"}.
             You will not be charged for another billing cycle.
           </p>
           {error && <p className="mt-1 text-sm text-rose-300">{error}</p>}
