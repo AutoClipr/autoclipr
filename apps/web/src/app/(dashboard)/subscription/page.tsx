@@ -3,7 +3,8 @@ import { UpgradeButton } from "@/components/billing/pricing-modal";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
-import { CreditHistory, type CreditTransaction } from "@/components/billing/credit-history";
+import { CreditUsageTable } from "@/components/billing/credit-usage-table";
+import { getCreditUsageRows } from "@/lib/credit-usage";
 
 export const metadata = { title: "Subscription" };
 
@@ -31,10 +32,10 @@ export default async function BillingPage() {
     data: { session },
   } = await supabase.auth.getSession();
 
-  const [billingRes, txRes, creditHistoryRes] = await Promise.all([
+  const [billingRes, txRes, creditRows] = await Promise.all([
     apiFetch<BillingData>("/api/v1/billing/subscription", { token: session!.access_token }),
     apiFetch<Transaction[]>("/api/v1/billing/transactions", { token: session!.access_token }),
-    apiFetch<CreditTransaction[]>("/api/v1/users/me/credit-history", { token: session!.access_token }),
+    getCreditUsageRows(session!.access_token),
   ]);
 
   const billing = billingRes.data;
@@ -43,7 +44,6 @@ export default async function BillingPage() {
   const planId = billing?.subscription?.plan_id ?? "free";
   const maxCredits = planId === "business" ? 1200 : planId === "creator" ? 500 : 30;
   const transactions = txRes.data ?? [];
-  const creditHistory = creditHistoryRes.data ?? [];
 
   const email = session?.user?.email ?? "";
   const planName = `${planId.charAt(0).toUpperCase()}${planId.slice(1)} plan`;
@@ -120,7 +120,7 @@ export default async function BillingPage() {
         </div>
       </div>
 
-      <CreditHistory transactions={creditHistory} />
+      <CreditUsageTable rows={creditRows} />
 
     </div>
   );
