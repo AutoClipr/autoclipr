@@ -26,7 +26,6 @@ import {
   SUPPORTED_SOURCES,
 } from "@/lib/video-sources";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -247,10 +246,13 @@ export function CreateFromUrl() {
   return (
     <div className="space-y-8">
       {isComplete ? (
-        <div className="gradient-border shadow-glow">
-          <div className="p-6 text-center sm:p-8">
-            <Flame className="mx-auto mb-4 h-10 w-10 text-orange-400" />
-            <h3 className="text-2xl font-bold">{pipeline!.clips_created} clips ready</h3>
+        <div className="relative overflow-hidden rounded-3xl border border-emerald-400/30 bg-white/[0.03] shadow-[0_0_60px_-20px_rgba(16,185,129,0.8)] backdrop-blur">
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden />
+          <div className="relative p-6 text-center sm:p-10">
+            <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl border border-orange-400/30 bg-orange-500/15 shadow-[0_0_40px_-8px_rgba(251,146,60,0.8)]">
+              <Flame className="h-8 w-8 text-orange-300" />
+            </span>
+            <h3 className="text-3xl font-extrabold tracking-tight text-white">{pipeline!.clips_created} clips ready</h3>
             <p className="mt-2 text-muted-foreground">
               Viral scores, captions, and exports are prepared for your platforms.
             </p>
@@ -265,16 +267,17 @@ export function CreateFromUrl() {
         </div>
       ) : isProcessing ? (
         <div className="space-y-6">
-          <div className="glass-panel p-6 sm:p-8">
-            <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
+            <div className="relative mb-6 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-emerald-400">Processing</p>
-                <h2 className="text-xl font-bold">{pipeline?.title ?? "Your video"}</h2>
+                <p className="section-label-white mb-2">Processing</p>
+                <h2 className="text-xl font-bold text-white">{pipeline?.title ?? "Your video"}</h2>
               </div>
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
             </div>
             <Progress value={pipeline?.progress_percent ?? 0} className="h-2" />
-            <p className="mt-2 text-right text-xs text-muted-foreground">
+            <p className="mt-2 text-right text-xs text-white/50">
               {pipeline?.progress_percent ?? 0}%
             </p>
           </div>
@@ -288,8 +291,9 @@ export function CreateFromUrl() {
                 <div
                   key={step.id}
                   className={cn(
-                    "glass-panel p-5 transition-colors",
-                    active && "border-emerald-500/30 ring-1 ring-emerald-500/20"
+                    "rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur transition-all",
+                    active && "border-emerald-400/40 shadow-[0_0_30px_-12px_rgba(16,185,129,0.8)]",
+                    done && "opacity-80"
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -303,14 +307,14 @@ export function CreateFromUrl() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium">{step.label}</p>
+                        <p className="font-semibold text-white">{step.label}</p>
                       </div>
                       {step.checks && step.checks.length > 0 && (
                         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
                           {step.checks.map((check) => (
                             <li
                               key={check}
-                              className="flex items-center gap-2 text-xs text-muted-foreground"
+                              className="flex items-center gap-2 text-xs text-white/55"
                             >
                               <CheckCircle2
                                 className={cn(
@@ -332,33 +336,32 @@ export function CreateFromUrl() {
         </div>
       ) : (
         <>
-          <div className="glass-panel relative overflow-hidden p-6 sm:p-8">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
             {/* Corner ambient glow */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/[0.08] blur-3xl" aria-hidden />
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
 
             <div className="relative mb-6 flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/25">
-                <Link2 className="h-5 w-5 text-emerald-400" />
-                <span className="absolute -inset-1 -z-10 rounded-xl bg-emerald-500/20 blur-md" />
-              </div>
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/15 shadow-[0_0_30px_-8px_rgba(16,185,129,0.8)]">
+                <Link2 className="h-5 w-5 text-emerald-200" />
+              </span>
               <div>
-                <h2 className="text-lg font-semibold">Paste Video URL</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="text-lg font-bold text-white">Paste a video link</h2>
+                <p className="text-sm text-white/50">
                   YouTube, Vimeo, Loom, Google Drive, or direct MP4
                 </p>
               </div>
             </div>
 
             <div className="relative space-y-2">
-              <Label htmlFor="video-url">Video URL</Label>
-              <div className="group/url relative rounded-xl transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(52,211,153,0.4),0_0_28px_-4px_rgba(52,211,153,0.3)]">
-                <Link2 className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within/url:text-emerald-400" />
-                <Input
+              <Label htmlFor="video-url" className="sr-only">Video URL</Label>
+              <div className="group/url flex items-center gap-3 rounded-full border border-white/10 bg-black/30 px-5 transition-all duration-300 focus-within:border-emerald-400/50 focus-within:shadow-[0_0_30px_-8px_rgba(16,185,129,0.6)]">
+                <Link2 className="h-4 w-4 shrink-0 text-white/40 transition-colors group-focus-within/url:text-emerald-300" />
+                <input
                   id="video-url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="pl-10 font-mono text-sm"
+                  className="h-14 min-w-0 flex-1 border-0 bg-transparent font-mono text-sm text-white placeholder:text-white/35 outline-none ring-0 focus:outline-none focus:ring-0"
                 />
               </div>
             </div>
@@ -367,7 +370,7 @@ export function CreateFromUrl() {
               {SUPPORTED_SOURCES.map((s) => (
                 <span
                   key={s.id}
-                  className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-muted-foreground"
+                  className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/55"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" />
                   {s.label}
@@ -377,8 +380,8 @@ export function CreateFromUrl() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="glass-panel p-5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
                 Clip count
               </Label>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -388,14 +391,14 @@ export function CreateFromUrl() {
                     type="button"
                     onClick={() => setClipCount(n)}
                     className={cn(
-                      "rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+                      "rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
                       clipCount === n
-                        ? "create-selected scale-105 shadow-lg shadow-emerald-500/20"
-                        : "border border-white/[0.08] bg-white/[0.03] hover:-translate-y-0.5 hover:bg-white/[0.06]"
+                        ? "create-selected"
+                        : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
                     )}
                   >
                     {n} clips
-                    <span className={cn("ml-1.5 text-[10px]", clipCount === n ? "opacity-80" : "text-muted-foreground/60")}>
+                    <span className={cn("ml-1.5 text-[10px]", clipCount === n ? "text-black/55" : "text-white/35")}>
                       {n * creditCostPerClip}cr
                     </span>
                   </button>
@@ -403,8 +406,8 @@ export function CreateFromUrl() {
               </div>
             </div>
 
-            <div className="glass-panel p-5">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+              <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
                 Duration
               </Label>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -414,10 +417,10 @@ export function CreateFromUrl() {
                     type="button"
                     onClick={() => toggleDuration(sec)}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
                       durations.includes(sec)
-                        ? "create-selected scale-105 shadow-lg shadow-emerald-500/20"
-                        : "border border-white/[0.08] bg-white/[0.03] hover:-translate-y-0.5 hover:bg-white/[0.06]"
+                        ? "create-selected"
+                        : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
                     )}
                   >
                     {durations.includes(sec) && <CheckCircle2 className="h-3 w-3" />}
@@ -428,8 +431,8 @@ export function CreateFromUrl() {
             </div>
           </div>
 
-          <div className="glass-panel p-5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
               Caption style
             </Label>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -439,10 +442,10 @@ export function CreateFromUrl() {
                   type="button"
                   onClick={() => setCaptionStyle(s.id)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm transition-all duration-200",
+                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all duration-200",
                     captionStyle === s.id
-                      ? "scale-105 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-500/15 ring-1 ring-emerald-500/40"
-                      : "border border-white/[0.08] text-muted-foreground hover:-translate-y-0.5 hover:bg-white/[0.04]"
+                      ? "create-selected"
+                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
                   )}
                 >
                   {CAPTION_EMOJI[s.id] && <span className="text-xs">{CAPTION_EMOJI[s.id]}</span>}
@@ -457,8 +460,8 @@ export function CreateFromUrl() {
                   type="button"
                   onClick={() => setLanguage(l.id)}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs",
-                    language === l.id ? "bg-white/10 text-foreground" : "text-muted-foreground"
+                    "rounded-full border px-3 py-1 text-xs transition-colors",
+                    language === l.id ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100" : "border-transparent text-white/45 hover:text-white"
                   )}
                 >
                   {l.label}
@@ -467,8 +470,8 @@ export function CreateFromUrl() {
             </div>
           </div>
 
-          <div className="glass-panel p-5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
               Publish to
             </Label>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -478,23 +481,23 @@ export function CreateFromUrl() {
                   type="button"
                   onClick={() => togglePlatform(p.id)}
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm transition-colors",
+                    "rounded-full px-4 py-2 text-sm transition-all",
                     platforms.includes(p.id)
-                      ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
-                      : "border border-white/[0.08] text-muted-foreground"
+                      ? "create-selected"
+                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
                   )}
                 >
                   {p.label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-white/45">
               Uses your connected channels — one-click publish when clips are ready
             </p>
           </div>
 
-          <div className="glass-panel p-5">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
+            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
               Export quality
             </Label>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -504,10 +507,10 @@ export function CreateFromUrl() {
                   type="button"
                   onClick={() => setExportQuality(q.id)}
                   className={cn(
-                    "rounded-lg px-4 py-2 text-sm",
+                    "rounded-full px-4 py-2 text-sm transition-all",
                     exportQuality === q.id
                       ? "create-selected"
-                      : "border border-white/[0.08] text-muted-foreground"
+                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
                   )}
                 >
                   {q.label}
@@ -518,14 +521,14 @@ export function CreateFromUrl() {
 
           {error && (
             <div className="space-y-3">
-              <p className="rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+              <p className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-200">
                 {error}
               </p>
               {(isFailed || error) && (
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-red-500/30"
+                  className="w-full border-rose-500/30 hover:border-rose-400/50"
                   onClick={() => {
                     setError(null);
                     setPipeline(null);
@@ -541,10 +544,10 @@ export function CreateFromUrl() {
           {credits !== null && (
             <div
               className={cn(
-                "rounded-lg border px-4 py-3 text-sm",
+                "rounded-2xl border px-4 py-3 text-sm backdrop-blur",
                 hasEnoughCredits
-                  ? "border-emerald-500/30 bg-emerald-950/30 text-emerald-300"
-                  : "border-amber-500/30 bg-amber-950/30 text-amber-200"
+                  ? "border-emerald-400/25 bg-emerald-500/[0.07] text-emerald-100"
+                  : "border-amber-400/30 bg-amber-500/[0.08] text-amber-100"
               )}
             >
               <p>
@@ -569,7 +572,7 @@ export function CreateFromUrl() {
             <Button
               variant="gradient"
               size="lg"
-              className="w-full text-base font-bold"
+              className="h-14 w-full text-base font-bold"
               onClick={() => router.push("/billing")}
             >
               <CreditCard className="mr-2 h-5 w-5" />
@@ -579,13 +582,13 @@ export function CreateFromUrl() {
             <Button
               variant="gradient"
               size="lg"
-              className="relative w-full overflow-hidden text-base font-bold shadow-lg shadow-emerald-500/25"
+              className="relative h-14 w-full overflow-hidden text-base font-bold"
               disabled={!url.trim() || !hasEnoughCredits}
               onClick={handleCreate}
             >
               <motion.span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-1/4 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                className="pointer-events-none absolute inset-y-0 w-1/4 -skew-x-12 bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
                 animate={{ x: ["-200%", "500%"] }}
                 transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
               />

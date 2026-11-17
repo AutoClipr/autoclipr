@@ -129,7 +129,7 @@
 
   /* Create / Viral Shorts — selected & active states */
   .create-selected {
-    @apply bg-emerald-700 font-semibold text-white shadow-[0_0_24px_rgba(6,95,70,0.45)] ring-1 ring-emerald-500/50;
+    @apply bg-white font-semibold text-black shadow-[0_0_20px_-4px_rgba(255,255,255,0.55)];
   }
 
   .create-sidebar-card {

@@ -18,7 +18,7 @@ const FILE_INPUT_ID = "autoclipr-video-upload";
 
 function UploadDropIcon() {
   return (
-    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-brand shadow-glow">
+    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-violet-400/30 bg-violet-500/15 shadow-[0_0_40px_-8px_rgba(139,92,246,0.8)]">
       <svg
         width="28"
         height="28"
@@ -210,31 +210,30 @@ export function UploadForm() {
       : `${progress}% — analyzing, clipping, and adding captions`;
 
     return (
-      <Card className="glass border-white/10">
+      <Card className="relative overflow-hidden">
         <CardContent className="space-y-4 p-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-emerald-400">{statusLabel}</p>
-              <h2 className="text-xl font-bold">{pipeline?.title ?? title}</h2>
+              <p className="section-label-white mb-2">{statusLabel}</p>
+              <h2 className="text-xl font-bold text-white">{pipeline?.title ?? title}</h2>
             </div>
             <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
           </div>
           <Progress value={progress} className="h-2" />
-          <p className="text-right text-xs text-muted-foreground">{detail}</p>
+          <p className="text-right text-xs text-white/50">{detail}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="glass relative overflow-hidden border-white/10">
+    <Card className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-violet-500/0 via-violet-500/60 to-violet-500/0" />
       <div className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-violet-500/[0.08] blur-3xl" />
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/15 ring-1 ring-violet-500/25">
-            <FileVideo className="h-5 w-5 text-violet-400" />
-            <span className="absolute -inset-1 -z-10 rounded-xl bg-violet-500/20 blur-md" />
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-500/15 shadow-[0_0_30px_-8px_rgba(139,92,246,0.8)]">
+            <FileVideo className="h-5 w-5 text-violet-200" />
           </span>
           Upload Video
         </CardTitle>
@@ -259,7 +258,7 @@ export function UploadForm() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={onDrop}
           className={cn(
-            "group/drop flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/15 bg-white/5 px-6 py-16 text-center transition-all duration-300",
+            "group/drop flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center transition-all duration-300",
             busy
               ? "cursor-not-allowed opacity-60"
               : "cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:shadow-[inset_0_0_40px_-12px_rgba(52,211,153,0.15)]",
@@ -302,7 +301,7 @@ export function UploadForm() {
           </div>
         )}
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-200">{error}</p>}
 
         <Button
           variant="gradient"
