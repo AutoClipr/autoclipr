@@ -1099,8 +1099,26 @@ describe('SubscriptionsService', () => {
       expect(subBuilder.upsert).toHaveBeenCalled();
     });
 
-    it('asks the user to contact support when no Dodo id is stored', async () => {
+    it('asks the user to contact support when no Dodo id is stored or found', async () => {
       mockTables({ ...activeRow, stripe_subscription_id: null });
+      (dodo as any).findActiveSubscriptionId = jest.fn().mockResolvedValue(null);
+      await expect(service.cancelSubscription('user-1')).rejects.toThrow(/contact support/);
+    });
+
+    it('recovers a missing Dodo id from Dodo, stores it and cancels', async () => {
+      const { subBuilder } = mockTables({ ...activeRow, stripe_subscription_id: null });
+      (dodo as any).findActiveSubscriptionId = jest.fn().mockResolvedValue('sub_found');
+
+      await service.cancelSubscription('user-1');
+
+      expect((dodo as any).findActiveSubscriptionId).toHaveBeenCalledWith('jane@example.com', 'user-1');
+      expect(subBuilder.update).toHaveBeenCalledWith({ stripe_subscription_id: 'sub_found' });
+      expect((dodo as any).scheduleCancellation).toHaveBeenCalledWith('sub_found', expect.anything());
+    });
+
+    it('treats a failed Dodo lookup as not found', async () => {
+      mockTables({ ...activeRow, stripe_subscription_id: null });
+      (dodo as any).findActiveSubscriptionId = jest.fn().mockRejectedValue(new Error('dodo down'));
       await expect(service.cancelSubscription('user-1')).rejects.toThrow(/contact support/);
     });
 

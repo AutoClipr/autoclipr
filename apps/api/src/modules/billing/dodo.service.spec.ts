@@ -3,6 +3,8 @@ const mockSubscriptionsRetrieve = jest.fn();
 const mockSubscriptionsUpdate = jest.fn();
 const mockWebhooksUnwrap = jest.fn();
 const mockDiscountsCreate = jest.fn();
+const mockCustomersList = jest.fn();
+const mockSubscriptionsList = jest.fn();
 const mockDiscountsUpdate = jest.fn();
 const mockDiscountsDelete = jest.fn();
 
@@ -16,6 +18,10 @@ const MockDodoPayments = jest.fn().mockImplementation(() => ({
     create: mockSubscriptionsCreate,
     retrieve: mockSubscriptionsRetrieve,
     update: mockSubscriptionsUpdate,
+    list: mockSubscriptionsList,
+  },
+  customers: {
+    list: mockCustomersList,
   },
   webhooks: {
     unwrap: mockWebhooksUnwrap,
@@ -276,6 +282,37 @@ describe('DodoService', () => {
         cancel_at_next_billing_date: true,
         cancel_reason: 'cancelled_by_customer',
       });
+    });
+  });
+
+  describe('findActiveSubscriptionId', () => {
+    async function* items<T>(list: T[]) {
+      for (const x of list) yield x;
+    }
+
+    it('returns the active subscription whose metadata names the user', async () => {
+      mockCustomersList.mockReturnValue(items([{ customer_id: 'cus_1' }]));
+      mockSubscriptionsList.mockReturnValue(
+        items([
+          { subscription_id: 'sub_other', metadata: { user_id: 'someone-else' } },
+          { subscription_id: 'sub_mine', metadata: { user_id: 'user-1' } },
+        ]),
+      );
+
+      await expect(service.findActiveSubscriptionId('a@b.com', 'user-1')).resolves.toBe('sub_mine');
+      expect(mockCustomersList).toHaveBeenCalledWith({ email: 'a@b.com' });
+      expect(mockSubscriptionsList).toHaveBeenCalledWith({ customer_id: 'cus_1', status: 'active' });
+    });
+
+    it('returns null when nothing matches', async () => {
+      mockCustomersList.mockReturnValue(items([{ customer_id: 'cus_1' }]));
+      mockSubscriptionsList.mockReturnValue(items([{ subscription_id: 'sub_x', metadata: {} }]));
+      await expect(service.findActiveSubscriptionId('a@b.com', 'user-1')).resolves.toBeNull();
+    });
+
+    it('returns null without an email', async () => {
+      await expect(service.findActiveSubscriptionId('', 'user-1')).resolves.toBeNull();
+      expect(mockCustomersList).not.toHaveBeenCalled();
     });
   });
 

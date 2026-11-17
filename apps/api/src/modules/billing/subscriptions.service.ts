@@ -552,9 +552,12 @@ export class SubscriptionsService {
       throw new BadRequestException('This subscription is not active, so there is nothing to cancel.');
     }
     if (!row.stripe_subscription_id) {
-      throw new BadRequestException(
-        'We could not find the payment record for this subscription. Please contact support to cancel.',
-      );
+      row.stripe_subscription_id = await this.recoverSubscriptionId(userId);
+      if (!row.stripe_subscription_id) {
+        throw new BadRequestException(
+          'We could not find the payment record for this subscription. Please contact support to cancel.',
+        );
+      }
     }
 
     const reason = opts.reason && CANCELLATION_REASONS[opts.reason] ? opts.reason : null;
@@ -641,6 +644,30 @@ export class SubscriptionsService {
     }
 
     return this.cancellationState({ ...row, cancel_at_period_end: true, cancellation_effective_at: accessUntil });
+  }
+
+  /**
+   * Look up and store the Dodo subscription id for a user whose row lacks it.
+   * Returns null when Dodo has no matching active subscription.
+   */
+  private async recoverSubscriptionId(userId: string): Promise<string | null> {
+    const profile = await this.getProfileContact(userId);
+    if (!profile) return null;
+    let subscriptionId: string | null = null;
+    try {
+      subscriptionId = await this.dodo.findActiveSubscriptionId(profile.email, userId);
+    } catch (err) {
+      this.logger.error(`Dodo subscription lookup failed for ${userId}: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+    if (subscriptionId) {
+      await this.supabase.getClient()
+        .from('user_subscriptions')
+        .update({ stripe_subscription_id: subscriptionId })
+        .eq('user_id', userId);
+      this.logger.log(`Recovered Dodo subscription id for ${userId}`);
+    }
+    return subscriptionId;
   }
 
   /** Undo a scheduled cancellation before the period ends. */

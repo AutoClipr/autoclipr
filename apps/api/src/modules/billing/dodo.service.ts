@@ -164,6 +164,23 @@ export class DodoService {
     });
   }
 
+  /**
+   * Find a user's active subscription in Dodo when we never stored its id
+   * (plans activated through the payment-success redirect before the id was
+   * saved). Customers are matched by email, then the subscription must carry
+   * our `user_id` in its metadata, so an email collision cannot match
+   * someone else's subscription.
+   */
+  async findActiveSubscriptionId(email: string, userId: string): Promise<string | null> {
+    if (!email) return null;
+    for await (const customer of this.client.customers.list({ email })) {
+      for await (const sub of this.client.subscriptions.list({ customer_id: customer.customer_id, status: 'active' })) {
+        if (sub.metadata?.user_id === userId) return sub.subscription_id;
+      }
+    }
+    return null;
+  }
+
   /** Undo a scheduled cancellation while the period is still running. */
   async resumeSubscription(subscriptionId: string) {
     return this.client.subscriptions.update(subscriptionId, { cancel_at_next_billing_date: false });
