@@ -71,7 +71,7 @@ export function baseLayout(content: string, previewText = ''): string {
               <p style="margin:0;font-size:12px;color:#9ca3af;">
                 <a href="{{appUrl}}/dashboard" style="color:#10b981;">Dashboard</a>
                 &nbsp;·&nbsp;
-                <a href="{{appUrl}}/billing" style="color:#10b981;">Billing</a>
+                <a href="{{appUrl}}/subscription" style="color:#10b981;">Subscription</a>
                 &nbsp;·&nbsp;
                 <a href="mailto:{{supportEmail}}" style="color:#10b981;">Support</a>
               </p>

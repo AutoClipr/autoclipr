@@ -14,9 +14,11 @@ export async function DashboardShell({
   token: string;
 }) {
   let credits = 10;
+  let plan = "free";
   const profileRes = await apiFetch<Profile>("/api/v1/users/me", { token });
   if (profileRes.success && profileRes.data) {
     credits = profileRes.data.credits;
+    plan = profileRes.data.subscription_tier || "free";
   }
 
   return (
@@ -24,7 +26,7 @@ export async function DashboardShell({
       <ReferralTracker token={token} />
       <Heartbeat />
       <PageBackground variant="dashboard" />
-      <Navbar solid />
+      <Navbar solid credits={credits} plan={plan} />
       <DashboardSidebar credits={credits} />
       <div className="lg:pl-64">
         <div className="mx-auto max-w-6xl px-4 py-8 pt-20 sm:px-6 lg:pt-8">{children}</div>

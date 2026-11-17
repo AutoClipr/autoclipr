@@ -313,7 +313,7 @@ export const REFUND_POLICY: LegalDocumentContent = {
       id: "cancellation",
       title: "2. Cancelling a subscription",
       list: [
-        "You can cancel at any time from Billing in your dashboard. There is no cancellation fee and no minimum contract.",
+        "You can cancel at any time from Subscription in your dashboard. There is no cancellation fee and no minimum contract.",
         "Cancelling stops future renewals. Your plan stays active for the remainder of the billing period you have already paid for.",
         "When the period ends, your account returns to the free Starter plan. Your existing clips and account data are not deleted by cancelling.",
       ],

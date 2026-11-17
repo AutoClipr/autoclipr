@@ -62,7 +62,7 @@ const SUGGESTIONS = [
 /** A nudge tuned to where the user already is, rather than a generic greeting. */
 function pageHint(pathname: string): string | null {
   if (pathname.startsWith("/pricing")) return "💳 Questions about plans or a coupon code?";
-  if (pathname.startsWith("/billing")) return "🧾 Need help with billing or invoices?";
+  if (pathname.startsWith("/subscription")) return "🧾 Need help with billing or invoices?";
   if (pathname.startsWith("/dashboard")) return "👋 Need a hand creating your first clip?";
   if (pathname.startsWith("/tools")) return "🛠️ Questions about the free tools?";
   return null;

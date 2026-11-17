@@ -7,7 +7,8 @@ import {
   LayoutDashboard,
   Link2,
   Share2,
-  CreditCard,
+  Crown,
+  History,
   LogOut,
   ChevronRight,
 } from "lucide-react";
@@ -41,6 +42,8 @@ type UserMenuProps = {
   phone?: string | null;
   fullName?: string | null;
   avatarUrl?: string | null;
+  /** Subscription tier, e.g. "free" or "creator". */
+  plan?: string;
 };
 
 /** Icon chip with a per-item accent color that lights up on row hover. */
@@ -72,7 +75,9 @@ export function UserMenu({
   phone,
   fullName,
   avatarUrl,
+  plan,
 }: UserMenuProps) {
+  const planLabel = plan ? `${plan.charAt(0).toUpperCase()}${plan.slice(1)} Plan` : null;
   const router = useRouter();
   const avatarFallback = getUserAvatarFallback({ email, phone, fullName, avatarUrl });
   const avatarImageUrl = getUserAvatarImageUrl(avatarUrl);
@@ -144,6 +149,11 @@ export function UserMenu({
               )}
               <p className="truncate text-xs text-zinc-400">{displayLabel}</p>
             </div>
+            {planLabel && (
+              <span className="ml-auto shrink-0 self-start rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/85 ring-1 ring-white/10">
+                {planLabel}
+              </span>
+            )}
           </div>
         </div>
 
@@ -197,9 +207,16 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/billing" onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={CreditCard} accent="text-zinc-400 group-data-[highlighted]:bg-amber-500/15 group-data-[highlighted]:text-amber-400 group-data-[highlighted]:ring-amber-500/30" />
-              Manage Membership
+            <Link href="/subscription" onClick={() => beginNavigationLoading()}>
+              <MenuIcon icon={Crown} accent="text-zinc-400 group-data-[highlighted]:bg-amber-500/15 group-data-[highlighted]:text-amber-400 group-data-[highlighted]:ring-amber-500/30" />
+              Subscription
+              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className={itemClass}>
+            <Link href="/activity" onClick={() => beginNavigationLoading()}>
+              <MenuIcon icon={History} accent="text-zinc-400 group-data-[highlighted]:bg-sky-500/15 group-data-[highlighted]:text-sky-400 group-data-[highlighted]:ring-sky-500/30" />
+              Credit usage history
               <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
             </Link>
           </DropdownMenuItem>

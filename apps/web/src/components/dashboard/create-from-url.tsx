@@ -573,7 +573,7 @@ export function CreateFromUrl() {
               variant="gradient"
               size="lg"
               className="h-14 w-full text-base font-bold"
-              onClick={() => router.push("/billing")}
+              onClick={() => router.push("/subscription")}
             >
               <CreditCard className="mr-2 h-5 w-5" />
               Take Subscription

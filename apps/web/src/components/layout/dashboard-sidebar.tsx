@@ -25,7 +25,7 @@ const nav = [
   { href: "/channels", label: "Channels", icon: Youtube },
   { href: "/clips", label: "Clips", icon: Film },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/subscription", label: "Subscription", icon: CreditCard },
   { href: "/dashboard/affiliate", label: "Earn & Refer", icon: DollarSign },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -71,7 +71,7 @@ export function DashboardSidebar({ credits }: { credits: number }) {
           </p>
           <p className="mt-1 text-3xl font-bold gradient-text">{credits}</p>
           <Link
-            href="/billing"
+            href="/subscription"
             className="mt-3 inline-block text-xs font-medium text-emerald-400 hover:text-emerald-300"
           >
             Upgrade plan →

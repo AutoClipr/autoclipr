@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Search, Download, Receipt } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import type { Transaction } from "@/app/(dashboard)/billing/page";
+import type { Transaction } from "@/app/(dashboard)/subscription/page";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 

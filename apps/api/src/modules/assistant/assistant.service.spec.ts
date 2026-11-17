@@ -151,7 +151,7 @@ describe('AssistantService', () => {
 
     it('offers billing for an invoice question', () => {
       expect(service.buildActions('where are my invoices?', {})).toContainEqual(
-        expect.objectContaining({ target: '/billing' }),
+        expect.objectContaining({ target: '/subscription' }),
       );
     });
 

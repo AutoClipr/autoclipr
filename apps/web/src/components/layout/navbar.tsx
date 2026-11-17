@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { createClient } from "@/lib/supabase/server";
+import { apiFetch, type Profile } from "@/lib/api";
 import { resolveUserFullName } from "@/lib/user-avatar";
 import { UserMenu } from "./user-menu";
 import { FreeToolsDropdown } from "./free-tools-dropdown";
@@ -9,6 +10,7 @@ import { FeaturesDropdown } from "./features-dropdown";
 import { MobileMenu } from "./mobile-menu";
 import { NavbarShell } from "./navbar-shell";
 import { DashboardLink } from "./dashboard-link";
+import { AppHeaderActions } from "./app-header-actions";
 
 const linksRight = [
   { href: "/coaching", label: "Coaching" },
@@ -16,11 +18,27 @@ const linksRight = [
   { href: "/pricing", label: "Pricing" },
 ];
 
-export async function Navbar({ solid = false }: { solid?: boolean } = {}) {
+export async function Navbar({
+  solid = false,
+  credits,
+  plan,
+}: { solid?: boolean; plan?: string; /** Set on app pages: shows notifications, credits and Add credits. */ credits?: number } = {}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Plan badge for the account menu. App pages pass it in; elsewhere fetch it.
+  let userPlan = plan;
+  if (user && !userPlan) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      const res = await apiFetch<Profile>("/api/v1/users/me", { token: session.access_token });
+      if (res.success && res.data) userPlan = res.data.subscription_tier || "free";
+    }
+  }
 
   return (
     <NavbarShell solid={solid}>
@@ -68,11 +86,12 @@ export async function Navbar({ solid = false }: { solid?: boolean } = {}) {
           {/* Desktop: signed in → Dashboard + avatar; signed out → Sign in + Sign up */}
           {user ? (
             <div className="flex items-center gap-3">
-              <DashboardLink />
+              {credits !== undefined ? <AppHeaderActions credits={credits} plan={plan} /> : <DashboardLink />}
               <UserMenu
                 email={user.email}
                 phone={user.phone}
                 fullName={resolveUserFullName(user.user_metadata)}
+                plan={userPlan}
                 avatarUrl={typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined}
               />
             </div>

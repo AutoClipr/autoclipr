@@ -49,8 +49,8 @@ export class AssistantService {
     if (/(credit|balance|how many)/.test(q)) {
       actions.push({ label: 'Check credits', type: 'navigate', target: '/dashboard' });
     }
-    if (/(invoice|billing|receipt|cancel|refund)/.test(q) && !on('/billing')) {
-      actions.push({ label: 'Billing', type: 'navigate', target: '/billing' });
+    if (/(invoice|billing|receipt|cancel|refund)/.test(q) && !on('/subscription')) {
+      actions.push({ label: 'Subscription', type: 'navigate', target: '/subscription' });
     }
 
     // Two is a helpful nudge; more is a wall of buttons.

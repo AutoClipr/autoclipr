@@ -155,7 +155,7 @@ export class EmailService {
       userName: this.firstName(vars.userName),
       appUrl: this.config.appUrl,
       supportEmail: this.config.supportEmail,
-      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/billing`,
+      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/subscription`,
     });
     await this.sendSafe({ to, subject, html, text, from: this.fromField() });
   }
@@ -166,7 +166,7 @@ export class EmailService {
       userName: this.firstName(vars.userName),
       appUrl: this.config.appUrl,
       supportEmail: this.config.supportEmail,
-      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/billing`,
+      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/subscription`,
     });
     await this.sendSafe({ to, subject, html, text, from: this.fromField() });
   }
@@ -188,7 +188,7 @@ export class EmailService {
       userName: this.firstName(vars.userName),
       appUrl: this.config.appUrl,
       supportEmail: this.config.supportEmail,
-      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/billing`,
+      upgradeUrl: vars.upgradeUrl || `${this.config.appUrl}/subscription`,
     });
 
     try {
@@ -248,7 +248,7 @@ export class EmailService {
       userName: this.firstName(vars.userName),
       appUrl: this.config.appUrl,
       supportEmail: this.config.supportEmail,
-      updatePaymentUrl: vars.updatePaymentUrl || `${this.config.appUrl}/billing`,
+      updatePaymentUrl: vars.updatePaymentUrl || `${this.config.appUrl}/subscription`,
     });
     await this.sendSafe({ to, subject, html, text, from: this.fromField() });
   }

@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
     return [
       // Google often requests /favicon.ico directly — serve the current brand icon.
       { source: "/favicon.ico", destination: "/icon", permanent: false },
+      // Billing page was renamed; keep old links (emails, bookmarks) working.
+      { source: "/billing", destination: "/subscription", permanent: true },
     ];
   },
   images: {
