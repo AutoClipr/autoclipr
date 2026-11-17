@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Link2, CheckCircle2, Ban } from "lucide-react";
+import { Link2, CheckCircle2, Ban, Info, ArrowLeft, ArrowRight } from "lucide-react";
 import { usePlatformAvailability } from "@/hooks/use-platform-availability";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,8 @@ type Platform = {
   description: string;
   icon: React.ReactNode;
   available: boolean;
+  /** Brand glow colour for the icon tile and hover halo. */
+  glow: string;
 };
 
 function YouTubeIcon({ className }: { className?: string }) {
@@ -68,6 +70,7 @@ function FacebookIcon({ className }: { className?: string }) {
 const platforms: Platform[] = [
   {
     id: "youtube",
+    glow: "rgba(239,68,68,0.55)",
     name: "YouTube",
     description: "Post clips as YouTube Shorts",
     icon: <YouTubeIcon />,
@@ -75,6 +78,7 @@ const platforms: Platform[] = [
   },
   {
     id: "tiktok",
+    glow: "rgba(255,255,255,0.35)",
     name: "TikTok",
     description: "Post clips to your TikTok account",
     icon: <TikTokIcon />,
@@ -82,6 +86,7 @@ const platforms: Platform[] = [
   },
   {
     id: "instagram",
+    glow: "rgba(214,41,118,0.55)",
     name: "Instagram",
     description: "Post clips as Instagram Reels",
     icon: <InstagramIcon />,
@@ -89,6 +94,7 @@ const platforms: Platform[] = [
   },
   {
     id: "facebook",
+    glow: "rgba(24,119,242,0.55)",
     name: "Facebook",
     description: "Post clips to your Facebook account",
     icon: <FacebookIcon />,
@@ -266,72 +272,122 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
 
   const isTrial = mode === "trial";
 
+  const usable = platforms.filter((p) => p.available && !bannedPlatforms.has(p.id));
+  const total = usable.length;
+  const connectedCount = usable.filter((p) => connected.includes(p.id)).length;
+
   return (
     <div className="relative mx-auto max-w-4xl">
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-56 w-[520px] -translate-x-1/2 rounded-full bg-violet-500/[0.07] blur-3xl" aria-hidden />
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[640px] -translate-x-1/2 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, rgba(16,185,129,0.18), rgba(139,92,246,0.08), transparent)" }}
+        aria-hidden
+      />
       <div className="relative text-center">
         {isTrial && (
           <Badge
             variant="outline"
-            className="mb-4 border-violet-500/40 bg-violet-500/10 text-violet-300"
+            className="mb-4 border-violet-400/40 bg-violet-500/10 text-violet-200"
           >
             FREE TRIAL
           </Badge>
         )}
-        <p className="section-label mx-auto mb-4">Platforms</p>
-        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-          Connect Your{" "}
-          <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-            Platforms
+        <p className="section-label-white mx-auto mb-5">Platforms</p>
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+          Connect your{" "}
+          <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+            platforms
           </span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+        <p className="mx-auto mt-4 max-w-xl text-white/55">
           {isTrial
             ? "Link a platform where you want clips posted. YouTube requires one-time Google authorization."
             : "Connect posting destinations (YouTube Shorts, Instagram, Facebook). This is separate from connecting a YouTube source channel for clipping."}
         </p>
+
+        {/* Progress */}
+        <div className="mx-auto mt-6 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 backdrop-blur">
+          <div className="flex gap-1">
+            {usable.map((p) => (
+              <span
+                key={p.id}
+                className={cn(
+                  "h-1.5 w-5 rounded-full transition-colors",
+                  connected.includes(p.id) ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-white/15",
+                )}
+              />
+            ))}
+          </div>
+          <span className="text-xs font-medium text-white/65">
+            {connectedCount} of {total} connected
+          </span>
+        </div>
       </div>
 
       {statusMessage && (
-        <div className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-center text-sm text-emerald-300">
+        <div className="relative mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] px-4 py-3 text-center text-sm text-emerald-200">
           {statusMessage}
         </div>
       )}
 
-      <div className="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-center text-sm text-emerald-300">
-        Make sure your accounts are set up to be{" "}
-        <span className="font-semibold text-emerald-200">business accounts</span> for
-        greatest success connecting.
+      <div className="relative mt-8 flex items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/60 backdrop-blur">
+        <Info className="h-4 w-4 shrink-0 text-emerald-300" />
+        <span>
+          Use <span className="font-semibold text-white">business or creator accounts</span> for the smoothest connection.
+        </span>
       </div>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2">
+      <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
         {platforms.map((platform) => {
           const isConnected = connected.includes(platform.id);
           const isLoading = connecting === platform.id;
+          const banned = bannedPlatforms.has(platform.id);
 
           return (
             <article
               key={platform.id}
+              style={{ ["--glow" as string]: platform.glow }}
               className={cn(
-                "surface-hover group relative flex flex-col overflow-hidden p-6 transition-all duration-300 hover:-translate-y-0.5",
-                isConnected ? "border-emerald-500/30" : ""
+                "group relative flex flex-col overflow-hidden rounded-3xl border bg-white/[0.03] p-6 backdrop-blur transition-all duration-300 hover:-translate-y-1",
+                isConnected
+                  ? "border-emerald-400/40 shadow-[0_0_40px_-16px_rgba(16,185,129,0.8)]"
+                  : banned
+                    ? "border-white/[0.07] opacity-80"
+                    : "border-white/10 hover:border-white/20",
               )}
             >
+              {/* Brand halo on hover */}
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-60"
+                style={{ background: "var(--glow)" }}
+                aria-hidden
+              />
               {isConnected && (
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-500/0 via-emerald-500/60 to-emerald-500/0" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-400/0 via-emerald-400/80 to-emerald-400/0" />
               )}
-              <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/[0.04] blur-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
               <div className="relative mb-5 flex items-start justify-between">
-                <span className="transition-transform duration-300 group-hover:scale-110">{platform.icon}</span>
-                {isConnected && (
-                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-                    <CheckCircle2 className="h-3 w-3" />
+                <span
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] transition-transform duration-300 group-hover:scale-105"
+                  style={{ boxShadow: "0 0 30px -10px var(--glow)" }}
+                >
+                  {platform.icon}
+                </span>
+                {isConnected ? (
+                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-200">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
                     Connected
                   </span>
+                ) : (
+                  !banned && platform.available && (
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/45">
+                      Not connected
+                    </span>
+                  )
                 )}
               </div>
-              <h2 className="text-xl font-semibold">{platform.name}</h2>
-              <p className="mt-2 flex-1 text-sm text-muted-foreground">
+              <h2 className="relative text-xl font-bold text-white">{platform.name}</h2>
+              <p className="relative mt-1.5 flex-1 text-sm text-white/50">
                 {platform.description}
               </p>
               {isConnected && platform.id === "youtube" && !platformRows.find((p) => p.platform === "youtube")?.can_post && (
@@ -339,7 +395,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-3 w-full"
+                  className="relative mt-4 w-full"
                   onClick={authorizeYoutube}
                 >
                   Authorize YouTube posting
@@ -350,26 +406,26 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="mt-3 w-full"
+                  className="relative mt-4 w-full"
                   onClick={authorizeInstagram}
                 >
                   Authorize Instagram posting
                 </Button>
               )}
-              {bannedPlatforms.has(platform.id) ? (
-                <div className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-red-500/30 bg-red-950/30 text-sm font-medium text-red-400">
+              {banned ? (
+                <div className="relative mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-rose-500/25 bg-rose-500/[0.08] text-sm font-medium text-rose-300">
                   <Ban className="h-4 w-4" />
                   Unavailable in your region
                 </div>
               ) : (
                 <Button
                   className={cn(
-                    "mt-6 h-11 w-full rounded-full font-semibold",
-                    platform.available && !isConnected && "bg-gradient-brand text-white hover:opacity-90",
+                    "relative mt-6 h-11 w-full rounded-full font-semibold",
+                    isConnected && "hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-rose-200",
                     !platform.available &&
-                      "cursor-not-allowed bg-zinc-800 text-muted-foreground opacity-70 hover:opacity-70"
+                      "cursor-not-allowed border border-white/10 bg-white/[0.04] text-white/40 opacity-70 hover:opacity-70",
                   )}
-                  variant={isConnected ? "outline" : platform.available ? "default" : "secondary"}
+                  variant={isConnected ? "outline" : platform.available ? "gradient" : "secondary"}
                   disabled={!platform.available || isLoading || regionLoading}
                   onClick={() => handleConnectClick(platform)}
                 >
@@ -381,7 +437,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
                     "Disconnect"
                   ) : (
                     <>
-                      <Link2 className="mr-2 h-4 w-4" />
+                      <Link2 className="h-4 w-4" />
                       Connect
                     </>
                   )}
@@ -393,50 +449,61 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
       </div>
 
       {connected.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-muted-foreground">
+        <p className="relative mt-10 text-center text-sm text-white/50">
           Connect at least one platform to continue.
         </p>
       ) : (
-        <p className="mt-10 text-center text-sm text-emerald-400">
-          {connected.length} platform{connected.length !== 1 ? "s" : ""} connected — use the{" "}
-          <span className="font-semibold">Post</span> button on each clip when ready.
+        <p className="relative mt-10 text-center text-sm text-white/60">
+          <span className="font-semibold text-emerald-300">
+            {connected.length} platform{connected.length !== 1 ? "s" : ""} connected
+          </span>{" "}
+          — use the <span className="font-semibold text-white">Post</span> button on each clip when ready.
         </p>
       )}
 
-      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <div className="relative mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         {!isTrial && (
           <Button variant="outline" asChild>
-            <Link href="/channels">← Channel Setup</Link>
+            <Link href="/channels"><ArrowLeft className="h-4 w-4" /> Channel setup</Link>
           </Button>
         )}
         {isTrial && (
           <Button variant="outline" asChild>
-            <Link href="/pricing">View Plans</Link>
+            <Link href="/pricing">View plans</Link>
           </Button>
         )}
         <Button variant="gradient" onClick={goToDashboard}>
           {connected.length > 0
-            ? "Continue to Dashboard"
+            ? "Continue to dashboard"
             : isTrial
-              ? "Skip → Dashboard"
-              : "Go to Dashboard"}
+              ? "Skip to dashboard"
+              : "Go to dashboard"}
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
 
       {/* OAuth confirm modal */}
       {pendingPlatform && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
-            <div className="mb-4 flex justify-center">{pendingPlatform.icon}</div>
-            <h3 className="text-center text-lg font-bold">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0b0d14]/95 p-7 shadow-2xl"
+            style={{ ["--glow" as string]: pendingPlatform.glow }}
+          >
+            <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full opacity-50 blur-3xl" style={{ background: "var(--glow)" }} aria-hidden />
+            <div className="relative mb-5 flex justify-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]" style={{ boxShadow: "0 0 36px -10px var(--glow)" }}>
+                {pendingPlatform.icon}
+              </span>
+            </div>
+            <h3 className="relative text-center text-xl font-bold text-white">
               Connect {pendingPlatform.name}
             </h3>
-            <p className="mt-3 text-center text-sm text-muted-foreground">
+            <p className="relative mt-3 text-center text-sm leading-relaxed text-white/55">
               You&apos;ll be redirected to {pendingPlatform.name} to authorize AutoClipr
               to post clips on your behalf. Use a business/creator account for best
               results.
             </p>
-            <div className="mt-6 flex gap-3">
+            <div className="relative mt-7 flex gap-3">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -446,7 +513,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
               </Button>
               <Button
                 variant="gradient"
-                className="flex-1 font-semibold"
+                className="flex-1"
                 onClick={confirmConnect}
               >
                 Authorize
