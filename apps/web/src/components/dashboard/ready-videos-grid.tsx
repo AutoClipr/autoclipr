@@ -45,8 +45,8 @@ export function ReadyVideosGrid({ videos: initialVideos }: ReadyVideosGridProps)
     <>
       {dialog}
       <section>
-      <h2 className="mb-4 text-lg font-semibold">Generate more clips</h2>
-      <p className="mb-4 text-sm text-muted-foreground">
+      <h2 className="mb-1 text-lg font-bold text-white">Generate more clips</h2>
+      <p className="mb-4 text-sm text-white/50">
         These videos are ready — generate additional shorts anytime.
       </p>
 
@@ -59,7 +59,7 @@ export function ReadyVideosGrid({ videos: initialVideos }: ReadyVideosGridProps)
                 type="button"
                 variant="outline"
                 size="icon"
-                className="absolute right-3 top-3 h-8 w-8 border-red-500/40 bg-black/70 text-red-400 hover:border-red-500/60 hover:bg-red-950/60 hover:text-red-300"
+                className="absolute right-3 top-3 h-8 w-8 border-rose-500/40 bg-black/70 text-rose-300 backdrop-blur hover:border-rose-400/60 hover:bg-rose-500/20 hover:text-rose-200"
                 disabled={deletingId === video.id}
                 onClick={() => void handleDelete(video)}
                 aria-label={`Delete ${video.title}`}

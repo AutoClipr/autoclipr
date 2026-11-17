@@ -111,15 +111,15 @@ export function ClipCard({
     <Card
       className={
         topPick
-          ? "glass relative overflow-hidden ring-2 ring-amber-400/60 shadow-lg shadow-amber-500/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/25"
-          : "glass overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.14] hover:shadow-xl hover:shadow-black/40"
+          ? "group/card relative overflow-hidden border-amber-400/50 shadow-[0_0_40px_-12px_rgba(251,191,36,0.6)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_50px_-10px_rgba(251,191,36,0.75)]"
+          : "group/card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)]"
       }
     >
-      <div className="relative aspect-[9/16] w-full overflow-hidden bg-zinc-900">
+      <div className="relative aspect-[9/16] w-full overflow-hidden rounded-t-3xl bg-black">
         {/* Top pick ribbon */}
         {topPick && (
-          <span className="absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 px-2.5 py-0.5 text-[10px] font-bold text-black shadow-lg shadow-amber-500/30">
-            ⭐ Top pick
+          <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-black shadow-[0_0_20px_-4px_rgba(251,191,36,0.9)]">
+            <Flame className="h-3 w-3" /> Top pick
           </span>
         )}
         {clip.thumbnail_url && !thumbError ? (
@@ -127,7 +127,7 @@ export function ClipCard({
           <img
             src={clip.thumbnail_url}
             alt={clip.title}
-            className="absolute inset-0 h-full w-full object-cover object-center"
+            className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover/card:scale-105"
             onError={() => setThumbError(true)}
           />
         ) : (
@@ -166,7 +166,7 @@ export function ClipCard({
             aria-label={`Delete ${clip.title}`}
             disabled={deleting}
             onClick={handleDelete}
-            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/40 bg-black/70 text-red-400 transition hover:border-red-500/70 hover:bg-red-950/60 hover:text-red-300 disabled:opacity-50"
+            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-rose-500/40 bg-black/70 text-rose-300 backdrop-blur transition hover:border-red-500/70 hover:bg-red-950/60 hover:text-red-300 disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -180,15 +180,15 @@ export function ClipCard({
             onClick={() => setPreviewOpen(true)}
             className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 hover:opacity-100"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm ring-2 ring-white/30 transition hover:scale-105 hover:bg-black/75">
-              <Play className="h-6 w-6 translate-x-0.5 fill-white text-white" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_0_30px_-4px_rgba(255,255,255,0.7)] transition hover:scale-105">
+              <Play className="h-6 w-6 translate-x-0.5 fill-black text-black" />
             </span>
           </button>
         )}
       </div>
 
       <CardContent className="space-y-3 p-4">
-        <h3 className="line-clamp-2 font-semibold leading-snug" title={clip.title}>
+        <h3 className="line-clamp-2 font-semibold leading-snug text-white" title={clip.title}>
           {clip.title}
         </h3>
         <div className="flex items-center justify-between">
@@ -204,7 +204,7 @@ export function ClipCard({
 
         {/* Viral score row with explanation */}
         {viralScore != null && (
-          <div className="flex items-center justify-between rounded-lg bg-orange-500/[0.08] px-3 py-1.5 ring-1 ring-orange-500/20">
+          <div className="flex items-center justify-between rounded-full border border-orange-400/25 bg-orange-500/[0.1] px-3 py-1.5">
             <div className="flex items-center gap-1.5">
               <Flame className="h-3.5 w-3.5 text-orange-400" />
               <span className="text-xs font-semibold text-orange-300">Viral Score</span>
@@ -212,7 +212,7 @@ export function ClipCard({
             <div className="flex items-center gap-1">
               <span className="text-sm font-bold text-orange-300">{viralScore}</span>
               <span className="text-xs text-orange-400/60">/100</span>
-              <span className="ml-1 text-[10px] text-muted-foreground">
+              <span className="ml-1 text-[10px] text-white/45">
                 {viralScore >= 80 ? "🔥 High" : viralScore >= 60 ? "⚡ Good" : "📈 Fair"}
               </span>
             </div>
@@ -275,7 +275,7 @@ export function ClipCard({
               return (
                 <span
                   key={pub.platform}
-                  className="flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400"
+                  className="flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-300"
                   title={pub.error_message ?? "Failed"}
                 >
                   <AlertCircle className="h-3 w-3" />
@@ -322,7 +322,7 @@ export function ClipCard({
       {/* Video preview modal */}
       {previewOpen && clip.download_url && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
           onClick={() => setPreviewOpen(false)}
         >
           <div
@@ -343,7 +343,7 @@ export function ClipCard({
               controls
               autoPlay
               playsInline
-              className="max-h-[85vh] w-full rounded-2xl bg-black"
+              className="max-h-[85vh] w-full rounded-3xl border border-white/10 bg-black shadow-2xl"
             />
             <p className="mt-3 truncate text-center text-sm font-medium text-white/80">
               {clip.title}

@@ -139,17 +139,17 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
       <section>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Videos in progress</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-white"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" /></span>Videos in progress</h2>
+          <p className="text-sm text-white/50">
             Clips appear automatically when processing finishes — no action needed.
           </p>
         </div>
-        <Badge variant="outline" className="shrink-0">
+        <Badge variant="outline" className="shrink-0 rounded-full border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
           {videos.length} active
         </Badge>
       </div>
 
-      <Card className="glass border-white/10">
+      <Card>
         <CardContent className="divide-y divide-white/10 p-0">
           {videos.map((video) => {
             const pipeline = pipelines[video.id];
@@ -162,8 +162,8 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
               <div key={video.id} className="space-y-3 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{video.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="truncate font-semibold text-white">{video.title}</p>
+                    <p className="mt-0.5 text-xs text-white/45">
                       {pipeline ? activeStepLabel(pipeline) : `${statusLabel}…`}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8 border-red-500/40 text-red-400 hover:border-red-500/60 hover:bg-red-950/40 hover:text-red-300"
+                      className="h-8 w-8 border-rose-500/30 text-rose-300 hover:border-rose-400/50 hover:bg-rose-500/10 hover:text-rose-200"
                       disabled={deletingId === video.id}
                       onClick={() => void handleDelete(video)}
                       aria-label={`Delete ${video.title}`}
@@ -186,7 +186,7 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
                 </div>
 
                 {error ? (
-                  <div className="flex flex-wrap items-start gap-3 rounded-lg border border-red-500/30 bg-red-950/30 px-3 py-2">
+                  <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-3.5 py-3">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                     <div className="min-w-0 flex-1 space-y-2">
                       <p className="text-sm text-red-300">{error}</p>
@@ -198,7 +198,7 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 border-red-500/40 text-red-400 hover:border-red-500/60 hover:bg-red-950/40 hover:text-red-300"
+                          className="h-8 border-rose-500/30 text-rose-300 hover:border-rose-400/50 hover:bg-rose-500/10 hover:text-rose-200"
                           disabled={deletingId === video.id}
                           onClick={() => void handleDelete(video)}
                         >
@@ -211,7 +211,7 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
                 ) : (
                   <>
                     <Progress value={progress} className="h-2" />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between text-xs text-white/50">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="h-3 w-3 text-violet-400" />
                         {statusLabel}

@@ -215,7 +215,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
       {dialog}
       <div className="space-y-4">
       {clips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2.5 rounded-3xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
           <Button type="button" variant="outline" size="sm" onClick={toggleAll}>
             {allSelected ? (
               <CheckSquare className="mr-2 h-4 w-4" />
@@ -242,7 +242,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
             size="sm"
             disabled={selected.size === 0 || bulkLoading || deleteLoading}
             onClick={bulkDelete}
-            className="border-red-500/40 text-red-400 hover:border-red-500/60 hover:bg-red-950/40 hover:text-red-300"
+            className="border-rose-500/30 text-rose-300 hover:border-rose-400/50 hover:bg-rose-500/10 hover:text-rose-200"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             {deleteLoading ? "Deleting…" : `Delete selected (${selected.size})`}
@@ -253,7 +253,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as "score" | "newest")}
-              className="h-9 rounded-lg border border-white/[0.08] bg-black/40 px-2.5 text-xs text-muted-foreground outline-none transition-colors hover:border-white/20 focus:border-emerald-500/40"
+              className="h-9 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-xs font-medium text-white/75 outline-none transition-colors hover:border-white/25 focus:border-emerald-400/50"
               aria-label="Sort clips"
             >
               <option value="score">Sort: Viral score</option>
@@ -262,7 +262,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as "all" | "posted" | "unposted")}
-              className="h-9 rounded-lg border border-white/[0.08] bg-black/40 px-2.5 text-xs text-muted-foreground outline-none transition-colors hover:border-white/20 focus:border-emerald-500/40"
+              className="h-9 rounded-full border border-white/10 bg-white/[0.04] px-3.5 text-xs font-medium text-white/75 outline-none transition-colors hover:border-white/25 focus:border-emerald-400/50"
               aria-label="Filter clips"
             >
               <option value="all">All clips</option>
@@ -274,7 +274,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
       )}
 
       {error && (
-        <p className="rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-400">
+        <p className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-200">
           {error}
         </p>
       )}
@@ -293,7 +293,7 @@ export function ClipsList({ clips: initialClips }: ClipsListProps) {
         ))}
       </div>
       {visibleClips.length === 0 && clips.length > 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <p className="rounded-3xl border border-dashed border-white/10 py-10 text-center text-sm text-white/50">
           No clips match this filter.
         </p>
       )}
