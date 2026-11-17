@@ -253,7 +253,7 @@ describe('BillingController', () => {
         '{"event_type":"subscription.active"}',
         expect.objectContaining({ 'webhook-signature': 'sig' }),
       );
-      expect(subscriptions.handleWebhookEvent).toHaveBeenCalledWith({ event_type: 'subscription.active', data: {} });
+      expect(subscriptions.handleWebhookEvent).toHaveBeenCalledWith({ event_type: 'subscription.active', data: {} }, undefined);
       expect(result).toEqual({ received: true });
     });
 

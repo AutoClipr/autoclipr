@@ -1,10 +1,20 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '@autoclipr/emails';
 import { SupabaseAdminService } from '../../database/supabase-admin.service';
 import { UsersRepository } from '../users/users.repository';
 import { AffiliatesService } from '../affiliates/affiliates.service';
-import { DodoService } from './dodo.service';
+import { DodoService, type DodoCancellationFeedback } from './dodo.service';
 import { RetentionService } from '../retention/retention.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { CampaignsService } from '../campaigns/campaigns.service';
@@ -14,6 +24,35 @@ const PLAN_TIER: Record<string, string> = {
   creator: 'creator',
   business: 'business',
 };
+
+/** Reasons offered in the "why are you leaving" step, mapped to Dodo's enum. */
+export const CANCELLATION_REASONS: Record<string, DodoCancellationFeedback> = {
+  too_expensive: 'too_expensive',
+  not_using: 'unused',
+  missing_features: 'missing_features',
+  found_alternative: 'switched_service',
+  technical_issues: 'low_quality',
+  other: 'other',
+};
+
+/** A cancel request older than this is treated as abandoned and may be retried. */
+const CANCEL_LOCK_MS = 2 * 60 * 1000;
+
+type SubscriptionRow = {
+  user_id: string;
+  plan_id: string;
+  status: string;
+  current_period_end: string | null;
+  stripe_subscription_id: string | null;
+  cancel_at_period_end: boolean | null;
+  cancellation_requested_at: string | null;
+  cancellation_effective_at: string | null;
+  cancelled_at: string | null;
+  last_webhook_at: string | null;
+};
+
+const SUBSCRIPTION_COLUMNS =
+  'user_id, plan_id, status, current_period_end, stripe_subscription_id, cancel_at_period_end, cancellation_requested_at, cancellation_effective_at, cancelled_at, last_webhook_at';
 
 const PLAN_CREDITS: Record<string, number> = {
   starter: 30,
@@ -173,8 +212,14 @@ export class SubscriptionsService {
         user_id: userId,
         plan_id: planId,
         status: 'active',
+        // The activation id is the Dodo subscription id; cancellation needs it.
+        stripe_subscription_id: transactionId,
         current_period_start: new Date().toISOString(),
         current_period_end: periodEnd,
+        cancel_at_period_end: false,
+        cancellation_requested_at: null,
+        cancellation_effective_at: null,
+        cancelled_at: null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
@@ -293,28 +338,378 @@ export class SubscriptionsService {
     return data ?? [];
   }
 
-  async handleWebhookEvent(event: any): Promise<void> {
+  /**
+   * Apply a verified Dodo webhook.
+   *
+   * `webhookId` (the `webhook-id` header) makes this idempotent: Dodo retries
+   * deliver the same id, and an id we have already processed is skipped, so a
+   * duplicate cannot re-grant credits or re-send emails.
+   */
+  async handleWebhookEvent(event: any, webhookId?: string): Promise<void> {
     const type: string = event.event_type ?? event.type ?? '';
-    this.logger.log(`Dodo webhook: ${type}`);
+    this.logger.log(`Dodo webhook: ${type}${webhookId ? ` (${webhookId})` : ''}`);
 
-    if (type === 'subscription.active' || type === 'subscription.created') {
-      await this.upsertSubscription(event.data, 'active');
-    } else if (type === 'subscription.renewed') {
-      await this.upsertSubscription(event.data, 'active');
-    } else if (type === 'subscription.plan_changed') {
-      await this.upsertSubscription(event.data, 'active');
-    } else if (type === 'subscription.cancelled') {
-      await this.upsertSubscription(event.data, 'cancelled');
-    } else if (type === 'subscription.expired') {
-      await this.upsertSubscription(event.data, 'expired');
-    } else if (type === 'subscription.on_hold' || type === 'subscription.failed') {
-      await this.upsertSubscription(event.data, 'on_hold');
-    } else if (type === 'payment.succeeded') {
-      this.logger.log(`Payment succeeded: ${event.data?.payment_id}`);
+    if (webhookId) {
+      const { error } = await this.supabase.getClient()
+        .from('processed_webhook_events')
+        .insert({ webhook_id: webhookId, event_type: type });
+      if (error?.code === '23505') {
+        this.logger.log(`Skipping duplicate webhook ${webhookId}`);
+        return;
+      }
+      if (error) this.logger.warn(`Could not record webhook ${webhookId}: ${error.message}`);
+    }
+
+    try {
+      await this.applyWebhookEvent(type, event);
+    } catch (err) {
+      // Forget the id so Dodo's retry is processed rather than skipped.
+      if (webhookId) {
+        await this.supabase.getClient().from('processed_webhook_events').delete().eq('webhook_id', webhookId);
+      }
+      throw err;
     }
   }
 
-  private async upsertSubscription(data: any, status: string): Promise<void> {
+  private async applyWebhookEvent(type: string, event: any): Promise<void> {
+    const data = event.data;
+    const eventAt: string | undefined = event.timestamp;
+
+    if (type.startsWith('subscription.') && (await this.isStaleEvent(data, eventAt))) {
+      this.logger.log(`Ignoring out-of-order ${type} from ${eventAt}`);
+      return;
+    }
+
+    if (type === 'subscription.active' || type === 'subscription.created') {
+      await this.upsertSubscription(data, 'active', eventAt);
+    } else if (type === 'subscription.renewed') {
+      await this.upsertSubscription(data, 'active', eventAt);
+    } else if (type === 'subscription.plan_changed') {
+      await this.upsertSubscription(data, 'active', eventAt);
+    } else if (type === 'subscription.updated') {
+      await this.syncSubscriptionFields(data, eventAt);
+    } else if (type === 'subscription.cancelled' || type === 'subscription.expired') {
+      await this.handleSubscriptionEnded(data, type === 'subscription.expired' ? 'expired' : 'cancelled', eventAt);
+    } else if (type === 'subscription.on_hold' || type === 'subscription.failed') {
+      await this.upsertSubscription(data, 'on_hold', eventAt);
+    } else if (type === 'payment.succeeded') {
+      this.logger.log(`Payment succeeded: ${data?.payment_id}`);
+    }
+  }
+
+  /** True when a newer webhook has already been applied to this subscription. */
+  private async isStaleEvent(data: any, eventAt?: string): Promise<boolean> {
+    const userId: string = data?.metadata?.user_id ?? '';
+    if (!userId || !eventAt) return false;
+    const row = await this.getSubscriptionRow(userId);
+    if (!row?.last_webhook_at) return false;
+    // Only compare events about the same Dodo subscription.
+    const subscriptionId: string = data.subscription_id ?? '';
+    if (row.stripe_subscription_id && subscriptionId && row.stripe_subscription_id !== subscriptionId) return false;
+    return new Date(eventAt).getTime() < new Date(row.last_webhook_at).getTime();
+  }
+
+  private async getSubscriptionRow(userId: string): Promise<SubscriptionRow | null> {
+    const { data } = await this.supabase.getClient()
+      .from('user_subscriptions')
+      .select(SUBSCRIPTION_COLUMNS)
+      .eq('user_id', userId)
+      .maybeSingle();
+    return (data as SubscriptionRow | null) ?? null;
+  }
+
+  /**
+   * `subscription.updated`: mirror the cancel flag and period end without
+   * touching credits (that only happens on activation and renewal).
+   */
+  private async syncSubscriptionFields(data: any, eventAt?: string): Promise<void> {
+    const userId: string = data?.metadata?.user_id ?? '';
+    if (!userId) return;
+    const scheduled = data.cancel_at_next_billing_date === true;
+    const periodEnd: string | null = data.next_billing_date ?? null;
+    const update: Record<string, unknown> = {
+      cancel_at_period_end: scheduled,
+      cancellation_effective_at: scheduled ? periodEnd : null,
+      updated_at: new Date().toISOString(),
+      ...(eventAt ? { last_webhook_at: eventAt } : {}),
+      ...(periodEnd ? { current_period_end: periodEnd } : {}),
+    };
+    if (!scheduled) update.cancellation_requested_at = null;
+    const { error } = await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update(update)
+      .eq('user_id', userId);
+    if (error) this.logger.error(`Failed to sync subscription for ${userId}: ${error.message}`);
+  }
+
+  /**
+   * `subscription.cancelled` / `subscription.expired`.
+   *
+   * If the paid period is still running (a scheduled cancellation), the plan
+   * stays usable and only the status is recorded; the daily sweep removes
+   * access once the period ends. Otherwise access is removed now.
+   */
+  private async handleSubscriptionEnded(data: any, status: 'cancelled' | 'expired', eventAt?: string): Promise<void> {
+    const userId: string = data?.metadata?.user_id ?? '';
+    if (!userId) {
+      this.logger.warn('Webhook missing user_id in metadata');
+      return;
+    }
+    const row = await this.getSubscriptionRow(userId);
+    const periodEnd: string | null =
+      row?.cancellation_effective_at ?? data.next_billing_date ?? row?.current_period_end ?? null;
+    const stillPaid = status === 'cancelled' && !!periodEnd && new Date(periodEnd).getTime() > Date.now();
+
+    await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update({
+        status,
+        stripe_subscription_id: data.subscription_id ?? row?.stripe_subscription_id ?? null,
+        cancel_at_period_end: stillPaid,
+        cancellation_effective_at: periodEnd,
+        updated_at: new Date().toISOString(),
+        ...(eventAt ? { last_webhook_at: eventAt } : {}),
+      })
+      .eq('user_id', userId);
+
+    if (!stillPaid) await this.endSubscriptionAccess(userId, row?.plan_id ?? data.metadata?.plan_id ?? 'starter');
+  }
+
+  /**
+   * Drop the user to Starter and send the "subscription ended" email, once.
+   * `cancelled_at` is the guard: it is set the first time, so a duplicate
+   * event or a later sweep does nothing.
+   */
+  private async endSubscriptionAccess(userId: string, planId: string): Promise<void> {
+    const now = new Date().toISOString();
+    const { data: claimed } = await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update({ cancelled_at: now, cancel_at_period_end: false, updated_at: now })
+      .eq('user_id', userId)
+      .is('cancelled_at', null)
+      .select('user_id');
+    if (!claimed?.length) return;
+
+    const { error } = await this.supabase.getClient()
+      .from('profiles')
+      .update({ subscription_tier: 'starter', updated_at: now })
+      .eq('id', userId);
+    if (error) this.logger.error(`Failed to downgrade ${userId}: ${error.message}`);
+    else this.logger.log(`Subscription ended: userId=${userId} plan=${planId}`);
+
+    const profile = await this.getProfileContact(userId);
+    if (profile && PLAN_TIER[planId] && planId !== 'starter') {
+      await this.email.sendSubscriptionEnded(profile.email, {
+        userName: profile.name,
+        planName: this.planName(planId),
+        endedAt: this.formatDate(now),
+      });
+    }
+  }
+
+  /**
+   * Safety net for a missed or delayed webhook: end every scheduled
+   * cancellation whose period is over.
+   */
+  @Cron(CronExpression.EVERY_HOUR, { name: 'end-cancelled-subscriptions' })
+  async endExpiredCancellations(): Promise<number> {
+    const { data } = await this.supabase.getClient()
+      .from('user_subscriptions')
+      .select('user_id, plan_id')
+      .eq('cancel_at_period_end', true)
+      .is('cancelled_at', null)
+      .lt('cancellation_effective_at', new Date().toISOString());
+    for (const row of data ?? []) {
+      await this.supabase.getClient()
+        .from('user_subscriptions')
+        .update({ status: 'expired' })
+        .eq('user_id', row.user_id);
+      await this.endSubscriptionAccess(row.user_id, row.plan_id);
+    }
+    return data?.length ?? 0;
+  }
+
+  /**
+   * Schedule cancellation of the caller's own subscription for the end of the
+   * billing period.
+   *
+   * The Dodo subscription id always comes from our database row for this
+   * user, never from the request, and Dodo's metadata must name the same
+   * user. A short lock on the row makes double clicks and parallel requests
+   * safe, and the call is idempotent: an already-scheduled cancellation is
+   * returned as-is.
+   */
+  async cancelSubscription(
+    userId: string,
+    opts: { reason?: string | null; comment?: string | null } = {},
+  ) {
+    const row = await this.getSubscriptionRow(userId);
+    if (!row || !PLAN_TIER[row.plan_id] || row.plan_id === 'starter') {
+      throw new BadRequestException('You do not have a paid subscription to cancel.');
+    }
+    if (row.cancel_at_period_end) return this.cancellationState(row);
+    if (row.status !== 'active') {
+      throw new BadRequestException('This subscription is not active, so there is nothing to cancel.');
+    }
+    if (!row.stripe_subscription_id) {
+      throw new BadRequestException(
+        'We could not find the payment record for this subscription. Please contact support to cancel.',
+      );
+    }
+
+    const reason = opts.reason && CANCELLATION_REASONS[opts.reason] ? opts.reason : null;
+    const comment = opts.comment?.trim().slice(0, 500) || null;
+
+    // Claim the row. Only one request can flip an unset (or stale) lock.
+    const now = new Date();
+    const staleBefore = new Date(now.getTime() - CANCEL_LOCK_MS).toISOString();
+    const { data: claimed } = await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update({ cancellation_requested_at: now.toISOString() })
+      .eq('user_id', userId)
+      .eq('cancel_at_period_end', false)
+      .or(`cancellation_requested_at.is.null,cancellation_requested_at.lt.${staleBefore}`)
+      .select('user_id');
+    if (!claimed?.length) {
+      throw new ConflictException('A cancellation request is already in progress.');
+    }
+
+    const subscriptionId = row.stripe_subscription_id;
+    let result: { cancel_at_next_billing_date?: boolean; next_billing_date?: string; metadata?: Record<string, string> };
+    try {
+      const current = (await this.dodo.getSubscription(subscriptionId)) as { metadata?: Record<string, string> };
+      if (current?.metadata?.user_id !== userId) {
+        this.logger.warn(`Cancel refused: subscription ${subscriptionId} is not owned by ${userId}`);
+        throw new ForbiddenException('This subscription does not belong to your account.');
+      }
+      result = (await this.dodo.scheduleCancellation(subscriptionId, {
+        feedback: reason ? CANCELLATION_REASONS[reason] : null,
+        comment,
+      })) as typeof result;
+    } catch (err) {
+      await this.supabase.getClient()
+        .from('user_subscriptions')
+        .update({ cancellation_requested_at: null })
+        .eq('user_id', userId);
+      if (err instanceof ForbiddenException) throw err;
+      this.logger.error(
+        `Dodo cancellation failed for userId=${userId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      const profile = await this.getProfileContact(userId);
+      if (profile) {
+        await this.email.sendCancellationFailed(profile.email, {
+          userName: profile.name,
+          planName: this.planName(row.plan_id),
+        });
+      }
+      throw new BadGatewayException('We could not cancel your subscription right now. Please try again.');
+    }
+
+    if (result?.cancel_at_next_billing_date !== true) {
+      // Dodo accepted the call but did not schedule it; do not claim success.
+      await this.supabase.getClient()
+        .from('user_subscriptions')
+        .update({ cancellation_requested_at: null })
+        .eq('user_id', userId);
+      throw new BadGatewayException('We could not cancel your subscription right now. Please try again.');
+    }
+
+    const accessUntil = result.next_billing_date ?? row.current_period_end;
+    await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update({
+        cancel_at_period_end: true,
+        cancellation_effective_at: accessUntil,
+        ...(accessUntil ? { current_period_end: accessUntil } : {}),
+        cancellation_reason: reason,
+        cancellation_comment: comment,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+    this.logger.log(`Cancellation scheduled: userId=${userId} until=${accessUntil ?? 'unknown'} reason=${reason ?? '-'}`);
+
+    // Never throws (EmailService swallows send errors), so a mail outage
+    // cannot undo a cancellation that Dodo has already accepted.
+    const profile = await this.getProfileContact(userId);
+    if (profile) {
+      await this.email.sendSubscriptionCancelled(profile.email, {
+        userName: profile.name,
+        planName: this.planName(row.plan_id),
+        cancellationDate: this.formatDate(new Date().toISOString()),
+        accessUntil: accessUntil ? this.formatDate(accessUntil) : 'the end of your billing period',
+      });
+    }
+
+    return this.cancellationState({ ...row, cancel_at_period_end: true, cancellation_effective_at: accessUntil });
+  }
+
+  /** Undo a scheduled cancellation before the period ends. */
+  async resumeSubscription(userId: string) {
+    const row = await this.getSubscriptionRow(userId);
+    if (!row?.cancel_at_period_end || !row.stripe_subscription_id) {
+      throw new BadRequestException('There is no scheduled cancellation to undo.');
+    }
+    if (row.cancellation_effective_at && new Date(row.cancellation_effective_at).getTime() <= Date.now()) {
+      throw new BadRequestException('This subscription has already ended. Please choose a new plan.');
+    }
+
+    try {
+      const current = (await this.dodo.getSubscription(row.stripe_subscription_id)) as { metadata?: Record<string, string> };
+      if (current?.metadata?.user_id !== userId) {
+        throw new ForbiddenException('This subscription does not belong to your account.');
+      }
+      const result = (await this.dodo.resumeSubscription(row.stripe_subscription_id)) as {
+        cancel_at_next_billing_date?: boolean;
+      };
+      if (result?.cancel_at_next_billing_date !== false) throw new Error('Dodo did not clear the cancellation');
+    } catch (err) {
+      if (err instanceof ForbiddenException) throw err;
+      this.logger.error(`Dodo resume failed for userId=${userId}: ${err instanceof Error ? err.message : String(err)}`);
+      throw new BadGatewayException('We could not resume your subscription right now. Please try again.');
+    }
+
+    await this.supabase.getClient()
+      .from('user_subscriptions')
+      .update({
+        status: 'active',
+        cancel_at_period_end: false,
+        cancellation_requested_at: null,
+        cancellation_effective_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+    this.logger.log(`Cancellation undone: userId=${userId}`);
+    return this.cancellationState({ ...row, status: 'active', cancel_at_period_end: false, cancellation_effective_at: null });
+  }
+
+  private cancellationState(row: Pick<SubscriptionRow, 'plan_id' | 'status' | 'cancel_at_period_end' | 'cancellation_effective_at' | 'current_period_end'>) {
+    return {
+      plan_id: row.plan_id,
+      status: row.status,
+      cancel_at_period_end: !!row.cancel_at_period_end,
+      access_until: row.cancellation_effective_at ?? row.current_period_end,
+    };
+  }
+
+  private async getProfileContact(userId: string): Promise<{ email: string; name: string } | null> {
+    const { data } = await this.supabase.getClient()
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .maybeSingle();
+    if (!data?.email) return null;
+    return { email: data.email, name: data.full_name || data.email.split('@')[0] };
+  }
+
+  private planName(planId: string): string {
+    return planId.charAt(0).toUpperCase() + planId.slice(1);
+  }
+
+  private formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  private async upsertSubscription(data: any, status: string, eventAt?: string): Promise<void> {
     if (!data) return;
 
     const userId: string = data.metadata?.user_id ?? data.customer?.id ?? '';
@@ -339,6 +734,15 @@ export class SubscriptionsService {
         current_period_start: data.created_at ?? new Date().toISOString(),
         current_period_end: periodEnd,
         updated_at: new Date().toISOString(),
+        ...(eventAt ? { last_webhook_at: eventAt } : {}),
+        // A (re)activation or renewal means it is no longer ending.
+        ...(status === 'active'
+          ? {
+              cancel_at_period_end: data.cancel_at_next_billing_date === true,
+              cancellation_effective_at: data.cancel_at_next_billing_date === true ? periodEnd : null,
+              cancelled_at: null,
+            }
+          : {}),
       }, { onConflict: 'user_id' });
 
     if (subError) {

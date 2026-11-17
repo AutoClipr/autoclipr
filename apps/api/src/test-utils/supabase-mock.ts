@@ -117,6 +117,9 @@ const SUPABASE_ADMIN_CHAIN_METHODS = [
   'upsert',
   'delete',
   'eq',
+  'is',
+  'or',
+  'lt',
   'order',
   'limit',
 ] as const;

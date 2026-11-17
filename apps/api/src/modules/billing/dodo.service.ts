@@ -6,6 +6,10 @@ type DodoCountryCode = NonNullable<
   Parameters<DodoPayments['checkoutSessions']['create']>[0]['billing_address']
 >['country'];
 
+export type DodoCancellationFeedback = NonNullable<
+  Parameters<DodoPayments['subscriptions']['update']>[1]['cancellation_feedback']
+>;
+
 const PRODUCT_IDS: Record<string, { monthly: string; yearly: string }> = {
   starter: { monthly: '', yearly: '' },
   creator: {
@@ -141,6 +145,28 @@ export class DodoService {
 
   async cancelSubscription(subscriptionId: string) {
     return this.client.subscriptions.update(subscriptionId, { status: 'cancelled' });
+  }
+
+  /**
+   * Schedule cancellation for the end of the current billing period. Dodo
+   * keeps the subscription active until then and does not renew it
+   * (`cancel_at_next_billing_date`, PATCH /subscriptions/{id}).
+   */
+  async scheduleCancellation(
+    subscriptionId: string,
+    opts: { feedback?: DodoCancellationFeedback | null; comment?: string | null } = {},
+  ) {
+    return this.client.subscriptions.update(subscriptionId, {
+      cancel_at_next_billing_date: true,
+      cancel_reason: 'cancelled_by_customer',
+      ...(opts.feedback ? { cancellation_feedback: opts.feedback } : {}),
+      ...(opts.comment ? { cancellation_comment: opts.comment } : {}),
+    });
+  }
+
+  /** Undo a scheduled cancellation while the period is still running. */
+  async resumeSubscription(subscriptionId: string) {
+    return this.client.subscriptions.update(subscriptionId, { cancel_at_next_billing_date: false });
   }
 
   verifyWebhook(payload: string, headers: Record<string, string>): any {

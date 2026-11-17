@@ -20,6 +20,14 @@ import { platformConnectedTemplate, type PlatformConnectedVars } from './templat
 import { affiliateApplicationTemplate, affiliateInquiryTemplate } from './templates/affiliate-application';
 import { videoRetentionWarningTemplate, type VideoRetentionWarningVars } from './templates/video-retention-warning';
 import { weekendOfferTemplate, type WeekendOfferVars } from './templates/weekend-offer';
+import {
+  subscriptionCancelledTemplate,
+  subscriptionEndedTemplate,
+  cancellationFailedTemplate,
+  type SubscriptionCancelledVars,
+  type SubscriptionEndedVars,
+  type CancellationFailedVars,
+} from './templates/subscription-cancellation';
 
 @Injectable()
 export class EmailService {
@@ -249,6 +257,36 @@ export class EmailService {
       appUrl: this.config.appUrl,
       supportEmail: this.config.supportEmail,
       updatePaymentUrl: vars.updatePaymentUrl || `${this.config.appUrl}/subscription`,
+    });
+    await this.sendSafe({ to, subject, html, text, from: this.fromField() });
+  }
+
+  async sendSubscriptionCancelled(to: string, vars: Omit<SubscriptionCancelledVars, 'appUrl' | 'supportEmail'>): Promise<void> {
+    const { subject, html, text } = subscriptionCancelledTemplate({
+      ...vars,
+      userName: this.firstName(vars.userName),
+      appUrl: this.config.appUrl,
+      supportEmail: this.config.supportEmail,
+    });
+    await this.sendSafe({ to, subject, html, text, from: this.fromField() });
+  }
+
+  async sendSubscriptionEnded(to: string, vars: Omit<SubscriptionEndedVars, 'appUrl' | 'supportEmail'>): Promise<void> {
+    const { subject, html, text } = subscriptionEndedTemplate({
+      ...vars,
+      userName: this.firstName(vars.userName),
+      appUrl: this.config.appUrl,
+      supportEmail: this.config.supportEmail,
+    });
+    await this.sendSafe({ to, subject, html, text, from: this.fromField() });
+  }
+
+  async sendCancellationFailed(to: string, vars: Omit<CancellationFailedVars, 'appUrl' | 'supportEmail'>): Promise<void> {
+    const { subject, html, text } = cancellationFailedTemplate({
+      ...vars,
+      userName: this.firstName(vars.userName),
+      appUrl: this.config.appUrl,
+      supportEmail: this.config.supportEmail,
     });
     await this.sendSafe({ to, subject, html, text, from: this.fromField() });
   }

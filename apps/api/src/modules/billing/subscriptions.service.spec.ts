@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '@autoclipr/emails';
 import { SubscriptionsService } from './subscriptions.service';
@@ -57,6 +57,7 @@ describe('SubscriptionsService', () => {
     email = {
       sendSubscriptionConfirmed: jest.fn().mockResolvedValue(undefined),
       sendInvoice: jest.fn().mockResolvedValue(undefined),
+      sendSubscriptionEnded: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<EmailService>;
 
     usersRepo = {
@@ -643,14 +644,13 @@ describe('SubscriptionsService', () => {
       });
     });
 
-    it('marks the subscription cancelled and downgrades the profile tier on subscription.cancelled', async () => {
+    it('ends access immediately on subscription.cancelled when no paid period is left', async () => {
       const { subBuilder, profileBuilder } = setupUpsertMocks();
+      subBuilder.__setResult({ data: [{ user_id: 'user-1' }], error: null });
 
       await service.handleWebhookEvent({ event_type: 'subscription.cancelled', data: baseData });
 
-      expect(subBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({ status: 'cancelled' }), {
-        onConflict: 'user_id',
-      });
+      expect(subBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'cancelled', cancel_at_period_end: false }));
       const profileUpdateArg = profileBuilder.update.mock.calls[0][0];
       expect(profileUpdateArg.subscription_tier).toBe('starter');
       expect(profileUpdateArg).not.toHaveProperty('credits');
@@ -658,14 +658,30 @@ describe('SubscriptionsService', () => {
       expect(email.sendSubscriptionConfirmed).not.toHaveBeenCalled();
     });
 
-    it('marks the subscription expired on subscription.expired', async () => {
-      const { subBuilder } = setupUpsertMocks();
+    it('keeps access on subscription.cancelled while the paid period is still running', async () => {
+      const { subBuilder, profileBuilder } = setupUpsertMocks();
+      const future = new Date(Date.now() + 10 * 86400000).toISOString();
+
+      await service.handleWebhookEvent({
+        event_type: 'subscription.cancelled',
+        data: { ...baseData, next_billing_date: future },
+      });
+
+      expect(subBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'cancelled', cancel_at_period_end: true, cancellation_effective_at: future }),
+      );
+      expect(profileBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it('marks the subscription expired and removes access on subscription.expired', async () => {
+      const { subBuilder, profileBuilder } = setupUpsertMocks();
+      subBuilder.__setResult({ data: [{ user_id: 'user-1' }], error: null });
 
       await service.handleWebhookEvent({ event_type: 'subscription.expired', data: baseData });
 
-      expect(subBuilder.upsert).toHaveBeenCalledWith(expect.objectContaining({ status: 'expired' }), {
-        onConflict: 'user_id',
-      });
+      expect(subBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'expired' }));
+      expect(profileBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ subscription_tier: 'starter' }));
+      expect(email.sendSubscriptionEnded).toHaveBeenCalledWith('jane@example.com', expect.objectContaining({ planName: 'Creator' }));
     });
 
     it.each(['subscription.on_hold', 'subscription.failed'])('marks the subscription on_hold on %s', async (eventType) => {
@@ -856,6 +872,186 @@ describe('SubscriptionsService', () => {
       });
 
       expect(email.sendSubscriptionConfirmed).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Cancellation ────────────────────────────────────────────────────────
+
+  describe('cancellation', () => {
+    const periodEnd = '2026-12-01T00:00:00.000Z';
+    const activeRow = {
+      user_id: 'user-1',
+      plan_id: 'creator',
+      status: 'active',
+      current_period_end: periodEnd,
+      stripe_subscription_id: 'sub_1',
+      cancel_at_period_end: false,
+      cancellation_requested_at: null,
+      cancellation_effective_at: null,
+      cancelled_at: null,
+      last_webhook_at: null,
+    };
+
+    /**
+     * user_subscriptions builder: reads (maybeSingle) return `row`, and the
+     * lock-claiming update (awaited directly) returns `claimed` rows.
+     */
+    function mockTables(row: any, claimed = true) {
+      const subBuilder = createQueryBuilderMock({ data: claimed ? [{ user_id: 'user-1' }] : [], error: null });
+      subBuilder.maybeSingle = jest.fn(() => Promise.resolve({ data: row, error: null }));
+      const profileBuilder = createQueryBuilderMock({ data: { email: 'jane@example.com', full_name: 'Jane Doe' }, error: null });
+      const webhookBuilder = createQueryBuilderMock({ data: null, error: null });
+      supabaseMock.__client.from.mockImplementation((table: string) => {
+        if (table === 'user_subscriptions') return subBuilder;
+        if (table === 'profiles') return profileBuilder;
+        if (table === 'processed_webhook_events') return webhookBuilder;
+        return createQueryBuilderMock({ data: null, error: null });
+      });
+      return { subBuilder, profileBuilder, webhookBuilder };
+    }
+
+    beforeEach(() => {
+      (dodo as any).scheduleCancellation = jest.fn().mockResolvedValue({
+        cancel_at_next_billing_date: true,
+        next_billing_date: periodEnd,
+      });
+      (dodo as any).resumeSubscription = jest.fn().mockResolvedValue({ cancel_at_next_billing_date: false });
+      (email as any).sendSubscriptionCancelled = jest.fn().mockResolvedValue(undefined);
+      (email as any).sendCancellationFailed = jest.fn().mockResolvedValue(undefined);
+      (email as any).sendSubscriptionEnded = jest.fn().mockResolvedValue(undefined);
+    });
+
+    it('schedules cancellation at period end with Dodo and keeps access until then', async () => {
+      const { subBuilder, profileBuilder } = mockTables(activeRow);
+
+      const result = await service.cancelSubscription('user-1', { reason: 'too_expensive' });
+
+      expect(dodo.getSubscription).toHaveBeenCalledWith('sub_1');
+      expect((dodo as any).scheduleCancellation).toHaveBeenCalledWith('sub_1', { feedback: 'too_expensive', comment: null });
+      expect(subBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({ cancel_at_period_end: true, cancellation_effective_at: periodEnd, cancellation_reason: 'too_expensive' }),
+      );
+      // Access is not removed now.
+      expect(profileBuilder.update).not.toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ cancel_at_period_end: true }));
+      expect((email as any).sendSubscriptionCancelled).toHaveBeenCalledWith(
+        'jane@example.com',
+        expect.objectContaining({ planName: 'Creator', accessUntil: 'December 1, 2026' }),
+      );
+    });
+
+    it('returns the existing state without calling Dodo when already scheduled', async () => {
+      mockTables({ ...activeRow, cancel_at_period_end: true, cancellation_effective_at: periodEnd });
+
+      const result = await service.cancelSubscription('user-1');
+
+      expect((dodo as any).scheduleCancellation).not.toHaveBeenCalled();
+      expect((email as any).sendSubscriptionCancelled).not.toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ cancel_at_period_end: true, access_until: periodEnd }));
+    });
+
+    it('rejects users without a paid subscription', async () => {
+      mockTables({ ...activeRow, plan_id: 'starter' });
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('rejects a subscription that is no longer active', async () => {
+      mockTables({ ...activeRow, status: 'cancelled' });
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(BadRequestException);
+      expect((dodo as any).scheduleCancellation).not.toHaveBeenCalled();
+    });
+
+    it("refuses to cancel a subscription Dodo says belongs to someone else", async () => {
+      const { subBuilder } = mockTables(activeRow);
+      dodo.getSubscription.mockResolvedValueOnce(paidSubscription('creator', 'yearly', 'someone-else'));
+
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(ForbiddenException);
+      expect((dodo as any).scheduleCancellation).not.toHaveBeenCalled();
+      // Lock released.
+      expect(subBuilder.update).toHaveBeenCalledWith({ cancellation_requested_at: null });
+    });
+
+    it('releases the lock, emails a failure notice and reports an error when Dodo fails', async () => {
+      const { subBuilder } = mockTables(activeRow);
+      (dodo as any).scheduleCancellation.mockRejectedValueOnce(new Error('Dodo 500'));
+
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(BadGatewayException);
+      expect(subBuilder.update).toHaveBeenCalledWith({ cancellation_requested_at: null });
+      expect((email as any).sendCancellationFailed).toHaveBeenCalledWith('jane@example.com', expect.objectContaining({ planName: 'Creator' }));
+      expect((email as any).sendSubscriptionCancelled).not.toHaveBeenCalled();
+    });
+
+    it('rejects a second request while one is already in progress', async () => {
+      mockTables(activeRow, false);
+
+      await expect(service.cancelSubscription('user-1')).rejects.toBeInstanceOf(ConflictException);
+      expect((dodo as any).scheduleCancellation).not.toHaveBeenCalled();
+    });
+
+    it('still succeeds when the confirmation email fails', async () => {
+      mockTables(activeRow);
+      // EmailService swallows send errors; a resolved no-op models a failed send.
+      (email as any).sendSubscriptionCancelled.mockResolvedValueOnce(undefined);
+
+      await expect(service.cancelSubscription('user-1')).resolves.toEqual(
+        expect.objectContaining({ cancel_at_period_end: true }),
+      );
+    });
+
+    it('undoes a scheduled cancellation with Dodo', async () => {
+      const future = new Date(Date.now() + 5 * 86400000).toISOString();
+      const { subBuilder } = mockTables({ ...activeRow, cancel_at_period_end: true, cancellation_effective_at: future });
+
+      await service.resumeSubscription('user-1');
+
+      expect((dodo as any).resumeSubscription).toHaveBeenCalledWith('sub_1');
+      expect(subBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ cancel_at_period_end: false, status: 'active' }));
+    });
+
+    it('skips a duplicate webhook delivery', async () => {
+      const { webhookBuilder, subBuilder } = mockTables(activeRow);
+      webhookBuilder.__setResult({ data: null, error: { message: 'duplicate', code: '23505' } });
+
+      await service.handleWebhookEvent({ event_type: 'subscription.expired', data: { metadata: { user_id: 'user-1' } } }, 'wh_1');
+
+      expect(subBuilder.update).not.toHaveBeenCalled();
+      expect((email as any).sendSubscriptionEnded).not.toHaveBeenCalled();
+    });
+
+    it('ignores a webhook older than the last one applied', async () => {
+      const { subBuilder } = mockTables({ ...activeRow, last_webhook_at: '2026-11-18T10:00:00Z' });
+
+      await service.handleWebhookEvent(
+        { event_type: 'subscription.active', timestamp: '2026-11-18T09:00:00Z', data: { metadata: { user_id: 'user-1', plan_id: 'creator' }, subscription_id: 'sub_1' } },
+        'wh_2',
+      );
+
+      expect(subBuilder.upsert).not.toHaveBeenCalled();
+    });
+
+    it('syncs a scheduled cancellation from subscription.updated without resetting credits', async () => {
+      const { subBuilder, profileBuilder } = mockTables(activeRow);
+
+      await service.handleWebhookEvent({
+        event_type: 'subscription.updated',
+        data: { metadata: { user_id: 'user-1' }, cancel_at_next_billing_date: true, next_billing_date: periodEnd },
+      });
+
+      expect(subBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({ cancel_at_period_end: true, cancellation_effective_at: periodEnd }),
+      );
+      expect(profileBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it('the sweep removes access once a cancelled period has ended', async () => {
+      const { subBuilder, profileBuilder } = mockTables(activeRow);
+      subBuilder.__setResult({ data: [{ user_id: 'user-1', plan_id: 'creator' }], error: null });
+
+      const ended = await service.endExpiredCancellations();
+
+      expect(ended).toBe(1);
+      expect(profileBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ subscription_tier: 'starter' }));
+      expect((email as any).sendSubscriptionEnded).toHaveBeenCalledTimes(1);
     });
   });
 });

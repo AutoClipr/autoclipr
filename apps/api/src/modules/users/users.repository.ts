@@ -182,7 +182,7 @@ export class UsersRepository {
       .getClient()
       .from('user_subscriptions')
       .select(
-        'id, user_id, plan_id, status, current_period_start, current_period_end, stripe_subscription_id',
+        'id, user_id, plan_id, status, current_period_start, current_period_end, stripe_subscription_id, cancel_at_period_end, cancellation_effective_at',
       )
       .eq('user_id', userId)
       .maybeSingle();

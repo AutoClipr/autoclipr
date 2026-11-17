@@ -15,7 +15,7 @@ import {
 import type { Response } from 'express';
 import { InvoicePdfService } from '@autoclipr/emails';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import { IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { Request } from 'express';
 import { ApiResponse } from '../../common/api-response';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -23,7 +23,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard, AuthUser } from '../../common/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { DodoService } from './dodo.service';
-import { SubscriptionsService } from './subscriptions.service';
+import { CANCELLATION_REASONS, SubscriptionsService } from './subscriptions.service';
 
 class CreateCheckoutDto {
   @IsString()
@@ -53,6 +53,18 @@ class ActivatePlanDto {
 
   @IsString()
   billingPeriod?: 'monthly' | 'yearly';
+}
+
+class CancelSubscriptionDto {
+  /** Optional "why are you leaving" answer. */
+  @IsOptional()
+  @IsIn(Object.keys(CANCELLATION_REASONS))
+  reason?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  comment?: string;
 }
 
 @ApiTags('Billing')
@@ -97,6 +109,30 @@ export class BillingController {
     }
     const url = await this.subscriptions.createCheckoutUrl(user.sub, email, dto.planId, dto.billingPeriod ?? 'yearly', dto.couponCode, dto.country);
     return ApiResponse.ok({ url });
+  }
+
+  /**
+   * Schedule cancellation of the caller's subscription for the end of the
+   * billing period. Takes no subscription id: it is looked up from the
+   * caller's own record.
+   */
+  @Post('billing/subscription/cancel')
+  @HttpCode(200)
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  async cancelSubscription(@CurrentUser() user: AuthUser, @Body() dto: CancelSubscriptionDto) {
+    const data = await this.subscriptions.cancelSubscription(user.sub, dto);
+    return ApiResponse.ok(data);
+  }
+
+  /** Undo a scheduled cancellation before the billing period ends. */
+  @Post('billing/subscription/resume')
+  @HttpCode(200)
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  async resumeSubscription(@CurrentUser() user: AuthUser) {
+    const data = await this.subscriptions.resumeSubscription(user.sub);
+    return ApiResponse.ok(data);
   }
 
   @Get('billing/transactions')
@@ -170,7 +206,7 @@ export class BillingController {
       throw new UnauthorizedException('Invalid webhook signature');
     }
 
-    await this.subscriptions.handleWebhookEvent(event);
+    await this.subscriptions.handleWebhookEvent(event, headers['webhook-id']);
     return { received: true };
   }
 }
