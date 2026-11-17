@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** Header "Dashboard" button — hidden while already on the dashboard. */
+/** Pages with the dashboard sidebar, which already links to the dashboard. */
+const APP_PATHS = ["/dashboard", "/create", "/upload", "/channels", "/clips", "/analytics", "/billing", "/settings", "/setup"];
+
+/** Header "Dashboard" button — hidden on app pages that show the sidebar. */
 export function DashboardLink() {
   const pathname = usePathname();
-  if (pathname === "/dashboard") return null;
+  if (APP_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
 
   return (
     <Link

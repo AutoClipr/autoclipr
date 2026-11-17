@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Sparkles,
+  LayoutDashboard,
   Film,
   BarChart3,
   CreditCard,
@@ -19,6 +20,7 @@ import { LogoIcon } from "@/components/ui/logo-icon";
 import { useState } from "react";
 
 const nav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/create", label: "Create", icon: Sparkles, highlight: true },
   { href: "/channels", label: "Channels", icon: Youtube },
   { href: "/clips", label: "Clips", icon: Film },
