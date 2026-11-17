@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Loader2, Youtube, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Loader2, Youtube, CheckCircle2, ArrowLeft, Radar, Scissors, Link2 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth-token";
 import { apiFetch, type YoutubeChannel } from "@/lib/api";
 import { notifyChannelsUpdated } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   ConnectedChannelRow,
   ConnectedChannelsHeading,
@@ -118,168 +116,186 @@ export function AddChannelSetup({ embedded = false }: { embedded?: boolean }) {
   const busy = phase !== "idle";
 
   return (
-    <div className="relative mx-auto max-w-2xl">
+    <div className="relative mx-auto max-w-3xl">
       {/* Ambient glow behind header */}
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-56 w-[480px] -translate-x-1/2 rounded-full bg-red-500/[0.07] blur-3xl" aria-hidden />
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[640px] -translate-x-1/2 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, rgba(239,68,68,0.16), rgba(16,185,129,0.08), transparent)" }}
+        aria-hidden
+      />
 
       <div className="relative text-center">
-        <p className="section-label mx-auto mb-4">YouTube</p>
-        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-          Add Channels To{" "}
-          <span className="bg-gradient-to-r from-red-400 via-rose-400 to-orange-300 bg-clip-text text-transparent">
-            Clip From
+        <p className="section-label-white mx-auto mb-5">Source channels</p>
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+          Add channels to{" "}
+          <span className="bg-gradient-to-r from-red-300 via-rose-300 to-orange-200 bg-clip-text text-transparent">
+            clip from
           </span>
         </h1>
-        <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Save YouTube channels you clip from. This is separate from posting platforms — connect
+        <p className="mx-auto mt-4 max-w-xl text-white/55">
+          Save the YouTube channels you clip from. This is separate from posting platforms — connect
           those under Settings → Platforms, then use the Post button on each clip.
         </p>
 
-        {/* How-it-works chips */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs">
-          {["Paste a channel", "We track uploads", "Clips auto-generate"].map((step, i) => (
-            <span key={step} className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-muted-foreground backdrop-blur">
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-[9px] font-bold text-emerald-400">
-                {i + 1}
+        {/* How it works */}
+        <div className="mx-auto mt-7 grid max-w-2xl gap-2.5 text-left sm:grid-cols-3">
+          {[
+            { icon: Link2, t: "Paste a channel", d: "Name, @handle or URL" },
+            { icon: Radar, t: "We track uploads", d: "New videos are spotted" },
+            { icon: Scissors, t: "Clips get made", d: "Ready in your library" },
+          ].map(({ icon: Icon, t, d }, i) => (
+            <div key={t} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-3 backdrop-blur">
+              <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+                <Icon className="h-4 w-4 text-emerald-300" />
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-black">
+                  {i + 1}
+                </span>
               </span>
-              {step}
-            </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white">{t}</p>
+                <p className="text-xs text-white/45">{d}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="gradient-border mt-10 shadow-glow">
-        <div className="p-6 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 ring-1 ring-red-500/25">
-            <Youtube className="h-5 w-5 text-red-500" />
-            <span className="absolute -inset-1 -z-10 rounded-xl bg-red-500/20 blur-md" />
+      {/* Add channel card */}
+      <div className="relative mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-red-500/15 blur-3xl" aria-hidden />
+        <div className="relative mb-5 flex items-center gap-3">
+          <span
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05]"
+            style={{ boxShadow: "0 0 30px -10px rgba(239,68,68,0.7)" }}
+          >
+            <Youtube className="h-6 w-6 text-red-500" />
+          </span>
+          <div>
+            <p className="text-lg font-bold text-white">Add a YouTube channel</p>
+            <p className="text-xs text-white/45">Type a channel name, @handle or paste its URL</p>
           </div>
-          <span className="text-lg font-semibold">Add YouTube Channel</span>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="channel-url">YouTube Channel URL</Label>
-            <div className="group/input relative rounded-xl transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(52,211,153,0.4),0_0_24px_-4px_rgba(52,211,153,0.25)]">
-              {phase === "resolving" ? (
-                <Loader2 className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 animate-spin text-violet-400" />
-              ) : (
-                <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within/input:text-emerald-400" />
-              )}
-              <Input
-                id="channel-url"
-                value={query}
-                disabled={busy}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setError(null);
-                  setSuccess(null);
-                }}
-                placeholder="Type channel name e.g. AdamLZ or @AdamLZ..."
-                className="pl-10"
-                onKeyDown={(e) => e.key === "Enter" && !busy && connectChannel()}
-              />
-            </div>
-            {phase === "resolving" && (
-              <p className="text-xs text-violet-400">Fetching channel details…</p>
-            )}
-            {/* Quick-try suggestions */}
-            {!query && phase === "idle" && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] text-muted-foreground/70">Try:</span>
-                {["@MrBeast", "@mkbhd", "@AliAbdaal"].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setQuery(s)}
-                    className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-300"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {success && (
-            <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              {success}
-            </div>
+        {/* Pill input with inline action */}
+        <label htmlFor="channel-url" className="sr-only">YouTube channel</label>
+        <div className="relative flex items-center gap-2 rounded-full border border-white/10 bg-black/30 p-1.5 pl-4 transition-all focus-within:border-emerald-400/50 focus-within:shadow-[0_0_30px_-8px_rgba(16,185,129,0.6)]">
+          {phase === "resolving" ? (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-300" />
+          ) : (
+            <Search className="h-4 w-4 shrink-0 text-white/40" />
           )}
-
-          {error && <p className="text-sm text-red-400">{error}</p>}
-
+          <input
+            id="channel-url"
+            value={query}
+            disabled={busy}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setError(null);
+              setSuccess(null);
+            }}
+            placeholder="e.g. AdamLZ or @AdamLZ"
+            className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[15px] text-white placeholder:text-white/35 outline-none ring-0 focus:outline-none focus:ring-0"
+            onKeyDown={(e) => e.key === "Enter" && !busy && connectChannel()}
+          />
           <Button
             variant="gradient"
-            className="h-12 w-full text-base font-bold"
+            className="h-11 shrink-0 px-5"
             disabled={busy || !query.trim()}
             onClick={connectChannel}
           >
             {phase === "resolving" ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Fetching channel…
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="hidden sm:inline">Fetching…</span>
               </>
             ) : phase === "connecting" ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Connecting…
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="hidden sm:inline">Connecting…</span>
               </>
             ) : (
               <>
-                <Plus className="mr-2 h-5 w-5" />
-                Connect Channel
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Connect channel</span>
+                <span className="sm:hidden">Add</span>
               </>
             )}
           </Button>
         </div>
 
-        <div className="mt-10 border-t border-white/[0.06] pt-8">
-          {loadingList ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        {/* Quick-try suggestions */}
+        {!query && phase === "idle" && (
+          <div className="relative mt-3 flex flex-wrap items-center gap-1.5 pl-1">
+            <span className="text-[11px] text-white/40">Try:</span>
+            {["@MrBeast", "@mkbhd", "@AliAbdaal"].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setQuery(s)}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-white/60 transition-colors hover:border-emerald-400/40 hover:bg-emerald-500/10 hover:text-emerald-200"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {success && (
+          <div className="relative mt-4 flex items-start gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-200">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            {success}
+          </div>
+        )}
+
+        {error && (
+          <p className="relative mt-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-200">
+            {error}
+          </p>
+        )}
+      </div>
+
+      {/* Connected channels card */}
+      <div className="relative mt-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
+        {loadingList ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+          </div>
+        ) : channels.length === 0 ? (
+          <div className="flex flex-col items-center px-6 py-6 text-center">
+            <div className="relative mb-5 flex h-16 w-16 items-center justify-center">
+              <span className="absolute inset-0 animate-ping rounded-full bg-red-500/10 [animation-duration:2.5s]" />
+              <span className="absolute inset-1.5 rounded-full bg-red-500/10" />
+              <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-red-500/15 ring-1 ring-red-500/30">
+                <Youtube className="h-5 w-5 text-red-400" />
+              </span>
             </div>
-          ) : channels.length === 0 ? (
-            <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/[0.1] bg-white/[0.015] px-6 py-10 text-center">
-              <div className="relative mb-5 flex h-16 w-16 items-center justify-center">
-                {/* Pulsing rings */}
-                <span className="absolute inset-0 animate-ping rounded-full bg-red-500/10 [animation-duration:2.5s]" />
-                <span className="absolute inset-1.5 rounded-full bg-red-500/10" />
-                <span className="relative flex h-11 w-11 items-center justify-center rounded-full bg-red-500/15 ring-1 ring-red-500/30">
-                  <Youtube className="h-5 w-5 text-red-400" />
-                </span>
-              </div>
-              <p className="font-semibold">No Channels Connected</p>
-              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Connect your first YouTube channel to start automatically creating
-                clips from new videos.
-              </p>
+            <p className="font-semibold text-white">No channels connected yet</p>
+            <p className="mt-2 max-w-sm text-sm text-white/50">
+              Connect your first YouTube channel to start automatically creating
+              clips from new videos.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <ConnectedChannelsHeading count={channels.length} />
+            <div className="space-y-3">
+              {channels.map((ch) => (
+                <ConnectedChannelRow
+                  key={ch.id}
+                  channel={ch}
+                  onRemove={disconnect}
+                  removing={removingId === ch.id}
+                />
+              ))}
             </div>
-          ) : (
-            <div>
-              <ConnectedChannelsHeading count={channels.length} />
-              <div className="space-y-3">
-                {channels.map((ch) => (
-                  <ConnectedChannelRow
-                    key={ch.id}
-                    channel={ch}
-                    onRemove={disconnect}
-                    removing={removingId === ch.id}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {!embedded && (
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <div className="relative mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Button variant="outline" asChild>
-            <Link href="/">← Back to Home</Link>
+            <Link href="/"><ArrowLeft className="h-4 w-4" /> Back to home</Link>
           </Button>
           <Button variant="gradient" asChild>
             <Link href="/login?redirect=/channels">Sign in to manage channels</Link>
