@@ -2,6 +2,7 @@ import { Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch, type Video } from "@/lib/api";
 import type { CreditTransaction } from "@/components/billing/credit-history";
+import { resolveVideoTitle } from "@/lib/video-title";
 
 export const metadata = { title: "Credit usage history" };
 
@@ -35,7 +36,11 @@ export default async function ActivityPage() {
 
   const rows = historyRes.data ?? [];
   // Credit rows point at the video they were spent on — show its title.
-  const titles = new Map((videosRes.data ?? []).map((v) => [v.id, v.title]));
+  const usedIds = new Set(rows.map((r) => r.reference_id));
+  const videos = (videosRes.data ?? []).filter((v) => usedIds.has(v.id));
+  const titles = new Map(
+    await Promise.all(videos.map(async (v) => [v.id, await resolveVideoTitle(v)] as const)),
+  );
 
   return (
     <div className="relative mx-auto max-w-5xl">

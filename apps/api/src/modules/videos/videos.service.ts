@@ -61,6 +61,24 @@ export class VideosService {
     };
   }
 
+  /**
+   * The video's real title from YouTube's public oEmbed endpoint, so the row
+   * is named even if the download later fails. Null on any error.
+   */
+  private async fetchYoutubeTitle(url: string): Promise<string | null> {
+    try {
+      const res = await fetch(
+        `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(url)}`,
+        { signal: AbortSignal.timeout(3000) },
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as { title?: string };
+      return data.title?.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
   async importFromUrl(userId: string, dto: ImportUrlDto) {
     const parsed = parseVideoUrl(dto.url);
     if (!parsed.isSupported) {
@@ -75,6 +93,7 @@ export class VideosService {
 
     const title =
       dto.title?.trim() ||
+      (parsed.sourceType === 'youtube' ? await this.fetchYoutubeTitle(parsed.normalizedUrl) : null) ||
       `${getSourceLabel(parsed.sourceType)} import · ${new Date().toLocaleDateString()}`;
 
     const video = await this.videosRepo.create({
