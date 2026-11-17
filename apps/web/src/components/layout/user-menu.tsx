@@ -9,6 +9,7 @@ import {
   Share2,
   Crown,
   History,
+  Receipt,
   LogOut,
   ChevronRight,
 } from "lucide-react";
@@ -217,6 +218,13 @@ export function UserMenu({
             <Link href="/activity" onClick={() => beginNavigationLoading()}>
               <MenuIcon icon={History} accent="text-zinc-400 group-data-[highlighted]:bg-sky-500/15 group-data-[highlighted]:text-sky-400 group-data-[highlighted]:ring-sky-500/30" />
               Credit usage history
+              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className={itemClass}>
+            <Link href="/transactions" onClick={() => beginNavigationLoading()}>
+              <MenuIcon icon={Receipt} accent="text-zinc-400 group-data-[highlighted]:bg-emerald-500/15 group-data-[highlighted]:text-emerald-400 group-data-[highlighted]:ring-emerald-500/30" />
+              Transaction history
               <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
             </Link>
           </DropdownMenuItem>

@@ -3,7 +3,6 @@ import { UpgradeButton } from "@/components/billing/pricing-modal";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
 import { Progress } from "@/components/ui/progress";
-import { TransactionHistory } from "@/components/billing/transaction-history";
 import { CreditHistory, type CreditTransaction } from "@/components/billing/credit-history";
 
 export const metadata = { title: "Subscription" };
@@ -123,7 +122,6 @@ export default async function BillingPage() {
 
       <CreditHistory transactions={creditHistory} />
 
-      <TransactionHistory transactions={transactions} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ const protectedPaths = [
   "/clips",
   "/subscription",
   "/activity",
+  "/transactions",
   "/dashboard/affiliate",
   "/settings",
   "/setup",
@@ -92,6 +93,7 @@ export async function middleware(request: NextRequest) {
     "/clips",
     "/subscription",
     "/activity",
+    "/transactions",
     "/dashboard/affiliate",
     "/settings",
   ].some((p) => request.nextUrl.pathname.startsWith(p));
