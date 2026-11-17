@@ -70,7 +70,7 @@ export function CancelSubscriptionButton({ planName, accessUntil }: { planName: 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded-full border border-rose-500/30 bg-rose-500/[0.06] px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:border-rose-500/50 hover:bg-rose-500/[0.12]"
+        className="text-xs font-medium text-red-400 underline-offset-4 transition-colors hover:text-red-300 hover:underline"
       >
         Cancel subscription
       </button>

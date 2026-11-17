@@ -143,7 +143,7 @@ export default async function BillingPage() {
               <p className="mt-auto pb-5 text-center text-xs text-white/35">No billing information</p>
             )}
             {isPaid && status === "active" && !scheduled && (
-              <div className="mt-auto px-4 pb-4">
+              <div className="mt-auto border-t border-white/[0.06] px-4 py-3 text-right">
                 <CancelSubscriptionButton planName={planName} accessUntil={periodEnd ?? null} />
               </div>
             )}
