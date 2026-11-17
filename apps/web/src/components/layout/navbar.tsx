@@ -8,6 +8,7 @@ import { ResourcesDropdown } from "./resources-dropdown";
 import { FeaturesDropdown } from "./features-dropdown";
 import { MobileMenu } from "./mobile-menu";
 import { NavbarShell } from "./navbar-shell";
+import { DashboardLink } from "./dashboard-link";
 
 const linksRight = [
   { href: "/coaching", label: "Coaching" },
@@ -67,12 +68,7 @@ export async function Navbar({ solid = false }: { solid?: boolean } = {}) {
           {/* Desktop: signed in → Dashboard + avatar; signed out → Sign in + Sign up */}
           {user ? (
             <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="hidden rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 md:inline-flex"
-              >
-                Dashboard
-              </Link>
+              <DashboardLink />
               <UserMenu
                 email={user.email}
                 phone={user.phone}

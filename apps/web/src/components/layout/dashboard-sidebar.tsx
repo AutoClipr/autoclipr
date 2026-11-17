@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   Sparkles,
   Film,
   BarChart3,
@@ -20,8 +19,7 @@ import { LogoIcon } from "@/components/ui/logo-icon";
 import { useState } from "react";
 
 const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/create", label: "Viral Shorts", icon: Sparkles, highlight: true },
+  { href: "/create", label: "Create", icon: Sparkles, highlight: true },
   { href: "/channels", label: "Channels", icon: Youtube },
   { href: "/clips", label: "Clips", icon: Film },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
