@@ -1,57 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Download, Receipt } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Download, Receipt, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Transaction } from "@/app/(dashboard)/subscription/page";
 
+const PAGE_SIZE = 10;
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export function TransactionHistory({ transactions }: { transactions: Transaction[] }) {
-  const [search, setSearch] = useState("");
-
-  const filtered = transactions.filter((tx) => {
-    const q = search.toLowerCase();
-    return (
-      tx.invoice_number.toLowerCase().includes(q) ||
-      tx.plan_id.toLowerCase().includes(q) ||
-      tx.amount.toLowerCase().includes(q) ||
-      new Date(tx.payment_date).toLocaleDateString().includes(q)
-    );
-  });
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const filtered = transactions.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
-      {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-center gap-2">
-          <Receipt className="h-4 w-4 text-emerald-400" />
-          <h2 className="font-semibold">Transaction History</h2>
-          {transactions.length > 0 && (
-            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-muted-foreground">
-              {transactions.length}
-            </span>
-          )}
-        </div>
-        <div className="relative w-full sm:w-56">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search transactions..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 pl-8 text-sm"
-          />
-        </div>
-      </div>
-
       {/* Table */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
           <Receipt className="h-8 w-8 opacity-30" />
-          <p className="text-sm">
-            {search ? "No transactions match your search." : "No transactions yet."}
-          </p>
+          <p className="text-sm">No transactions yet.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -123,6 +92,34 @@ export function TransactionHistory({ transactions }: { transactions: Transaction
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-3 sm:px-6">
+          <p className="text-xs text-white/45">
+            Page {current} of {totalPages}
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              aria-label="Previous page"
+              disabled={current === 1}
+              onClick={() => setPage(current - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition-colors hover:bg-white/[0.1] disabled:pointer-events-none disabled:opacity-35"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next page"
+              disabled={current === totalPages}
+              onClick={() => setPage(current + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition-colors hover:bg-white/[0.1] disabled:pointer-events-none disabled:opacity-35"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>
