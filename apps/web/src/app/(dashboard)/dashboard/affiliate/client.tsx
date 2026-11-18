@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Check, ChevronDown, Clock, Copy, DollarSign, ExternalLink, Gift, MessageCircle,
+  Check, ChevronDown, Clock, Copy, DollarSign, ExternalLink, Gift, Instagram, MessageCircle,
   MousePointer, Send, Share2, TrendingUp, Users,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
@@ -119,6 +119,15 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
     }
   }
 
+  // Instagram has no web share link: copy the message, then open DMs to paste it.
+  const [igCopied, setIgCopied] = useState(false);
+  function shareInstagram() {
+    navigator.clipboard.writeText(shareText).catch(() => {});
+    setIgCopied(true);
+    setTimeout(() => setIgCopied(false), 4000);
+    window.open("https://www.instagram.com/direct/inbox/", "_blank", "noopener,noreferrer");
+  }
+
   async function shareMore() {
     if (navigator.share) {
       try {
@@ -194,6 +203,12 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
                   <Send className="h-2.5 w-2.5 text-white" />
                 </span>
                 Telegram
+              </ShareButton>
+              <ShareButton onClick={shareInstagram}>
+                <span className="flex h-4 w-4 items-center justify-center rounded-[5px] bg-gradient-to-tr from-[#feda75] via-[#d62976] to-[#4f5bd5]">
+                  <Instagram className="h-2.5 w-2.5 text-white" />
+                </span>
+                {igCopied ? "Link copied — paste it" : "Instagram"}
               </ShareButton>
               <ShareButton href={`https://twitter.com/intent/tweet?text=${enc(shareText)}`}>
                 <span className="text-sm font-black leading-none">𝕏</span>

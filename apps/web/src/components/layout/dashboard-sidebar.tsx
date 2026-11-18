@@ -14,7 +14,7 @@ import {
   X,
   Youtube,
   Link2,
-  DollarSign,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoIcon } from "@/components/ui/logo-icon";
@@ -29,7 +29,7 @@ const nav = [
   { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/dashboard/affiliate", label: "Earn & Refer", icon: DollarSign },
+  { href: "/dashboard/affiliate", label: "Refer a friend", icon: Gift },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
