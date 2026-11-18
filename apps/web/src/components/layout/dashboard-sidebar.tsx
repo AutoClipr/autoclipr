@@ -19,20 +19,21 @@ import {
 import { cn } from "@/lib/utils";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { useState } from "react";
+import { hasSchedulerAccess } from "@/lib/scheduler";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/create", label: "Create", icon: Sparkles, highlight: true },
   { href: "/channels", label: "Channels", icon: Youtube },
   { href: "/clips", label: "Clips", icon: Film },
-  { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays },
+  { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/subscription", label: "Subscription", icon: CreditCard },
   { href: "/dashboard/affiliate", label: "Earn & Refer", icon: DollarSign },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function DashboardSidebar({ credits }: { credits: number }) {
+export function DashboardSidebar({ credits, plan = "starter" }: { credits: number; plan?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -133,6 +134,11 @@ export function DashboardSidebar({ credits }: { credits: number }) {
                   )}
                 />
                 {item.label}
+                {"paid" in item && item.paid && !hasSchedulerAccess(plan) && (
+                  <span className="ml-auto rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                    Pro
+                  </span>
+                )}
               </Link>
             );
           })}

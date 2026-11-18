@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { ScheduledPostsService } from './scheduled-posts.service';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ScheduledPostsService, SCHEDULER_UPGRADE_MESSAGE } from './scheduled-posts.service';
 import { createQueryBuilderMock, createSupabaseAdminServiceMock } from '../../test-utils/supabase-mock';
 
 const USER = 'user-1';
@@ -19,6 +19,7 @@ describe('ScheduledPostsService', () => {
   let supabase: ReturnType<typeof createSupabaseAdminServiceMock>;
   let posts: ReturnType<typeof createQueryBuilderMock>;
   let targets: ReturnType<typeof createQueryBuilderMock>;
+  let profiles: ReturnType<typeof createQueryBuilderMock>;
   let clips: { getById: jest.Mock };
   let platforms: { listByUser: jest.Mock };
   let storage: { createSignedUploadUrl: jest.Mock; clipsBucket: jest.Mock };
@@ -27,7 +28,10 @@ describe('ScheduledPostsService', () => {
     supabase = createSupabaseAdminServiceMock();
     posts = createQueryBuilderMock({ data: post(), error: null });
     targets = createQueryBuilderMock({ data: null, error: null });
-    supabase.__client.from.mockImplementation((t: string) => (t === 'scheduled_posts' ? posts : targets));
+    profiles = createQueryBuilderMock({ data: { subscription_tier: 'creator' }, error: null });
+    supabase.__client.from.mockImplementation((t: string) =>
+      t === 'profiles' ? profiles : t === 'scheduled_posts' ? posts : targets,
+    );
     clips = {
       getById: jest.fn().mockResolvedValue({
         id: 'c1',
@@ -48,6 +52,41 @@ describe('ScheduledPostsService', () => {
       clipsBucket: jest.fn().mockReturnValue('clips'),
     };
     service = new ScheduledPostsService(supabase as never, clips as never, platforms as never, storage as never);
+  });
+
+  describe('paid plan gate', () => {
+    const futureIso = () => new Date(Date.now() + 3600_000).toISOString();
+    const free = () => profiles.__setResult({ data: { subscription_tier: 'starter' }, error: null });
+
+    it.each([
+      ['createUploadUrl', () => service.createUploadUrl('u1', { filename: 'a.mp4', mime_type: 'video/mp4', size: 10 } as never)],
+      ['create', () => service.create('u1', { clip_id: 'c1', targets: [{ platform: 'youtube' }], scheduled_at: futureIso() } as never)],
+      ['update', () => service.update('u1', 'p1', { clip_id: 'c1', targets: [] } as never)],
+      ['reschedule', () => service.reschedule('u1', 'p1', { scheduled_at: futureIso() } as never)],
+      ['publishNow', () => service.publishNow('u1', 'p1')],
+      ['retry', () => service.retry('u1', 'p1', {} as never)],
+    ])('%s is refused on the free plan', async (_name, call) => {
+      free();
+      await expect(call()).rejects.toThrow(SCHEDULER_UPGRADE_MESSAGE);
+    });
+
+    it('refuses when the profile is missing', async () => {
+      profiles.__setResult({ data: null, error: null });
+      await expect(service.publishNow('u1', 'p1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('still lets a free user view and delete posts', async () => {
+      free();
+      await expect(service.get('u1', 'p1')).resolves.toBeTruthy();
+      await expect(service.remove('u1', 'p1')).resolves.toEqual({ deleted: true });
+    });
+
+    it('allows the business plan', async () => {
+      profiles.__setResult({ data: { subscription_tier: 'business' }, error: null });
+      await expect(
+        service.createUploadUrl('u1', { filename: 'a.mp4', mime_type: 'video/mp4', size: 10 } as never),
+      ).resolves.toHaveProperty('upload_url');
+    });
   });
 
   describe('createUploadUrl', () => {

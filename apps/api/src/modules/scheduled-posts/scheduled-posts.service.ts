@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -24,6 +25,10 @@ const IN_FLIGHT = ['queued', 'publishing', 'retrying'];
 /** Earliest a post can be scheduled, so the minute tick reliably sees it. */
 const MIN_LEAD_MS = 60 * 1000;
 const MAX_AHEAD_MS = 365 * 24 * 60 * 60 * 1000;
+/** Plans that include the Content Scheduler. */
+export const SCHEDULER_PLANS = ['creator', 'business'];
+export const SCHEDULER_UPGRADE_MESSAGE =
+  'Content scheduling is available on the Creator and Business plans. Upgrade to schedule posts.';
 
 const POST_COLUMNS =
   'id, user_id, clip_id, media_storage_path, media_thumbnail_url, media_duration_seconds, title, caption, description, hashtags, scheduled_at, timezone, status, published_at, cancelled_at, created_at, updated_at, scheduled_post_targets(id, platform, caption_override, status, platform_post_id, platform_post_url, error_message, retry_count, published_at)';
@@ -52,6 +57,7 @@ export class ScheduledPostsService {
    * only ever point at its owner's uploads.
    */
   async createUploadUrl(userId: string, dto: UploadUrlDto) {
+    await this.assertPaidPlan(userId);
     const ext = dto.filename.split('.').pop()?.toLowerCase() ?? '';
     if (!(UPLOAD_EXTENSIONS as readonly string[]).includes(ext) || !dto.mime_type.startsWith('video/')) {
       throw new BadRequestException(`Upload an ${UPLOAD_EXTENSIONS.join(', ').toUpperCase()} video.`);
@@ -87,6 +93,7 @@ export class ScheduledPostsService {
   }
 
   async create(userId: string, dto: CreateScheduledPostDto) {
+    await this.assertPaidPlan(userId);
     const values = await this.validate(userId, dto);
     const { data, error } = await this.db()
       .from('scheduled_posts')
@@ -101,6 +108,7 @@ export class ScheduledPostsService {
 
   /** Edit a draft or scheduled post: caption, media, destinations or time. */
   async update(userId: string, id: string, dto: CreateScheduledPostDto) {
+    await this.assertPaidPlan(userId);
     const existing = await this.get(userId, id);
     this.assertEditable(existing);
     const values = await this.validate(userId, dto);
@@ -117,6 +125,7 @@ export class ScheduledPostsService {
   }
 
   async reschedule(userId: string, id: string, dto: RescheduleDto) {
+    await this.assertPaidPlan(userId);
     const existing = await this.get(userId, id);
     this.assertEditable(existing);
     if (existing.status !== 'scheduled') {
@@ -151,6 +160,7 @@ export class ScheduledPostsService {
 
   /** Move every waiting destination to "now"; the worker picks it up within a minute. */
   async publishNow(userId: string, id: string) {
+    await this.assertPaidPlan(userId);
     const existing = await this.get(userId, id);
     this.assertEditable(existing);
     if (!existing.scheduled_post_targets?.length) {
@@ -172,6 +182,7 @@ export class ScheduledPostsService {
 
   /** Re-queue failed destinations only, so a published one is never posted twice. */
   async retry(userId: string, id: string, dto: RetryDto) {
+    await this.assertPaidPlan(userId);
     const existing = await this.get(userId, id);
     const failed = (existing.scheduled_post_targets ?? []).filter(
       (t) => t.status === 'failed' && (!dto.platform || t.platform === dto.platform),
@@ -190,6 +201,21 @@ export class ScheduledPostsService {
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
+
+  /**
+   * Scheduling is a paid feature. Viewing and deleting stay open so a user
+   * who downgrades can still see and clean up their calendar.
+   */
+  private async assertPaidPlan(userId: string) {
+    const { data } = await this.db()
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', userId)
+      .maybeSingle();
+    if (!SCHEDULER_PLANS.includes((data?.subscription_tier as string) ?? '')) {
+      throw new ForbiddenException(SCHEDULER_UPGRADE_MESSAGE);
+    }
+  }
 
   private inFlight(post: Post): boolean {
     return (post.scheduled_post_targets ?? []).some((t) => IN_FLIGHT.includes(t.status));

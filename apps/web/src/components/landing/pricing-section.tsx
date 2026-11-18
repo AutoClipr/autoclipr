@@ -23,6 +23,7 @@ import {
   LineChart,
   Layers,
   Check,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,7 @@ const plans: Plan[] = [
       { label: "Brand kits", icon: Award },
       { label: "Priority exports + faster queue", icon: Upload, highlight: true },
       { label: "Multi-platform publishing", icon: PlaySquare },
+      { label: "Content scheduling (Shorts & Reels)", icon: CalendarClock, highlight: true },
       { label: "Unlimited exports", icon: Upload },
     ],
   },
@@ -117,6 +119,7 @@ const plans: Plan[] = [
       { label: "Priority rendering queue", icon: Upload },
       { label: "Advanced brand kits", icon: Award },
       { label: "Bulk video creation", icon: Layers, highlight: true },
+      { label: "Content scheduling (Shorts & Reels)", icon: CalendarClock, highlight: true },
       { label: "Analytics & performance tracking", icon: LineChart, highlight: true },
       { label: "Unlimited exports", icon: Upload },
     ],

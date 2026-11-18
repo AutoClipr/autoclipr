@@ -20,6 +20,11 @@ const STUCK_PUBLISHING_MS = 30 * 60 * 1000;
 const LOST_QUEUED_MS = 15 * 60 * 1000;
 const CLAIM_BATCH = 25;
 
+/** Plans that include the Content Scheduler (kept in sync with the API). */
+export const SCHEDULER_PLANS = ['creator', 'business'];
+export const SCHEDULER_PLAN_ERROR =
+  'Content scheduling needs a Creator or Business plan. Upgrade, then retry this post.';
+
 const PLATFORM_LABELS: Record<string, string> = { youtube: 'YouTube Shorts', instagram: 'Instagram Reels' };
 
 /**
@@ -155,8 +160,11 @@ export class ScheduledPublishService implements OnModuleInit {
     await this.refreshPost(target.scheduled_post_id);
 
     const postRes = await this.db.client.query(
-      `SELECT id, user_id, title, caption, description, hashtags, media_storage_path
-         FROM scheduled_posts WHERE id = $1`,
+      `SELECT p.id, p.user_id, p.title, p.caption, p.description, p.hashtags, p.media_storage_path,
+              pr.subscription_tier
+         FROM scheduled_posts p
+         LEFT JOIN profiles pr ON pr.id = p.user_id
+        WHERE p.id = $1`,
       [target.scheduled_post_id],
     );
     const post = postRes.rows[0];
@@ -165,6 +173,8 @@ export class ScheduledPublishService implements OnModuleInit {
     const workDir = await this.temp.createJobDir(`sched_${targetId}`);
     try {
       if (!post) throw new UnrecoverableError('The scheduled post no longer exists.');
+      // The user may have downgraded after scheduling.
+      if (!SCHEDULER_PLANS.includes(post.subscription_tier)) throw new UnrecoverableError(SCHEDULER_PLAN_ERROR);
       const localPath = path.join(workDir, 'media.mp4');
       await this.publish.downloadClip(post.media_storage_path, localPath);
 

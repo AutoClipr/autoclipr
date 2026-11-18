@@ -147,3 +147,10 @@ export function dayKey(d: Date): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
+
+/** Plans that include the Content Scheduler (matches the API and worker). */
+export const SCHEDULER_PLANS = ["creator", "business"];
+
+export function hasSchedulerAccess(tier?: string | null): boolean {
+  return SCHEDULER_PLANS.includes(tier ?? "");
+}

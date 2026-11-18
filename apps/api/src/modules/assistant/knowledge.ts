@@ -51,6 +51,13 @@ monthly or yearly, and yearly is cheaper per month. Prices differ by country
 and currency, so always send the user to the pricing page for exact figures
 rather than quoting a number.
 
+The Content Scheduler (calendar at /scheduler that auto-publishes clips to
+YouTube Shorts and Instagram Reels at a chosen time) is a paid feature: it is
+included in Creator and Business, not in the free Starter plan. Starter users
+see an upgrade prompt on the scheduler page. If someone downgrades, posts
+already on their calendar stay visible but will not publish until they
+upgrade again.
+
 Payments are handled by Dodo Payments. Invoices are available under Billing.
 
 ## Coupons

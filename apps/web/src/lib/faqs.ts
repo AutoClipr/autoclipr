@@ -25,6 +25,11 @@ export const MARKETING_FAQS = [
     a: "Absolutely. Cancel directly from your billing settings — no calls, no hoops. You keep access until the end of your current billing period.",
   },
   {
+    category: "Credits & billing",
+    q: "Which plans include content scheduling?",
+    a: "The Content Scheduler is included in the Creator and Business plans. Plan your clips on a calendar and AutoClipr publishes them to YouTube Shorts and Instagram Reels at the time you pick. On the free Starter plan you can still create and download clips; upgrade any time to unlock scheduling.",
+  },
+  {
     category: "Platform & formats",
     q: "Which video formats are supported?",
     a: "You can upload MP4, MOV, and WebM files, or paste a YouTube URL directly. Exports default to 9:16 for Shorts/Reels/TikTok, with 16:9 and 1:1 also available on Creator and Business plans.",
