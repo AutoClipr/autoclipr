@@ -153,7 +153,7 @@ export function AffiliateDashboard({ data, token }: { data: AffiliateData; token
       {/* Heading */}
       <div className="pb-1">
         <div className="flex items-center gap-3">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Earn &amp; refer</p>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Refer &amp; earn</p>
           <StatusBadge status={affiliate.status} />
         </div>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
@@ -581,7 +581,7 @@ export function AffiliateApply({ token }: { token: string }) {
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="pb-1">
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Earn &amp; refer</p>
+        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Refer &amp; earn</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
           Share AutoClipr. Earn every month.
         </h1>
