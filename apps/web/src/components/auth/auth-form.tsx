@@ -87,14 +87,14 @@ async function syncProfile(
   });
 }
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({ mode, redirectOverride }: { mode: Mode; redirectOverride?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/setup/platforms";
+  const redirectTo = redirectOverride ?? searchParams.get("redirect") ?? "/setup/platforms";
   // Arrived from the landing page's "Get free clips" link box.
   const fromClipLink = redirectTo.startsWith("/create?url=");
   // Keep the redirect when switching between login and register.
-  const redirectQuery = searchParams.get("redirect")
+  const redirectQuery = redirectOverride || searchParams.get("redirect")
     ? `?redirect=${encodeURIComponent(redirectTo)}`
     : "";
 

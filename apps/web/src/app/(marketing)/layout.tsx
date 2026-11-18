@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { CouponBanner } from "@/components/layout/coupon-banner";
 import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { AnnouncementBanner } from "@/components/layout/announcement-banner";
+import { AuthModal } from "@/components/auth/auth-modal";
 import { PageBackground } from "@/components/ui/page-background";
 
 export default function MarketingLayout({
@@ -29,6 +30,7 @@ export default function MarketingLayout({
       <Footer />
       <AnnouncementBanner />
       <AssistantWidget />
+      <AuthModal />
     </div>
   );
 }

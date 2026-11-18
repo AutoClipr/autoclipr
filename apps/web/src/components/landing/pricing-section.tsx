@@ -1,5 +1,6 @@
 "use client";
 
+import { openAuth } from "@/components/auth/auth-modal";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { CouponField, couponAppliesTo, type AppliedCoupon } from "@/components/landing/coupon-field";
@@ -187,7 +188,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
 
   async function handleCheckout() {
     if (plan.id === "starter") {
-      window.location.href = "/register";
+      openAuth("register");
       return;
     }
     setLoading(true);
@@ -203,7 +204,7 @@ function PricingCard({ plan, yearly, currency, coupon }: { plan: Plan; yearly: b
         }`;
         // Encoded: unencoded, everything after the first & became a param of
         // /login instead of the redirect, losing the billing period.
-        window.location.href = `/login?redirect=${encodeURIComponent(back)}`;
+        openAuth("login", back);
         return;
       }
 
