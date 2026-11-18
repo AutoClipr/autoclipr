@@ -57,7 +57,7 @@ export function weekendOfferTemplate(vars: WeekendOfferVars): {
     ${divider()}
 
     ${p('Happy clipping! 🎬', true)}
-    ${p('Questions? Reply to this email or contact <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a>.', true)}
+    ${p('Questions? Email <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a>.', true)}
     `,
     `${vars.offerLabel} AutoClipr ${vars.planName} this weekend — code ${vars.couponCode}.`,
   )

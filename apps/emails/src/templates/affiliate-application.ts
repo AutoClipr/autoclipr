@@ -50,7 +50,7 @@ export function affiliateApplicationTemplate(vars: AffiliateApplicationVars): {
       ['Elite  (21+ conversions)',   '40% recurring'],
     ])}
 
-    ${p('Questions? Reply to this email or reach us at <a href="mailto:team@autoclipr.com" style="color:#10b981;">team@autoclipr.com</a>.', true)}
+    ${p('Questions? Email <a href="mailto:support@autoclipr.com" style="color:#10b981;">support@autoclipr.com</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a>.', true)}
     `,
     "You're approved! Your AutoClipr affiliate link is ready.",
   ).replace(/\{\{appUrl\}\}/g, vars.appUrl);
@@ -67,7 +67,7 @@ Commission tiers:
 
 Minimum payout: ₹1,000 via PayPal, UPI, or bank transfer.
 
-Questions? Email team@autoclipr.com.
+Questions? Email support@autoclipr.com or visit our contact page.
 
 — The AutoClipr Team`;
 
@@ -99,7 +99,7 @@ export function affiliateInquiryTemplate(vars: AffiliateInquiryVars): {
     ${divider()}
 
     ${p('Already have an account? <a href="' + vars.appUrl + '/dashboard/affiliate" style="color:#10b981;">Apply from your dashboard →</a>', true)}
-    ${p('Questions? Reply to this email or reach us at <a href="mailto:team@autoclipr.com" style="color:#10b981;">team@autoclipr.com</a>.', true)}
+    ${p('Questions? Email <a href="mailto:support@autoclipr.com" style="color:#10b981;">support@autoclipr.com</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a>.', true)}
     `,
     'Thanks for your interest in the AutoClipr Affiliate Program!',
   ).replace(/\{\{appUrl\}\}/g, vars.appUrl);

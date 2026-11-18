@@ -58,7 +58,7 @@ export function videoRetentionWarningTemplate(vars: VideoRetentionWarningVars): 
 
     ${divider()}
 
-    ${p('Questions? Reply to this email or contact <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a>.', true)}
+    ${p('Questions? Email <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a>.', true)}
     `,
     `${vars.videoCount} video${plural} will be deleted on ${vars.deletionDate} unless you upgrade.`,
   )

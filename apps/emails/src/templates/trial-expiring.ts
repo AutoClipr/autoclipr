@@ -46,7 +46,7 @@ export function trialExpiringTemplate(vars: TrialExpiringVars): {
 
     ${divider()}
 
-    ${p('Questions? Reply to this email or contact <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a>.', true)}
+    ${p('Questions? Email <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a>.', true)}
     `,
     `Your trial ends in ${vars.daysLeft} day${vars.daysLeft === 1 ? '' : 's'} — upgrade to keep access.`,
   )

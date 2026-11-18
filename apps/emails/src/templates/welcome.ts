@@ -49,7 +49,7 @@ export function welcomeTemplate(vars: WelcomeVars): { subject: string; html: str
 
     ${divider()}
 
-    ${p('Need help getting started? Reply to this email or reach us at <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a> — we\'re happy to help.', true)}
+    ${p('Need help getting started? Email <a href="mailto:' + vars.supportEmail + '" style="color:#10b981;">' + vars.supportEmail + '</a> or use our <a href="' + vars.appUrl + '/contact" style="color:#10b981;">contact page</a> — we\'re happy to help.', true)}
     `,
     'Welcome to AutoClipr! Your AI video clips platform is ready.',
   )
