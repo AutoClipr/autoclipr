@@ -12,6 +12,11 @@ import { CLIP_QUEUE } from '../jobs.constants';
 import { UrlPipelineService } from '../pipeline/url-pipeline.service';
 import { diagnosisOf } from '../pipeline/pipeline-error.util';
 import { PublishService } from '../publish/publish.service';
+import {
+  PUBLISH_SCHEDULED_JOB,
+  SCHEDULER_TICK_JOB,
+  ScheduledPublishService,
+} from '../publish/scheduled-publish.service';
 import type { UrlPipelinePayload } from '../pipeline/types';
 
 @Processor(CLIP_QUEUE)
@@ -23,6 +28,7 @@ export class ClipProcessor extends WorkerHost {
     private readonly urlPipeline: UrlPipelineService,
     private readonly publishService: PublishService,
     private readonly monitoring: MonitoringService,
+    private readonly scheduledPublish: ScheduledPublishService,
   ) {
     super();
   }
@@ -143,6 +149,13 @@ export class ClipProcessor extends WorkerHost {
         case 'publish_clip':
           await this.publishService.run(job.data as Record<string, unknown>, jobId);
           result = { status: 'completed', clip_id: job.data.clip_id };
+          break;
+        case SCHEDULER_TICK_JOB:
+          result = { status: 'completed', queued: await this.scheduledPublish.tick() };
+          break;
+        case PUBLISH_SCHEDULED_JOB:
+          await this.scheduledPublish.publishTarget(job.data.targetId as string, job.attemptsMade);
+          result = { status: 'completed', target_id: job.data.targetId };
           break;
         default:
           this.logger.warn(`Unknown job type: ${name}`);

@@ -19,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
           "/subscription",
           "/activity",
           "/transactions",
+          "/scheduler",
           "/setup",
           "/login",          // utility auth pages — noindex via metadata too
           "/register",

@@ -100,6 +100,12 @@ export type SupabaseQueryBuilderMock = {
   upsert: jest.Mock;
   delete: jest.Mock;
   eq: jest.Mock;
+  is: jest.Mock;
+  or: jest.Mock;
+  lt: jest.Mock;
+  gte: jest.Mock;
+  lte: jest.Mock;
+  in: jest.Mock;
   order: jest.Mock;
   limit: jest.Mock;
   single: jest.Mock;
@@ -120,6 +126,9 @@ const SUPABASE_ADMIN_CHAIN_METHODS = [
   'is',
   'or',
   'lt',
+  'gte',
+  'lte',
+  'in',
   'order',
   'limit',
 ] as const;

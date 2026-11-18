@@ -28,6 +28,12 @@ import {
   type SubscriptionEndedVars,
   type CancellationFailedVars,
 } from './templates/subscription-cancellation';
+import {
+  postPublishedTemplate,
+  postFailedTemplate,
+  type PostPublishedVars,
+  type PostFailedVars,
+} from './templates/scheduled-post';
 
 @Injectable()
 export class EmailService {
@@ -283,6 +289,26 @@ export class EmailService {
 
   async sendCancellationFailed(to: string, vars: Omit<CancellationFailedVars, 'appUrl' | 'supportEmail'>): Promise<void> {
     const { subject, html, text } = cancellationFailedTemplate({
+      ...vars,
+      userName: this.firstName(vars.userName),
+      appUrl: this.config.appUrl,
+      supportEmail: this.config.supportEmail,
+    });
+    await this.sendSafe({ to, subject, html, text, from: this.fromField() });
+  }
+
+  async sendPostPublished(to: string, vars: Omit<PostPublishedVars, 'appUrl' | 'supportEmail'>): Promise<void> {
+    const { subject, html, text } = postPublishedTemplate({
+      ...vars,
+      userName: this.firstName(vars.userName),
+      appUrl: this.config.appUrl,
+      supportEmail: this.config.supportEmail,
+    });
+    await this.sendSafe({ to, subject, html, text, from: this.fromField() });
+  }
+
+  async sendPostFailed(to: string, vars: Omit<PostFailedVars, 'appUrl' | 'supportEmail'>): Promise<void> {
+    const { subject, html, text } = postFailedTemplate({
       ...vars,
       userName: this.firstName(vars.userName),
       appUrl: this.config.appUrl,

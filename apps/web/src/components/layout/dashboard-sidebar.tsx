@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Sparkles,
+  CalendarDays,
   LayoutDashboard,
   Film,
   BarChart3,
@@ -24,6 +25,7 @@ const nav = [
   { href: "/create", label: "Create", icon: Sparkles, highlight: true },
   { href: "/channels", label: "Channels", icon: Youtube },
   { href: "/clips", label: "Clips", icon: Film },
+  { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/subscription", label: "Subscription", icon: CreditCard },
   { href: "/dashboard/affiliate", label: "Earn & Refer", icon: DollarSign },

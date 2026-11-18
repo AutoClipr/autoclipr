@@ -18,6 +18,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { ChannelsModule } from './modules/channels/channels.module';
 import { PlatformsModule } from './modules/platforms/platforms.module';
+import { ScheduledPostsModule } from './modules/scheduled-posts/scheduled-posts.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { NewsletterModule } from './modules/newsletter/newsletter.module';
@@ -60,6 +61,7 @@ import { ActionLoggingInterceptor } from './common/interceptors/action-logging.i
     JobsModule,
     ChannelsModule,
     PlatformsModule,
+    ScheduledPostsModule,
     AnalyticsModule,
     FeedbackModule,
     NewsletterModule,

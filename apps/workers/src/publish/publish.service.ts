@@ -132,7 +132,7 @@ export class PublishService {
     }
   }
 
-  private async downloadClip(storagePath: string, localPath: string): Promise<void> {
+  async downloadClip(storagePath: string, localPath: string): Promise<void> {
     if (!this.supabase) throw new Error('Supabase storage not configured');
 
     const bucket = this.config.get<string>('buckets.clips') ?? 'clips';
@@ -145,11 +145,14 @@ export class PublishService {
     await fs.writeFile(localPath, buffer);
   }
 
-  private async publishToPlatform(opts: {
+  /** Publish a local video file to one connected platform. Also used by the scheduler. */
+  async publishToPlatform(opts: {
     platform: PlatformId;
     userId: string;
-    clipId: string;
+    clipId?: string;
     title: string;
+    /** YouTube description / Instagram caption; defaults to the title. */
+    caption?: string;
     localClipPath: string;
   }): Promise<{ postId: string | null; postUrl: string | null }> {
     const connRes = await this.db.client.query(
@@ -171,6 +174,7 @@ export class PublishService {
           accessToken: conn.access_token as string,
           refreshToken: conn.refresh_token as string | null,
           title: opts.title,
+          description: opts.caption,
           localClipPath: opts.localClipPath,
           onTokenRefresh: async (tokens) => {
             await this.db.client.query(
@@ -196,7 +200,8 @@ export class PublishService {
         return this.instagram.uploadReel({
           accessToken: conn.access_token as string,
           igUserId: conn.account_id as string,
-          title: opts.title,
+          // Instagram has no title: the caption is the post text.
+          title: opts.caption ?? opts.title,
           localClipPath: opts.localClipPath,
           onTokenRefresh: async (newToken, expiresAt) => {
             await this.db.client.query(

@@ -6,6 +6,8 @@ type UploadShortOptions = {
   accessToken: string;
   refreshToken: string | null;
   title: string;
+  /** Full description; defaults to the title. */
+  description?: string;
   localClipPath: string;
   onTokenRefresh: (tokens: {
     access_token: string;
@@ -27,7 +29,7 @@ export class YoutubePublisherService {
     const metadata = {
       snippet: {
         title: opts.title.slice(0, 100),
-        description: `${opts.title}\n\nCreated with AutoClipr.ai`,
+        description: `${(opts.description ?? opts.title).slice(0, 4800)}\n\nCreated with AutoClipr.ai`,
         categoryId: '22',
       },
       status: {

@@ -13,6 +13,7 @@ import { HookAnalysisService } from './pipeline/hook-analysis.service';
 import { TempFilesService } from './pipeline/temp-files.service';
 import { UrlPipelineService } from './pipeline/url-pipeline.service';
 import { PublishService } from './publish/publish.service';
+import { ScheduledPublishService } from './publish/scheduled-publish.service';
 import { YoutubePublisherService } from './publish/youtube-publisher.service';
 import { InstagramPublisherService } from './publish/instagram-publisher.service';
 import { WhisperService } from './pipeline/whisper.service';
@@ -52,6 +53,7 @@ import { EmailModule } from '@autoclipr/emails';
     CaptionService,
     UrlPipelineService,
     PublishService,
+    ScheduledPublishService,
     YoutubePublisherService,
     InstagramPublisherService,
   ],
