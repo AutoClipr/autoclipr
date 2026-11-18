@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { LogoIcon } from "@/components/ui/logo-icon";
 import {
   getPasswordValidationRules,
   isExistingEmailSignup,
@@ -87,7 +88,17 @@ async function syncProfile(
   });
 }
 
-export function AuthForm({ mode, redirectOverride }: { mode: Mode; redirectOverride?: string }) {
+export function AuthForm({
+  mode,
+  redirectOverride,
+  variant = "card",
+}: {
+  mode: Mode;
+  redirectOverride?: string;
+  /** "modal" drops the card frame and adds the logo, for the popup. */
+  variant?: "card" | "modal";
+}) {
+  const isModal = variant === "modal";
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = redirectOverride ?? searchParams.get("redirect") ?? "/setup/platforms";
@@ -418,9 +429,19 @@ export function AuthForm({ mode, redirectOverride }: { mode: Mode; redirectOverr
   }
 
   return (
-    <div className="relative w-full max-w-md overflow-hidden rounded-3xl lg:max-w-[34rem] 2xl:max-w-xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-black/50 backdrop-blur-xl">
-      <div className="p-7 sm:p-10 2xl:p-12">
+    <div
+      className={cn(
+        "relative w-full",
+        isModal
+          ? "mx-auto max-w-sm"
+          : "max-w-md overflow-hidden rounded-3xl lg:max-w-[34rem] 2xl:max-w-xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-black/50 backdrop-blur-xl",
+      )}
+    >
+      <div className={isModal ? "" : "p-7 sm:p-10 2xl:p-12"}>
         <div className="mb-7 text-center">
+          {isModal && (
+            <LogoIcon size={40} className="mx-auto mb-4 rounded-xl shadow-lg shadow-emerald-500/30" />
+          )}
           <h1 className="text-balance text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl 2xl:text-4xl">
             {fromClipLink
               ? mode === "login"
@@ -442,7 +463,11 @@ export function AuthForm({ mode, redirectOverride }: { mode: Mode; redirectOverr
           <Button
             type="button"
             variant="outline"
-            className="h-12 w-full rounded-full border-white/15 bg-white/[0.06] text-[15px] font-semibold text-white hover:border-white/25 hover:bg-white/[0.1]"
+            className={cn(
+              "h-12 w-full border-white/15 bg-white/[0.06] text-[15px] font-semibold text-white hover:border-white/25 hover:bg-white/[0.1]",
+              isModal ? "h-14 rounded-xl bg-transparent" : "rounded-full",
+              isModal && lastMethod === "google" && "border-lime-400/40",
+            )}
             onClick={handleGoogle}
             disabled={loading}
           >
