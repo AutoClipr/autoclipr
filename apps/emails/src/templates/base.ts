@@ -66,7 +66,7 @@ export function baseLayout(content: string, previewText = ''): string {
           <tr>
             <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
               <p style="margin:0 0 8px;font-size:12px;color:#6b7280;">
-                © ${new Date().getFullYear()} AutoClipr.ai · AI-Powered Video Clips
+                © ${new Date().getFullYear()} AutoClipr · AI-Powered Video Clips
               </p>
               <p style="margin:0;font-size:12px;color:#9ca3af;">
                 <a href="{{appUrl}}/dashboard" style="color:#10b981;">Dashboard</a>

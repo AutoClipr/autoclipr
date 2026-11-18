@@ -40,7 +40,7 @@ export function FAQ() {
             </span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground sm:text-lg">
-            Everything you need to know about AutoClipr.ai. Can&apos;t find what you&apos;re looking for?{" "}
+            Everything you need to know about AutoClipr. Can&apos;t find what you&apos;re looking for?{" "}
             <Link href="/contact" className="text-aurora hover:underline">
               Ask us directly.
             </Link>

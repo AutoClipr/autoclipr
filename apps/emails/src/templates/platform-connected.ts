@@ -48,13 +48,13 @@ export function platformConnectedTemplate(vars: PlatformConnectedVars): {
   const key = vars.platformName.toLowerCase();
   const emoji = PLATFORM_EMOJI[key] ?? '🔗';
   const icon = PLATFORM_ICON[key] ?? `<p style="margin:0 0 16px;font-size:48px;text-align:center;">🔗</p>`;
-  const subject = `${emoji} ${vars.platformName} connected to AutoClipr.ai`;
+  const subject = `${emoji} ${vars.platformName} connected to AutoClipr`;
 
   const html = baseLayout(
     `
     ${icon}
     ${h1(`${vars.platformName} connected, ${highlight(vars.userName)}!`)}
-    ${p(`Your <strong style="color:#e5e7eb;">${vars.platformName}</strong> account has been successfully connected to AutoClipr.ai. You can now automatically post your AI-generated clips to this platform.`)}
+    ${p(`Your <strong style="color:#e5e7eb;">${vars.platformName}</strong> account has been successfully connected to AutoClipr. You can now automatically post your AI-generated clips to this platform.`)}
 
     ${infoTable([
       ['Platform', vars.platformName],
@@ -81,13 +81,13 @@ export function platformConnectedTemplate(vars: PlatformConnectedVars): {
 
   const text = `${vars.platformName} connected, ${vars.userName}!
 
-Your ${vars.platformName} account (${vars.accountName}) has been successfully connected to AutoClipr.ai.
+Your ${vars.platformName} account (${vars.accountName}) has been successfully connected to AutoClipr.
 
 Go to your dashboard: ${vars.appUrl}/dashboard
 
 If you didn't connect this account, contact us at ${vars.supportEmail}.
 
-— The AutoClipr.ai Team`;
+— The AutoClipr Team`;
 
   return { subject, html, text };
 }

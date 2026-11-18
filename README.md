@@ -2,7 +2,7 @@
 
 Modern AI video clipping SaaS — turn long-form videos into viral short clips with subtitles, exports, and subscription-based credits.
 
-**Domains:** [autoclipr.ai](https://autoclipr.ai) · [autoclipr.io](https://autoclipr.io) · [autoclipr.com](https://autoclipr.com)
+**Website:** [autoclipr.com](https://autoclipr.com)
 
 ## Monorepo structure
 

@@ -49,7 +49,7 @@ export async function Navbar({
           <span className="absolute -inset-2 -z-10 rounded-2xl bg-emerald-500/0 blur-xl transition-colors duration-300 group-hover:bg-emerald-500/15" />
           <LogoIcon size={36} className="rounded-xl shadow-glow transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
           <span className="text-base sm:text-lg">
-            Auto<span className="gradient-text">Clipr.ai</span>
+            Auto<span className="gradient-text">Clipr</span>
           </span>
         </Link>
 

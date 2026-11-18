@@ -12,13 +12,13 @@ export function accountDeletedTemplate(vars: AccountDeletedVars): {
   html: string;
   text: string;
 } {
-  const subject = 'Your AutoClipr.ai account has been deleted';
+  const subject = 'Your AutoClipr account has been deleted';
 
   const html = baseLayout(
     `
     <p style="margin:0 0 16px;font-size:36px;text-align:center;">👋</p>
     ${h1(`Goodbye, ${highlight(vars.userName)}`)}
-    ${p('Your AutoClipr.ai account and all associated data have been permanently deleted. This includes your clips, videos, connected platforms, and billing information.')}
+    ${p('Your AutoClipr account and all associated data have been permanently deleted. This includes your clips, videos, connected platforms, and billing information.')}
 
     ${infoTable([
       ['Account', vars.email],
@@ -39,16 +39,16 @@ export function accountDeletedTemplate(vars: AccountDeletedVars): {
 
     ${p(`Need help or think this was a mistake? Email us at <a href="mailto:${vars.supportEmail}" style="color:#10b981;">${vars.supportEmail}</a> as soon as possible.`, true)}
     `,
-    'Your AutoClipr.ai account has been permanently deleted.',
+    'Your AutoClipr account has been permanently deleted.',
   );
 
   const text = `Goodbye, ${vars.userName}
 
-Your AutoClipr.ai account (${vars.email}) has been permanently deleted along with all your clips, videos, and connected platforms.
+Your AutoClipr account (${vars.email}) has been permanently deleted along with all your clips, videos, and connected platforms.
 
 If this was a mistake, contact us at ${vars.supportEmail} within 24 hours.
 
-— The AutoClipr.ai Team`;
+— The AutoClipr Team`;
 
   return { subject, html, text };
 }

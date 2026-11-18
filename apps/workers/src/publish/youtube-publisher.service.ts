@@ -29,7 +29,7 @@ export class YoutubePublisherService {
     const metadata = {
       snippet: {
         title: opts.title.slice(0, 100),
-        description: `${(opts.description ?? opts.title).slice(0, 4800)}\n\nCreated with AutoClipr.ai`,
+        description: `${(opts.description ?? opts.title).slice(0, 4800)}\n\nCreated with AutoClipr`,
         categoryId: '22',
       },
       status: {

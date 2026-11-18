@@ -160,7 +160,7 @@ export function Footer() {
             <Link href="/" className="mb-4 inline-flex items-center gap-2.5">
               <LogoIcon size={38} className="rounded-xl shadow-lg shadow-emerald-500/30" />
               <span className="text-xl font-bold text-white">
-                Auto<span className="text-emerald-400">Clipr.ai</span>
+                Auto<span className="text-emerald-400">Clipr</span>
               </span>
             </Link>
             <p className="max-w-md text-sm leading-relaxed text-white/55 xl:max-w-none">
@@ -204,7 +204,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.06] py-6 sm:flex-row">
           <p className="text-xs text-white/45">
-            © {new Date().getFullYear()} AutoClipr.ai · All rights reserved.
+            © {new Date().getFullYear()} AutoClipr · All rights reserved.
             <span className="sr-only"> Operated by Kishan Kumar Maurya.</span>
           </p>
           <div className="flex gap-5">

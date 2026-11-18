@@ -139,7 +139,7 @@ function InstagramMockup() {
         </div>
         {/* bottom info */}
         <div className="absolute bottom-3 left-3 right-10">
-          <p className="text-[10px] font-semibold text-white mb-0.5">autoclipr.ai</p>
+          <p className="text-[10px] font-semibold text-white mb-0.5">autoclipr.com</p>
           <p className="text-[9px] text-white/60 leading-tight">Turn videos into viral reels instantly ✨ #reels #creator</p>
           <div className="mt-1.5 flex items-center gap-1">
             <div className="h-3 w-3 rounded-full bg-gradient-to-br from-pink-500 to-orange-400" />

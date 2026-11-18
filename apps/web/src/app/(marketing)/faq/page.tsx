@@ -6,7 +6,7 @@ import { CTA } from "@/components/landing/cta";
 export const metadata: Metadata = pageMetadata({
   title: "FAQ — Frequently Asked Questions",
   description:
-    "Everything you need to know about AutoClipr.ai — pricing, platforms, credits, privacy, and how it works.",
+    "Everything you need to know about AutoClipr — pricing, platforms, credits, privacy, and how it works.",
   path: "/faq",
 });
 
