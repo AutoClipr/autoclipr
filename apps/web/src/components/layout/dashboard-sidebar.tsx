@@ -21,16 +21,33 @@ import { LogoIcon } from "@/components/ui/logo-icon";
 import { useState } from "react";
 import { hasSchedulerAccess } from "@/lib/scheduler";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/create", label: "Create", icon: Sparkles, highlight: true },
-  { href: "/channels", label: "Channels", icon: Youtube },
-  { href: "/clips", label: "Clips", icon: Film },
-  { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/dashboard/affiliate", label: "Refer a friend", icon: Gift },
-  { href: "/settings", label: "Settings", icon: Settings },
+type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; paid?: boolean };
+
+const sections: { title: string; items: NavItem[] }[] = [
+  {
+    title: "Create",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/create", label: "Create", icon: Sparkles },
+      { href: "/channels", label: "Channels", icon: Youtube },
+      { href: "/clips", label: "Clips", icon: Film },
+    ],
+  },
+  {
+    title: "Post",
+    items: [
+      { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { href: "/subscription", label: "Subscription", icon: CreditCard },
+      { href: "/dashboard/affiliate", label: "Refer a friend", icon: Gift },
+      { href: "/settings", label: "Settings", icon: Settings },
+    ],
+  },
 ];
 
 export function DashboardSidebar({ credits, plan = "starter" }: { credits: number; plan?: string }) {
@@ -102,46 +119,43 @@ export function DashboardSidebar({ credits, plan = "starter" }: { credits: numbe
           </Link>
         </div>
 
-        <nav className="mt-6 flex-1 space-y-1 px-3">
-          {nav.map((item) => {
-            const hrefBase = item.href.split("?")[0];
-            const active =
-              pathname === hrefBase ||
-              (hrefBase === "/create" && pathname === "/upload") ||
-              (item.href === "/channels" && pathname.startsWith("/channels"));
-            const Icon = item.icon;
-            const isHighlight = "highlight" in item && item.highlight;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
-                  active
-                    ? hrefBase === "/create"
-                      ? "create-nav-active"
-                      : "bg-gradient-brand text-white shadow-glow"
-                    : isHighlight
-                      ? "border border-emerald-500/25 bg-emerald-500/10 text-foreground hover:bg-emerald-500/15"
-                      : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "h-4 w-4",
-                    !active && (isHighlight ? "group-hover:text-emerald-400" : "group-hover:text-violet-400")
-                  )}
-                />
-                {item.label}
-                {"paid" in item && item.paid && !hasSchedulerAccess(plan) && (
-                  <span className="ml-auto rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
-                    Pro
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="mt-5 flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+          {sections.map((section) => (
+            <div key={section.title}>
+              <p className="mb-1.5 px-3 text-xs font-medium text-white/40">{section.title}</p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const active =
+                    pathname === item.href ||
+                    (item.href === "/create" && pathname === "/upload") ||
+                    (item.href === "/channels" && pathname.startsWith("/channels"));
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-white/[0.08] text-white"
+                          : "text-white/75 hover:bg-white/[0.04] hover:text-white",
+                      )}
+                    >
+                      <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                      {item.label}
+                      {item.paid && !hasSchedulerAccess(plan) && (
+                        <span className="ml-auto rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                          Pro
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-white/[0.06] p-4">
