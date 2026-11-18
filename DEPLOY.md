@@ -100,7 +100,7 @@ Root Directory: `apps/api` · Builder: **Dockerfile**
 | `API_HOST` | `0.0.0.0` | `0.0.0.0` |
 | `API_PORT` | `8080` | *(optional — Railway sets `PORT`)* |
 | `API_PUBLIC_URL` | `http://localhost:8080` | `https://api.autoclipr.com` |
-| `ALLOWED_ORIGINS` | `http://localhost:3000,https://autoclipr.ai,https://autoclipr.io,https://autoclipr.com` | add `https://www.autoclipr.com` + your `*.vercel.app` URL |
+| `ALLOWED_ORIGINS` | `http://localhost:3000,https://autoclipr.com` | add `https://www.autoclipr.com` + your `*.vercel.app` URL |
 | `SUPABASE_URL` | `https://mkwbdscwxpisrazqegtw.supabase.co` | same |
 | `SUPABASE_ANON_KEY` | *(publishable key — local `.env` only)* | same |
 | `SUPABASE_SERVICE_ROLE_KEY` | **secret** — local `.env` only | same (never expose to web) |

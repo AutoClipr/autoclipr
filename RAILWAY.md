@@ -19,7 +19,7 @@ Web on **Vercel** (`apps/web`) — see [DEPLOY.md](./DEPLOY.md).
 | Whisper | `whisper-1` |
 | Queue | `clip_processing` |
 | Buckets | `videos`, `clips`, `exports` |
-| Domains (CORS) | `autoclipr.com`, `autoclipr.ai`, `autoclipr.io` |
+| Domains (CORS) | `autoclipr.com`, `www.autoclipr.com` |
 
 Paste **secrets** from your local `.env` into Railway — do not commit them.
 
@@ -80,7 +80,7 @@ API_HOST=0.0.0.0
 API_PUBLIC_URL=https://autoclipr-api-production.up.railway.app
 # ⬇ Where users land after YouTube OAuth (must match Vercel domain):
 WEB_APP_URL=https://autoclipr.com
-ALLOWED_ORIGINS=https://autoclipr.com,https://www.autoclipr.com,https://autoclipr.ai,https://autoclipr.io,https://YOUR-APP.vercel.app,http://localhost:3000
+ALLOWED_ORIGINS=https://autoclipr.com,https://www.autoclipr.com,https://YOUR-APP.vercel.app,http://localhost:3000
 
 SUPABASE_URL=https://mkwbdscwxpisrazqegtw.supabase.co
 SUPABASE_ANON_KEY=<paste from local .env — not GitHub>
