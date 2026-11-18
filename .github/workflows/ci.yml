@@ -12,6 +12,8 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
+  # Skip onnxruntime-node's CUDA binary download (unused, and it can 404).
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
 
 jobs:
   ci-web:
