@@ -66,15 +66,7 @@ export default async function AffiliatePage() {
 
   if (!res.success || !res.data) {
     // No affiliate account yet — show apply form
-    return (
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold sm:text-3xl">Affiliate Program</h1>
-          <p className="text-muted-foreground mt-1">Earn 30–40% recurring commission for every creator you refer.</p>
-        </div>
-        <AffiliateApply token={token} />
-      </div>
-    );
+    return <AffiliateApply token={token} />;
   }
 
   return <AffiliateDashboard data={res.data} token={token} />;
