@@ -37,6 +37,35 @@ type PhoneStep = "enter" | "verify";
 
 const OTP_EXPIRY_SECONDS = 60;
 
+/** Remembers how this browser last signed in, for the "Last used" badge. */
+type AuthMethod = "google" | "email";
+const LAST_AUTH_KEY = "autoclipr:last-auth-method";
+
+function readLastAuthMethod(): AuthMethod | null {
+  try {
+    const v = window.localStorage.getItem(LAST_AUTH_KEY);
+    return v === "google" || v === "email" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLastAuthMethod(method: AuthMethod) {
+  try {
+    window.localStorage.setItem(LAST_AUTH_KEY, method);
+  } catch {
+    // Storage blocked (private mode): the badge is just a convenience.
+  }
+}
+
+function LastUsedBadge() {
+  return (
+    <span className="pointer-events-none absolute -top-2.5 right-4 z-10 rounded-md border border-lime-400/30 bg-lime-950/90 px-2 py-0.5 text-[11px] font-semibold text-lime-300 shadow-sm">
+      Last used
+    </span>
+  );
+}
+
 function formatOtpCountdown(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -97,6 +126,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [emailSent, setEmailSent] = useState<string | null>(null); // holds the email address after verification sent
   const [otpSecondsLeft, setOtpSecondsLeft] = useState(0);
   const [otpTimerKey, setOtpTimerKey] = useState(0);
+  // Read after mount so server and client render the same markup.
+  const [lastMethod, setLastMethod] = useState<AuthMethod | null>(null);
+
+  useEffect(() => {
+    setLastMethod(readLastAuthMethod());
+  }, []);
 
   const passwordValid =
     mode === "register" && isPasswordRegistrationValid(password, confirmPassword);
@@ -265,6 +300,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       return;
     }
 
+    saveLastAuthMethod("email");
     const session = result.data.session;
     if (session?.access_token) {
       await finishAuth(session.access_token, {
@@ -327,6 +363,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   async function handleGoogle() {
     setLoading(true);
     setError(null);
+    saveLastAuthMethod("google");
     const supabase = createClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -400,16 +437,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="mb-4 h-12 w-full rounded-full border-white/15 bg-white/[0.06] text-[15px] font-semibold text-white hover:border-white/25 hover:bg-white/[0.1]"
-          onClick={handleGoogle}
-          disabled={loading}
-        >
-          <GoogleIcon />
-          Continue with Google
-        </Button>
+        <div className="relative mb-4">
+          {lastMethod === "google" && <LastUsedBadge />}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12 w-full rounded-full border-white/15 bg-white/[0.06] text-[15px] font-semibold text-white hover:border-white/25 hover:bg-white/[0.1]"
+            onClick={handleGoogle}
+            disabled={loading}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </Button>
+        </div>
 
         <div className="my-2 flex items-center gap-3 text-xs text-white/40">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/15" />
@@ -516,13 +556,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
             )}
             {error && <AuthMessage variant="error">{error}</AuthMessage>}
             {info && <AuthMessage variant="info">{info}</AuthMessage>}
-            <Button type="submit" className={AUTH_SUBMIT} disabled={loading}>
-              {loading
-                ? "Please wait…"
-                : mode === "login"
-                  ? "Sign in"
-                  : "Create account"}
-            </Button>
+            <div className="relative">
+              {lastMethod === "email" && <LastUsedBadge />}
+              <Button type="submit" className={AUTH_SUBMIT} disabled={loading}>
+                {loading
+                  ? "Please wait…"
+                  : mode === "login"
+                    ? "Sign in"
+                    : "Create account"}
+              </Button>
+            </div>
           </form>
         ) : phoneStep === "enter" ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
