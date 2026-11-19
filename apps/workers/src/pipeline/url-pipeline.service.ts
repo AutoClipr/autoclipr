@@ -1,3 +1,4 @@
+import { toUserMessage } from './user-error.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService, NR_EVENTS } from '@autoclipr/monitoring';
@@ -340,7 +341,8 @@ export class UrlPipelineService {
     }
     if (!jobId) return;
 
-    const message = err instanceof Error ? err.message : 'Unknown error';
+    // Users see a friendly message; the full detail is logged by the job processor.
+    const message = toUserMessage(err);
     await this.db.client.query(
       `UPDATE processing_jobs SET result = $1::jsonb WHERE id = $2`,
       [

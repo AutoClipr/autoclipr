@@ -1,3 +1,4 @@
+import { withUserMessage } from './user-error.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createReadStream } from 'fs';
@@ -112,11 +113,14 @@ export class WhisperService {
       return this.fallbackTranscript(durationSeconds, reason);
     }
 
-    throw formatOpenAiError(
+    const failure = formatOpenAiError(
       'OpenAI Whisper',
       lastErr,
       audioTooLarge ? 'Audio exceeds Whisper 25 MB limit — use a shorter source video.' : undefined,
     );
+    throw audioTooLarge
+      ? withUserMessage(failure, 'This video is too long to transcribe. Try a shorter video or trim it first.')
+      : failure;
   }
 
   private fallbackTranscript(durationSeconds: number, reason: string): TranscriptResult {

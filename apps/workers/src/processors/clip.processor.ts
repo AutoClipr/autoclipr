@@ -1,3 +1,4 @@
+import { toUserMessage } from '../pipeline/user-error.util';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -211,7 +212,7 @@ export class ClipProcessor extends WorkerHost {
       if (jobId) {
         await this.db.client.query(
           `UPDATE processing_jobs SET status = 'failed', error_message = $1, completed_at = NOW() WHERE id = $2`,
-          [message, jobId],
+          [toUserMessage(err), jobId],
         );
       }
       if (videoId) {

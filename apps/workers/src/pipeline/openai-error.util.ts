@@ -1,4 +1,5 @@
 import { APIConnectionError, APIError } from 'openai';
+import { BUSY_USER_ERROR, GENERIC_USER_ERROR, withUserMessage } from './user-error.util';
 
 const OPENAI_HINT =
   'Verify OPENAI_API_KEY in .env, add billing at https://platform.openai.com/account/billing, and ensure api.openai.com is reachable (no firewall/VPN blocking).';
@@ -45,26 +46,26 @@ export function formatOpenAiError(
   const hint = extraHint ? `${extraHint} ${OPENAI_HINT}` : OPENAI_HINT;
 
   if (base === 'Connection error.' || err instanceof APIConnectionError) {
-    return new Error(`${service}: cannot reach OpenAI API. ${hint}`);
+    return withUserMessage(new Error(`${service}: cannot reach OpenAI API. ${hint}`), GENERIC_USER_ERROR);
   }
 
   if (err instanceof APIError) {
     if (err.status === 401) {
-      return new Error(`${service}: invalid OPENAI_API_KEY. ${OPENAI_HINT}`);
+      return withUserMessage(new Error(`${service}: invalid OPENAI_API_KEY. ${OPENAI_HINT}`), GENERIC_USER_ERROR);
     }
     if (isQuotaOrBillingError(err)) {
-      return new Error(
+      return withUserMessage(new Error(
         `${service}: no OpenAI credits or billing not active. Add payment at https://platform.openai.com/account/billing (minimum ~$5). Free-tier keys cannot use Whisper.`,
-      );
+      ), GENERIC_USER_ERROR);
     }
     if (err.status === 429) {
-      return new Error(
+      return withUserMessage(new Error(
         `${service}: rate limited (too many requests). Wait 1–2 minutes and retry. ${OPENAI_HINT}`,
-      );
+      ), BUSY_USER_ERROR);
     }
   }
 
-  return new Error(`${service} failed: ${base}. ${hint}`);
+  return withUserMessage(new Error(`${service} failed: ${base}. ${hint}`), GENERIC_USER_ERROR);
 }
 
 export function sleep(ms: number): Promise<void> {
