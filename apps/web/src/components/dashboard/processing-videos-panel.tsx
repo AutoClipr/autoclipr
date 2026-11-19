@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Loader2, Sparkles, Trash2 } from "lucide-react";
@@ -55,6 +55,14 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
   const [pipelines, setPipelines] = useState<Record<string, VideoPipeline>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Clip counts already seen, so the page refreshes only when new clips land.
+  const seenClips = useRef<Record<string, number>>({});
+
+  // The server re-sends the list after each refresh: follow it, so finished
+  // videos leave the panel instead of polling forever.
+  useEffect(() => {
+    setVideos(initialVideos);
+  }, [initialVideos]);
 
   const pollAll = useCallback(async () => {
     const token = await getAccessToken();
@@ -91,9 +99,17 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
         return next;
       });
 
+      if (data.status === "ready") {
+        // Done: drop it from the panel and show its clips.
+        setVideos((prev) => prev.filter((v) => v.id !== video.id));
+        shouldRefresh = true;
+        continue;
+      }
+
       setPipelines((prev) => ({ ...prev, [video.id]: data }));
 
-      if (data.status === "ready" || data.progress_percent >= 100 || data.clips_created > 0) {
+      if (data.clips_created > (seenClips.current[video.id] ?? 0)) {
+        seenClips.current[video.id] = data.clips_created;
         shouldRefresh = true;
       }
     }

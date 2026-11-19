@@ -15,6 +15,11 @@ export function formatPipelineError(raw?: string | null): string {
     );
   }
 
+  // Internal detail (keys, config, vendor billing, infra) is never shown to users.
+  if (/api[_ ]?key|\.env\b|OPENAI|openai\.com|billing|quota|SUPABASE|DATABASE_URL|REDIS|ECONN|ETIMEDOUT|ENOTFOUND/i.test(raw)) {
+    return "Something went wrong on our side while processing this video. Please try again in a few minutes — if it keeps happening, contact support.";
+  }
+
   if (/caption burn skipped|without burned captions/i.test(raw)) {
     return raw;
   }
