@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Gift, RotateCcw, Search, X } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Download, Gift, RotateCcw, Search, X } from "lucide-react";
 import type { CreditKind, CreditUsageRow } from "@/lib/credit-usage";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ function fmtDate(d: string) {
 }
 
 /** Credit usage history: filters, search, date range, sort, paging and a details view. */
-export function CreditUsageTable({ rows }: { rows: CreditUsageRow[] }) {
+export function CreditUsageTable({ rows, exportable = false }: { rows: CreditUsageRow[]; exportable?: boolean }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState("");
@@ -68,6 +68,28 @@ export function CreditUsageTable({ rows }: { rows: CreditUsageRow[] }) {
   const current = Math.min(page, totalPages);
   const visible = filtered.slice((current - 1) * size, current * size);
   const hasFilters = filter !== "all" || query || from || to;
+
+  /** CSV of the transactions matching the current filters (only this user's rows are loaded). */
+  function exportCsv() {
+    const header = ["Transaction ID", "Timestamp", "Activity", "Description", "Type", "Credits", "Balance after", "Reference ID"];
+    const lines = filtered.map((r) => [
+      r.id,
+      r.created_at,
+      r.activity,
+      r.detail,
+      KIND_META[r.kind].label,
+      r.amount,
+      r.balance_after ?? "",
+      r.reference_id ?? "",
+    ]);
+    const csv = [header, ...lines].map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "autoclipr-credit-activity.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const totals = useMemo(() => {
     let used = 0;
@@ -154,6 +176,15 @@ export function CreditUsageTable({ rows }: { rows: CreditUsageRow[] }) {
               >
                 {newestFirst ? "Newest first" : "Oldest first"}
               </button>
+              {exportable && filtered.length > 0 && (
+                <button
+                  type="button"
+                  onClick={exportCsv}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#253244] px-3 text-xs font-medium text-[#cbd5e1] hover:bg-white/[0.04]"
+                >
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </button>
+              )}
               {hasFilters && (
                 <button
                   type="button"
@@ -278,7 +309,7 @@ function TransactionDetails({ row, onClose }: { row: CreditUsageRow; onClose: ()
     ["Credits", <span key="c" className={row.amount < 0 ? "" : "text-[#86efac]"}>{row.amount > 0 ? `+${row.amount}` : row.amount}</span>],
   ];
   if (row.balance_after != null) items.push(["Balance after", row.balance_after.toLocaleString()]);
-  items.push(["Transaction ID", <span key="id" className="break-all font-mono text-xs">{row.id}</span>]);
+  items.push(["Transaction ID", <CopyId key="id" id={row.id} />]);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070B12]/80 p-4 backdrop-blur-sm" onClick={onClose} role="presentation">
@@ -324,5 +355,27 @@ function TransactionDetails({ row, onClose }: { row: CreditUsageRow; onClose: ()
         )}
       </div>
     </div>
+  );
+}
+
+function CopyId({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="break-all font-mono text-xs">{id}</span>
+      <button
+        type="button"
+        aria-label="Copy transaction ID"
+        onClick={() =>
+          navigator.clipboard.writeText(id).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          })
+        }
+        className="shrink-0 rounded p-1 text-[#94A3B8] hover:bg-white/[0.06] hover:text-white"
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-[#86efac]" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    </span>
   );
 }
