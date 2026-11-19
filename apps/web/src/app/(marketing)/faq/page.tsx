@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { FAQ } from "@/components/landing/faq";
 import { CTA } from "@/components/landing/cta";
+import { FaqPageJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMetadata({
   title: "FAQ — Frequently Asked Questions",
@@ -13,6 +14,7 @@ export const metadata: Metadata = pageMetadata({
 export default function FAQPage() {
   return (
     <>
+      <FaqPageJsonLd />
       <div className="relative isolate overflow-hidden pt-16">
         {/* Glow + faint grid */}
         <div className="pointer-events-none absolute inset-0 -z-10">

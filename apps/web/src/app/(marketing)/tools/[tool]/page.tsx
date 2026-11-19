@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (LIVE_TOOLS[tool]) return {};
   const name = tool.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   return {
-    title: `${name} — Coming Soon | AutoClipr`,
+    title: `${name} — Coming Soon`,
     description: `${name} is coming soon to AutoClipr. Check back shortly.`,
     // noindex: catch-all "coming soon" pages are thin content — don't index them
     robots: PRIVATE_ROBOTS,

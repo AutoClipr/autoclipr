@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
 import { AffiliateDashboard, AffiliateApply } from "./client";
 
-export const metadata: Metadata = { title: "Affiliate Dashboard — AutoClipr" };
+export const metadata: Metadata = { title: "Refer & earn" };
 
 export type AffiliateStats = {
   total_clicks: number;

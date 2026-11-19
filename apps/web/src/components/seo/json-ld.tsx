@@ -1,7 +1,7 @@
 import type { BlogPost } from "@/lib/blog-posts";
 import { MARKETING_FAQS } from "@/lib/faqs";
 import type { LandingPage } from "@/lib/landing-pages";
-import { DEFAULT_DESCRIPTION, OG_IMAGE_PATH, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { DEFAULT_DESCRIPTION, OG_IMAGE_PATH, SITE_NAME, SITE_URL, SOCIAL_PROFILES } from "@/lib/seo";
 
 type JsonLdProps = {
   data: Record<string, unknown> | Record<string, unknown>[];
@@ -28,6 +28,7 @@ export function HomePageJsonLd() {
     url: SITE_URL,
     logo: `${SITE_URL}/icon-192`,
     description: DEFAULT_DESCRIPTION,
+    sameAs: SOCIAL_PROFILES,
   };
 
   const website = {
@@ -36,11 +37,7 @@ export function HomePageJsonLd() {
     name: SITE_NAME,
     url: SITE_URL,
     description: DEFAULT_DESCRIPTION,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE_URL}/create`,
-      "query-input": "required name=search_term_string",
-    },
+    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
   };
 
   const software = {
@@ -59,17 +56,23 @@ export function HomePageJsonLd() {
     },
   };
 
-  const faq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: MARKETING_FAQS.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: { "@type": "Answer", text: item.a },
-    })),
-  };
+  return <JsonLd data={[organization, website, software]} />;
+}
 
-  return <JsonLd data={[organization, website, software, faq]} />;
+export function FaqPageJsonLd() {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: MARKETING_FAQS.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      }}
+    />
+  );
 }
 
 export function LandingPageJsonLd({ page }: { page: LandingPage }) {

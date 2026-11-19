@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { PRIVATE_ROBOTS } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Tutorials — AutoClipr",
+  title: "Tutorials",
   robots: PRIVATE_ROBOTS,
 };
 

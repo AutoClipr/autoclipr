@@ -6,11 +6,20 @@ export const SITE_TAGLINE = "AI Video Clipping Platform";
 export const SITE_URL =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://autoclipr.com";
 
+/** Official profiles, used for Organization `sameAs` structured data. */
+export const SOCIAL_PROFILES = [
+  "https://x.com/autocliprai",
+  "https://www.instagram.com/autoclipr.ai/",
+  "https://youtube.com/@autoclipr",
+  "https://www.linkedin.com/in/autoclipr-ai/",
+  "https://www.reddit.com/user/autoClipr/",
+];
+
 export const OG_IMAGE_PATH = "/opengraph-image";
 export const OG_IMAGE_ALT = `${SITE_NAME} — Turn long videos into viral shorts with AI`;
 
 export const DEFAULT_DESCRIPTION =
-  "Turn long YouTube videos and podcasts into viral TikTok, Reels, and Shorts with AI. Auto captions, smart hooks, and one-click export for creators.";
+  "Turn long YouTube videos and podcasts into viral TikTok, Reels, and Shorts with AI. Auto captions, smart hooks, 9:16 reframing, and scheduled publishing for creators.";
 
 export const DEFAULT_KEYWORDS = [
   "AI video clipping",
@@ -21,6 +30,8 @@ export const DEFAULT_KEYWORDS = [
   "viral video clips",
   "AI captions",
   "video repurposing",
+  "schedule YouTube Shorts",
+  "AI clip maker",
   "content creator tools",
   "AutoClipr",
 ];
@@ -138,6 +149,7 @@ export const PRIVATE_ROBOTS: Metadata["robots"] = {
 
 import { BLOG_POSTS } from "./blog-posts";
 import { LANDING_PAGES } from "./landing-pages";
+import { TOP_CREATOR_SLUGS } from "./top-creators";
 
 /** Public marketing routes included in sitemap.xml */
 export const SITEMAP_ROUTES = [
@@ -161,7 +173,6 @@ export const SITEMAP_ROUTES = [
   { path: "/success-stories",               changeFrequency: "monthly" as const, priority: 0.7  },
   { path: "/top-creators",                  changeFrequency: "weekly"  as const, priority: 0.7  },
   { path: "/faq",                           changeFrequency: "monthly" as const, priority: 0.65 },
-  { path: "/tutorials",                     changeFrequency: "monthly" as const, priority: 0.7  },
   { path: "/coaching",                      changeFrequency: "monthly" as const, priority: 0.7  },
   { path: "/contact",                       changeFrequency: "monthly" as const, priority: 0.5  },
   { path: "/feedback",                      changeFrequency: "monthly" as const, priority: 0.5  },
@@ -177,5 +188,11 @@ export const SITEMAP_ROUTES = [
     path: `/blog/${p.slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.7,
+    lastModified: p.publishedAt,
+  })),
+  ...TOP_CREATOR_SLUGS.map((slug) => ({
+    path: `/top-creators/${slug}`,
+    changeFrequency: "daily" as const,
+    priority: 0.6,
   })),
 ];

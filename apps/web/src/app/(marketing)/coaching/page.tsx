@@ -5,7 +5,7 @@ import { ArrowRight, CalendarCheck, LineChart, MessageCircle, Sparkles } from "l
 import { MarketingHero } from "@/components/marketing/marketing-hero";
 
 export const metadata: Metadata = pageMetadata({
-  title: "1-on-1 Creator Coaching — Grow Faster with AutoClipr",
+  title: "1-on-1 Creator Coaching — Grow Your Channel Faster",
   description:
     "Get personalised 1-on-1 coaching to grow your YouTube, TikTok, and Reels channels faster. Expert guidance on short-form content strategy, editing, and monetisation. Coming soon.",
   path: "/coaching",

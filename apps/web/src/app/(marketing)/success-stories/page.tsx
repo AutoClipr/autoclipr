@@ -11,7 +11,7 @@ import {
 } from "./client";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Success Stories — Real Creator Results with AutoClipr",
+  title: "Success Stories — Real Creator Results",
   description:
     "Real results from creators using AutoClipr to turn long-form YouTube videos into viral TikToks, Reels, and Shorts. See subscriber growth, views, and earnings.",
   path: "/success-stories",

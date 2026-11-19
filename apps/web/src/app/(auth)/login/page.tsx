@@ -4,7 +4,7 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PRIVATE_ROBOTS } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Log in — AutoClipr", robots: PRIVATE_ROBOTS };
+export const metadata: Metadata = { title: "Log in", robots: PRIVATE_ROBOTS };
 
 export default function LoginPage() {
   return (

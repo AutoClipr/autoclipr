@@ -5,15 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Video, Calendar, BadgeCheck, TrendingUp, Eye, Users, DollarSign } from "lucide-react";
 import { searchChannel, getTopVideos, formatCount, estimateMonthlyEarnings } from "@/lib/youtube-api";
 import { ChannelCharts } from "./channel-charts";
+import { CREATOR_RANKS } from "@/lib/top-creators";
 
-// Rank lookup — ordered list matches CREATORS_META
-const CREATOR_RANKS: Record<string, number> = {
-  "mrbeast": 1, "t-series": 2, "cocomelon": 3, "set india": 4,
-  "vlad and niki": 5, "stokes twins": 6, "kids diana show": 7, "like nastya": 8,
-  "zee music company": 9, "5-minute crafts": 10, "blackpink": 11, "justin bieber": 12,
-  "mark rober": 13, "dude perfect": 14, "nicki minaj": 15, "shakira": 16,
-  "abp news": 17, "beatboxjcop": 18, "toys and colors": 19, "alan's universe": 20,
-};
 
 type Props = { params: Promise<{ channel: string }> };
 
