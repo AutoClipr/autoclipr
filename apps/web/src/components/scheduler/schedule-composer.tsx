@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Check, Film, Instagram, Loader2, Upload, X, Youtube } from "lucide-react";
+import { ArrowRight, Check, Film, Instagram, Loader2, Pencil, RotateCcw, Search, Upload, X, Youtube } from "lucide-react";
 import { getAccessToken } from "@/lib/auth-token";
 import { apiFetch, type Clip, type PlatformConnection } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,15 @@ import {
 } from "@/lib/scheduler";
 
 const STEPS = ["Media", "Accounts", "Content", "Schedule", "Review"] as const;
+const STEP_HEADINGS: [string, string][] = [
+  ["Choose your video", "Pick a clip from your library or upload your own."],
+  ["Where do you want to publish?", "Choose one or more connected accounts."],
+  ["Customize your post", "Write the title, caption and hashtags."],
+  ["Choose when to publish", "Pick a date, time and timezone."],
+  ["Review your post", "Check everything before it goes on the calendar."],
+];
+/** Platform limits shown as counters. */
+const LIMITS = { title: 100, caption: 2200, description: 5000 };
 const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 const ACCEPT = "video/mp4,video/quicktime,video/webm,video/x-m4v";
 
@@ -84,6 +93,11 @@ export function ScheduleComposer({
   const [upload, setUpload] = useState<{ progress: number; error: string | null } | null>(null);
   const [saving, setSaving] = useState<"draft" | "scheduled" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const closeRef = useRef<() => void>(() => {});
 
   // Reset whenever the composer opens.
   useEffect(() => {
@@ -91,6 +105,8 @@ export function ScheduleComposer({
     setError(null);
     setUpload(null);
     setSaving(null);
+    setQuery("");
+    setConfirmClose(false);
     if (editing) {
       const tz = editing.timezone || tz0;
       const when = editing.scheduled_at ? utcToZoned(editing.scheduled_at, tz) : null;
@@ -150,7 +166,7 @@ export function ScheduleComposer({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !saving && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeRef.current();
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -164,13 +180,15 @@ export function ScheduleComposer({
     () =>
       SCHEDULER_PLATFORMS.map((p) => {
         const conn = connections?.find((c) => c.platform === p.id);
-        return { ...p, ready: !!conn && conn.auth_status === "authorized" && conn.has_tokens !== false, name: conn?.account_name };
+        const ready = !!conn && conn.auth_status === "authorized" && conn.has_tokens !== false;
+        return { ...p, ready, reconnect: !!conn && !ready, name: conn?.account_name };
       }),
     [connections],
   );
 
   async function handleFile(file: File) {
     setError(null);
+    setLastFile(file);
     if (!file.type.startsWith("video/")) return setUpload({ progress: 0, error: "Choose a video file (MP4, MOV, WebM)." });
     if (file.size > MAX_UPLOAD_BYTES) return setUpload({ progress: 0, error: "That file is over 500 MB." });
     let meta: { duration: number; width: number; height: number };
@@ -220,6 +238,12 @@ export function ScheduleComposer({
   }
 
   const scheduledIso = date && time ? zonedToUtcIso(date, time, timeZone) : null;
+  const filteredClips = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (clips ?? []).filter((c) => !q || c.title.toLowerCase().includes(q));
+  }, [clips, query]);
+  // Today in the chosen timezone, so the date picker can't go into the past.
+  const minDate = utcToZoned(new Date().toISOString(), timeZone).date;
 
   function stepError(s: number): string | null {
     if (s === 0 && !media) return "Choose a clip or upload a video.";
@@ -277,29 +301,38 @@ export function ScheduleComposer({
     onClose();
   }
 
+  // Anything the user has entered that closing would throw away.
+  const dirty = !!media || selected.length > 0 || !!caption || !!title || !!hashtags || !!description;
+  function requestClose() {
+    if (saving) return;
+    if (dirty && !confirmClose) return setConfirmClose(true);
+    onClose();
+  }
+  closeRef.current = requestClose;
+
   if (!open) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-6"
-      onMouseDown={(e) => e.target === e.currentTarget && !saving && onClose()}
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-[#070B12]/80 backdrop-blur-sm sm:items-center sm:p-6"
+      onMouseDown={(e) => e.target === e.currentTarget && requestClose()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="composer-title"
     >
-      <div className="relative my-4 flex w-full max-w-2xl flex-col rounded-3xl border border-white/10 bg-[#0b0f14] shadow-2xl">
+      <div className="relative flex w-full max-w-2xl flex-col border-[#253244] bg-[#101824] shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)] max-sm:min-h-full sm:my-4 sm:rounded-2xl sm:border">
         {/* Header + stepper */}
-        <div className="border-b border-white/[0.06] px-5 pb-4 pt-5 sm:px-6">
+        <div className="border-b border-[#253244] px-5 pb-4 pt-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
-            <h2 id="composer-title" className="text-xl font-bold text-white">
+            <h2 id="composer-title" className="text-xl font-semibold text-[#F8FAFC]">
               {editing ? "Edit post" : "Schedule a post"}
             </h2>
             <button
               type="button"
               aria-label="Close"
               disabled={!!saving}
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-white/50 hover:bg-white/[0.08] hover:text-white"
+              onClick={requestClose}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-white/[0.06] hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -312,7 +345,11 @@ export function ScheduleComposer({
                   onClick={() => (i < step || !stepError(Math.max(0, i - 1)) ? setStep(i) : undefined)}
                   className={cn(
                     "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                    i === step ? "bg-white text-black" : i < step ? "bg-emerald-500/15 text-emerald-200" : "bg-white/[0.05] text-white/50",
+                    i === step
+                      ? "bg-[#54D045] text-[#070B12]"
+                      : i < step
+                        ? "bg-[#54D045]/10 text-[#a6ec9c]"
+                        : "bg-[#0A111B] text-[#64748B]",
                   )}
                 >
                   {i < step ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
@@ -323,21 +360,39 @@ export function ScheduleComposer({
           </ol>
         </div>
 
-        <div className="min-h-[18rem] px-5 py-5 sm:px-6">
+        <div className="min-h-[18rem] flex-1 px-5 py-5 sm:px-6">
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-[#F8FAFC]">{STEP_HEADINGS[step][0]}</h3>
+            <p className="mt-0.5 text-sm text-[#94A3B8]">{STEP_HEADINGS[step][1]}</p>
+          </div>
           {/* Step 1 — media */}
           {step === 0 && (
             <div>
-              <div className="mb-4 inline-flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-lg border border-[#253244] bg-[#0A111B] p-1">
                 {(["library", "upload"] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setMediaTab(t)}
-                    className={cn("rounded-full px-4 py-1.5 text-sm", mediaTab === t ? "bg-white font-semibold text-black" : "text-white/60")}
+                    className={cn("rounded-md px-4 py-1.5 text-sm", mediaTab === t ? "bg-[#19251F] font-semibold text-[#F8FAFC] shadow-[inset_0_0_0_1px_rgba(84,208,69,0.4)]" : "text-[#94A3B8]")}
                   >
                     {t === "library" ? "AutoClipr library" : "Upload video"}
                   </button>
                 ))}
+              </div>
+              {mediaTab === "library" && clips && clips.length > 0 && (
+                <label className="relative min-w-[160px] flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#64748B]" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search clips"
+                    aria-label="Search clips"
+                    className={cn(inputCls, "h-9 py-0 pl-8")}
+                  />
+                </label>
+              )}
               </div>
 
               {mediaTab === "library" ? (
@@ -349,7 +404,10 @@ export function ScheduleComposer({
                   </p>
                 ) : (
                   <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
-                    {clips.map((c) => {
+                    {filteredClips.length === 0 && (
+                      <p className="col-span-full py-8 text-center text-sm text-[#94A3B8]">No clips match &ldquo;{query}&rdquo;.</p>
+                    )}
+                    {filteredClips.map((c) => {
                       const active = media?.kind === "clip" && media.clipId === c.id;
                       return (
                         <button
@@ -358,12 +416,12 @@ export function ScheduleComposer({
                           onClick={() => setMedia({ kind: "clip", clipId: c.id, title: c.title, thumbnail: c.thumbnail_url ?? null, duration: c.duration_seconds ?? null })}
                           className={cn(
                             "group relative aspect-[9/16] overflow-hidden rounded-xl border bg-black text-left",
-                            active ? "border-emerald-400 ring-2 ring-emerald-400/50" : "border-white/10 hover:border-white/30",
+                            active ? "border-[#54D045] ring-2 ring-[#54D045]/40" : "border-[#253244] hover:border-[#35445a]",
                           )}
                         >
                           {c.thumbnail_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={c.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                            <img src={c.thumbnail_url} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                           ) : (
                             <Film className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-white/30" />
                           )}
@@ -372,7 +430,7 @@ export function ScheduleComposer({
                             {c.duration_seconds ? <span className="text-white/60">{Math.round(c.duration_seconds)}s</span> : null}
                           </span>
                           {active && (
-                            <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-black">
+                            <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#54D045] text-[#070B12]">
                               <Check className="h-3 w-3" />
                             </span>
                           )}
@@ -399,7 +457,23 @@ export function ScheduleComposer({
                       </div>
                     </div>
                   ) : (
-                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center transition-colors hover:border-white/30">
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragging(true);
+                      }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragging(false);
+                        const f = e.dataTransfer.files[0];
+                        if (f && !(upload && !upload.error)) handleFile(f);
+                      }}
+                      className={cn(
+                        "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors",
+                        dragging ? "border-[#54D045]/70 bg-[#54D045]/[0.06]" : "border-[#253244] bg-[#0A111B] hover:border-[#54D045]/40",
+                      )}
+                    >
                       <input
                         type="file"
                         accept={ACCEPT}
@@ -409,20 +483,36 @@ export function ScheduleComposer({
                       />
                       {upload && !upload.error ? (
                         <>
-                          <Loader2 className="mb-3 h-6 w-6 animate-spin text-emerald-300" />
+                          <Loader2 className="mb-3 h-6 w-6 animate-spin text-[#54D045]" />
                           <p className="text-sm text-white">Uploading… {upload.progress}%</p>
                           <div className="mt-3 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
-                            <div className="h-full bg-emerald-400 transition-all" style={{ width: `${upload.progress}%` }} />
+                            <div className="h-full bg-[#54D045] transition-all" style={{ width: `${upload.progress}%` }} />
                           </div>
                         </>
                       ) : (
                         <>
                           <Upload className="mb-3 h-6 w-6 text-white/50" />
-                          <p className="font-medium text-white">Choose a video from your device</p>
+                          <p className="font-medium text-[#F8FAFC]">{dragging ? "Drop to upload" : "Drag & drop a video, or click to browse"}</p>
                           <p className="mt-1 text-xs text-white/45">MP4, MOV or WebM · up to 500 MB · 3 min max · vertical works best</p>
                         </>
                       )}
-                      {upload?.error && <p className="mt-3 text-sm text-rose-300">{upload.error}</p>}
+                      {upload?.error && (
+                        <span className="mt-3 flex flex-col items-center gap-2">
+                          <span className="text-sm text-[#fca5a5]">{upload.error}</span>
+                          {lastFile && upload.error.startsWith("Upload failed") && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleFile(lastFile);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#253244] px-3 py-1.5 text-xs text-[#F8FAFC] hover:bg-white/[0.04]"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" /> Retry upload
+                            </button>
+                          )}
+                        </span>
+                      )}
                     </label>
                   )}
                 </div>
@@ -444,29 +534,43 @@ export function ScheduleComposer({
                         key={p.id}
                         type="button"
                         disabled={!p.ready}
+                        aria-pressed={on}
                         onClick={() => setSelected((s) => (on ? s.filter((x) => x !== p.id) : [...s, p.id]))}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
-                          on ? "border-emerald-400/50 bg-emerald-500/[0.08]" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
+                          on ? "border-[#54D045]/50 bg-[#54D045]/[0.07]" : "border-[#253244] bg-[#0A111B] hover:border-[#35445a]",
                           !p.ready && "cursor-not-allowed opacity-50",
                         )}
                       >
                         <PlatformIcon platform={p.id} className="h-5 w-5" />
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-white">{p.label}</p>
-                          <p className="truncate text-xs text-white/45">{p.ready ? p.name || "Connected" : "Not connected or not authorized"}</p>
+                          <p className="truncate text-xs text-[#94A3B8]">{p.name || (p.ready ? "Connected" : "No account linked")}</p>
                         </div>
-                        <span className={cn("flex h-5 w-5 items-center justify-center rounded-md border", on ? "border-emerald-400 bg-emerald-400 text-black" : "border-white/20")}>
+                        <span
+                          className={cn(
+                            "rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
+                            p.ready
+                              ? "border-[#22C55E]/30 bg-[#22C55E]/10 text-[#86efac]"
+                              : p.reconnect
+                                ? "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-amber-200"
+                                : "border-[#253244] text-[#94A3B8]",
+                          )}
+                        >
+                          {p.ready ? "Connected" : p.reconnect ? "Reconnect required" : "Not connected"}
+                        </span>
+                        <span className={cn("flex h-5 w-5 items-center justify-center rounded-md border", on ? "border-[#54D045] bg-[#54D045] text-[#070B12]" : "border-[#475569]")}>
                           {on && <Check className="h-3.5 w-3.5" />}
                         </span>
                       </button>
                     );
                   })}
-                  {usable.some((p) => !p.ready) && (
-                    <p className="pt-1 text-xs text-white/45">
-                      Connect accounts in <Link href="/setup/platforms" className="text-emerald-300 hover:underline">Settings → Platforms</Link>. Facebook and TikTok publishing are coming later.
-                    </p>
-                  )}
+                  <p className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[#94A3B8]">
+                    <span>Scheduled publishing supports YouTube Shorts and Instagram Reels.</span>
+                    <Link href="/setup/platforms?from=dashboard" className="inline-flex items-center gap-1 font-medium text-[#8fe383] hover:underline">
+                      Manage connections <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </p>
                 </>
               )}
             </div>
@@ -476,21 +580,21 @@ export function ScheduleComposer({
           {step === 2 && (
             <div className="space-y-3">
               {selected.includes("youtube") && (
-                <Field label="YouTube title" hint={`${title.length}/100`}>
-                  <input value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} placeholder="Defaults to the first line of the caption" className={inputCls} />
+                <Field label="YouTube title" hint={<Counter n={title.length} max={LIMITS.title} />}>
+                  <input value={title} maxLength={LIMITS.title} onChange={(e) => setTitle(e.target.value)} placeholder="Defaults to the first line of the caption" className={inputCls} />
                 </Field>
               )}
-              <Field label="Caption" hint={`${caption.length}/2200`}>
-                <textarea value={caption} maxLength={2200} rows={4} onChange={(e) => setCaption(e.target.value)} placeholder="What's this video about?" className={cn(inputCls, "resize-none")} />
+              <Field label="Caption" hint={<Counter n={caption.length} max={LIMITS.caption} />}>
+                <textarea value={caption} maxLength={LIMITS.caption} rows={4} onChange={(e) => setCaption(e.target.value)} placeholder="What's this video about?" className={cn(inputCls, "resize-none")} />
               </Field>
               <Field label="Hashtags">
                 <input value={hashtags} maxLength={500} onChange={(e) => setHashtags(e.target.value)} placeholder="#shorts #creator" className={inputCls} />
               </Field>
-              <Field label="Description (optional)">
-                <textarea value={description} maxLength={5000} rows={2} onChange={(e) => setDescription(e.target.value)} placeholder="Extra text added after the caption" className={cn(inputCls, "resize-none")} />
+              <Field label="Description (optional)" hint={<Counter n={description.length} max={LIMITS.description} />}>
+                <textarea value={description} maxLength={LIMITS.description} rows={2} onChange={(e) => setDescription(e.target.value)} placeholder="Extra text added after the caption" className={cn(inputCls, "resize-none")} />
               </Field>
               {selected.length > 1 && (
-                <details className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                <details className="rounded-xl border border-[#253244] bg-[#0A111B] px-4 py-3">
                   <summary className="cursor-pointer text-sm text-white/70">Customize caption per platform</summary>
                   <div className="mt-3 space-y-3">
                     {selected.map((p) => (
@@ -516,7 +620,7 @@ export function ScheduleComposer({
             <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Date">
-                  <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={cn(inputCls, "[color-scheme:dark]")} />
+                  <input type="date" value={date} min={minDate} onChange={(e) => setDate(e.target.value)} className={cn(inputCls, "[color-scheme:dark]")} />
                 </Field>
                 <Field label="Time">
                   <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={cn(inputCls, "[color-scheme:dark]")} />
@@ -530,8 +634,21 @@ export function ScheduleComposer({
                 </select>
               </Field>
               {scheduledIso && (
-                <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/80">
-                  Publishes <span className="font-semibold text-white">{formatDateTime(scheduledIso, timeZone)}</span> ({timeZone})
+                <p
+                  className={cn(
+                    "rounded-xl border px-4 py-3 text-sm",
+                    new Date(scheduledIso).getTime() < Date.now() + 60_000
+                      ? "border-[#EF4444]/30 bg-[#EF4444]/[0.07] text-[#fca5a5]"
+                      : "border-[#54D045]/25 bg-[#54D045]/[0.06] text-[#cbd5e1]",
+                  )}
+                >
+                  {new Date(scheduledIso).getTime() < Date.now() + 60_000 ? (
+                    "That time has already passed — pick a later time."
+                  ) : (
+                    <>
+                      Publishes on <span className="font-semibold text-[#F8FAFC]">{formatDateTime(scheduledIso, timeZone)}</span> ({timeZone})
+                    </>
+                  )}
                 </p>
               )}
             </div>
@@ -539,49 +656,81 @@ export function ScheduleComposer({
 
           {/* Step 5 — review */}
           {step === 4 && (
-            <dl className="space-y-2.5 text-sm">
-              <Summary label="Video">{media ? (media.kind === "clip" ? media.title : media.name) : "—"}</Summary>
-              <Summary label="Accounts">
-                <span className="flex flex-wrap justify-end gap-1.5">
-                  {selected.length
-                    ? selected.map((p) => (
-                        <span key={p} className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">
-                          <PlatformIcon platform={p} className="h-3 w-3" /> {SCHEDULER_PLATFORMS.find((x) => x.id === p)?.short}
-                        </span>
-                      ))
-                    : "—"}
-                </span>
-              </Summary>
-              <Summary label="Caption"><span className="line-clamp-3">{caption || "—"}</span></Summary>
-              {hashtags && <Summary label="Hashtags">{hashtags}</Summary>}
-              <Summary label="Date & time">{scheduledIso ? formatDateTime(scheduledIso, timeZone) : "Not set"}</Summary>
-              <Summary label="Timezone">{timeZone}</Summary>
-            </dl>
+            <div className="space-y-3">
+              <div className="flex gap-3 rounded-xl border border-[#253244] bg-[#0A111B] p-3">
+                {media?.kind === "clip" && media.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={media.thumbnail} alt="" className="h-20 w-12 shrink-0 rounded-md object-cover" />
+                ) : (
+                  <span className="flex h-20 w-12 shrink-0 items-center justify-center rounded-md bg-black"><Film className="h-4 w-4 text-[#475569]" /></span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-[#94A3B8]">Media</p>
+                  <p className="truncate text-sm font-medium text-[#F8FAFC]">{media ? (media.kind === "clip" ? media.title : media.name) : "—"}</p>
+                  {media?.duration ? <p className="text-xs text-[#94A3B8]">{Math.round(media.duration)}s</p> : null}
+                </div>
+                <EditLink onClick={() => setStep(0)} />
+              </div>
+              <dl className="space-y-2 text-sm">
+                <Summary label="Accounts" onEdit={() => setStep(1)}>
+                  <span className="flex flex-wrap justify-end gap-1.5">
+                    {selected.length
+                      ? selected.map((p) => (
+                          <span key={p} className="inline-flex items-center gap-1 rounded-md bg-[#131D2B] px-2 py-0.5 text-xs">
+                            <PlatformIcon platform={p} className="h-3 w-3" /> {usable.find((x) => x.id === p)?.name || SCHEDULER_PLATFORMS.find((x) => x.id === p)?.short}
+                          </span>
+                        ))
+                      : "—"}
+                  </span>
+                </Summary>
+                {selected.includes("youtube") && <Summary label="Title" onEdit={() => setStep(2)}>{title || "First line of caption"}</Summary>}
+                <Summary label="Caption" onEdit={() => setStep(2)}><span className="line-clamp-3">{caption || "—"}</span></Summary>
+                {hashtags && <Summary label="Hashtags" onEdit={() => setStep(2)}>{hashtags}</Summary>}
+                {description && <Summary label="Description" onEdit={() => setStep(2)}><span className="line-clamp-2">{description}</span></Summary>}
+                <Summary label="Publishes" onEdit={() => setStep(3)}>
+                  {scheduledIso ? `${formatDateTime(scheduledIso, timeZone)} (${timeZone})` : "Not set"}
+                </Summary>
+              </dl>
+            </div>
+          )}
+
+          {confirmClose && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3 py-2 text-sm text-amber-100" role="alert">
+              <span>Discard this post? Your changes will be lost.</span>
+              <span className="flex gap-2">
+                <button type="button" onClick={() => setConfirmClose(false)} className="rounded-md px-2 py-1 text-xs text-[#F8FAFC] hover:bg-white/[0.06]">
+                  Keep editing
+                </button>
+                <button type="button" onClick={onClose} className="rounded-md bg-amber-300 px-2 py-1 text-xs font-semibold text-[#070B12]">
+                  Discard
+                </button>
+              </span>
+            </div>
           )}
 
           {error && (
-            <p className="mt-4 rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-3 py-2 text-sm text-rose-200">{error}</p>
+            <p className="mt-4 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/[0.08] px-3 py-2 text-sm text-[#fca5a5]" role="alert">{error}</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col-reverse gap-2 border-t border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-[#253244] bg-[#101824] px-5 py-4 sm:static sm:flex-row sm:items-center sm:justify-between sm:rounded-b-2xl sm:px-6">
           <button
             type="button"
             disabled={!!saving}
             onClick={() => save("draft")}
-            className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/[0.06]"
+            className="rounded-lg border border-[#253244] px-4 py-2 text-sm text-[#cbd5e1] transition-colors hover:bg-white/[0.04]"
           >
             {saving === "draft" ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Save as draft"}
           </button>
           <div className="flex gap-2">
             {step > 0 && (
-              <button type="button" onClick={() => setStep(step - 1)} className="flex-1 rounded-full border border-white/10 px-4 py-2 text-sm text-white/75 hover:bg-white/[0.06] sm:flex-none">
+              <button type="button" onClick={() => setStep(step - 1)} className="flex-1 rounded-lg border border-[#253244] px-4 py-2 text-sm text-[#cbd5e1] hover:bg-white/[0.04] sm:flex-none">
                 Back
               </button>
             )}
             {step < STEPS.length - 1 ? (
-              <button type="button" onClick={next} className="flex-1 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black hover:opacity-90 sm:flex-none">
+              <button type="button" onClick={next} className="flex-1 rounded-lg bg-[#F8FAFC] px-5 py-2 text-sm font-semibold text-[#070B12] hover:bg-white sm:flex-none">
                 Continue
               </button>
             ) : (
@@ -589,10 +738,10 @@ export function ScheduleComposer({
                 type="button"
                 disabled={!!saving}
                 onClick={() => save("scheduled")}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-[0_0_20px_-4px_rgba(255,255,255,0.55)] hover:opacity-90 sm:flex-none"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#54D045] px-5 py-2 text-sm font-semibold text-[#070B12] shadow-[0_10px_30px_-12px_rgba(84,208,69,0.7)] hover:bg-[#62dc53] disabled:opacity-60 sm:flex-none"
               >
                 {saving === "scheduled" && <Loader2 className="h-4 w-4 animate-spin" />}
-                Schedule post
+                {editing ? "Save changes" : "Schedule post"}
               </button>
             )}
           </div>
@@ -604,25 +753,43 @@ export function ScheduleComposer({
 }
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/25";
+  "w-full rounded-lg border border-[#253244] bg-[#0A111B] px-3 py-2 text-sm text-[#F8FAFC] placeholder:text-[#64748B] outline-none focus:border-[#54D045]/60";
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Counter({ n, max }: { n: number; max: number }) {
+  const left = max - n;
+  return (
+    <span className={cn("tabular-nums", left < 0 ? "text-[#fca5a5]" : left <= max * 0.1 ? "text-amber-200" : "text-[#64748B]")}>
+      {left.toLocaleString()} left
+    </span>
+  );
+}
+
+function EditLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="inline-flex h-7 shrink-0 items-center gap-1 self-start rounded-md px-2 text-xs text-[#8fe383] hover:bg-[#54D045]/10">
+      <Pencil className="h-3 w-3" /> Edit
+    </button>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 flex justify-between text-xs font-medium text-white/55">
+      <span className="mb-1 flex justify-between text-xs font-medium text-[#94A3B8]">
         {label}
-        {hint && <span className="text-white/35">{hint}</span>}
+        {hint}
       </span>
       {children}
     </label>
   );
 }
 
-function Summary({ label, children }: { label: string; children: React.ReactNode }) {
+function Summary({ label, onEdit, children }: { label: string; onEdit?: () => void; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-6 rounded-xl bg-white/[0.03] px-3 py-2">
-      <dt className="shrink-0 text-white/50">{label}</dt>
-      <dd className="min-w-0 text-right text-white/85">{children}</dd>
+    <div className="flex items-start justify-between gap-4 rounded-lg bg-[#0A111B] px-3 py-2">
+      <dt className="shrink-0 text-[#94A3B8]">{label}</dt>
+      <dd className="min-w-0 flex-1 text-right text-[#F8FAFC]">{children}</dd>
+      {onEdit && <EditLink onClick={onEdit} />}
     </div>
   );
 }

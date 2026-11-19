@@ -162,23 +162,24 @@ export function SchedulerView() {
   return (
     <div className="relative mx-auto max-w-6xl">
       {/* Header */}
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Content Calendar</h1>
-          <p className="mt-1 text-sm text-white/50">Plan and auto-publish your Shorts and Reels.</p>
+          <p className="text-[11px] font-semibold tracking-[0.16em] text-[#54D045]">PUBLISH &amp; AUTOMATE</p>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-[#F8FAFC]">Content Calendar</h1>
+          <p className="mt-1 text-sm text-[#94A3B8]">Plan, schedule, and publish your videos across social platforms.</p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setComposer({ upload: true })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/85 hover:bg-white/[0.08]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#253244] bg-[#101824] px-4 text-sm font-medium text-[#F8FAFC] hover:border-[#35445a]"
           >
             <Upload className="h-4 w-4" /> Upload local video
           </button>
           <button
             type="button"
             onClick={() => setComposer({})}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black shadow-[0_0_20px_-4px_rgba(255,255,255,0.55)] hover:opacity-90"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#54D045] px-4 text-sm font-semibold text-[#070B12] shadow-[0_10px_30px_-12px_rgba(84,208,69,0.7)] hover:bg-[#62dc53]"
           >
             <Plus className="h-4 w-4" /> Schedule post
           </button>
@@ -194,8 +195,8 @@ export function SchedulerView() {
           <button type="button" aria-label="Next" onClick={() => shift(1)} className={navBtn}>
             <ChevronRight className="h-4 w-4" />
           </button>
-          <p className="ml-1 min-w-[10rem] text-base font-semibold text-white">{title}</p>
-          <button type="button" onClick={() => setCursor(new Date())} className="ml-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20">
+          <p className="ml-1 min-w-[10rem] text-base font-semibold text-[#F8FAFC]">{title}</p>
+          <button type="button" onClick={() => setCursor(new Date())} className="ml-1 rounded-lg border border-[#54D045]/35 bg-[#54D045]/10 px-3 py-1 text-xs font-semibold text-[#a6ec9c] hover:bg-[#54D045]/20">
             Today
           </button>
         </div>
@@ -212,13 +213,13 @@ export function SchedulerView() {
               <option key={s} value={s} className="bg-zinc-900">{statusStyle(s).label}</option>
             ))}
           </select>
-          <div className="flex rounded-full border border-white/10 bg-white/[0.03] p-0.5">
+          <div className="flex rounded-lg border border-[#253244] bg-[#0A111B] p-0.5">
             {(["month", "week", "list"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
-                className={cn("flex items-center gap-1 rounded-full px-3 py-1 text-xs capitalize", view === v ? "bg-white font-semibold text-black" : "text-white/60 hover:text-white")}
+                className={cn("flex items-center gap-1 rounded-md px-3 py-1 text-xs capitalize", view === v ? "bg-[#19251F] font-semibold text-[#F8FAFC] shadow-[inset_0_0_0_1px_rgba(84,208,69,0.4)]" : "text-[#94A3B8] hover:text-[#F8FAFC]")}
               >
                 {v === "list" ? <List className="h-3.5 w-3.5" /> : <CalendarDays className="h-3.5 w-3.5" />}
                 {v}
@@ -228,7 +229,9 @@ export function SchedulerView() {
         </div>
       </div>
 
-      <div className="relative rounded-3xl border border-white/10 bg-white/[0.02] p-1.5 backdrop-blur">
+      <div className="grid gap-5 xl:grid-cols-[1fr_280px]">
+      <div className="min-w-0">
+      <div className="relative rounded-2xl border border-[#253244] bg-[#101824] p-1.5">
         {posts === null && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-black/30">
             <Loader2 className="h-6 w-6 animate-spin text-white/50" />
@@ -241,7 +244,7 @@ export function SchedulerView() {
             <div className="min-w-[640px]">
               <div className="grid grid-cols-7 gap-1 pb-1">
                 {WEEKDAYS.map((d) => (
-                  <p key={d} className="py-2 text-center text-xs font-medium text-white/45">{d}</p>
+                  <p key={d} className="py-2 text-center text-xs font-medium text-[#64748B]">{d}</p>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -263,20 +266,20 @@ export function SchedulerView() {
                       onClick={() => !past && setComposer({ date: key })}
                       className={cn(
                         "group min-h-[6.5rem] rounded-xl border p-1.5 text-left transition-colors",
-                        inMonth ? "border-white/[0.06] bg-white/[0.03]" : "border-transparent bg-white/[0.01]",
-                        past ? "cursor-default" : "cursor-pointer hover:border-white/15",
+                        inMonth ? "border-[#253244]/70 bg-[#0B1220]" : "border-transparent bg-[#0B1220]/40",
+                        past ? "cursor-default opacity-80" : "cursor-pointer hover:border-[#54D045]/35",
                       )}
                     >
                       <div className="mb-1 flex items-center justify-between">
                         <span
                           className={cn(
                             "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs",
-                            key === todayKey ? "bg-emerald-400 font-bold text-black" : inMonth ? "text-white/75" : "text-white/25",
+                            key === todayKey ? "bg-[#54D045] font-bold text-[#070B12]" : inMonth ? "text-[#cbd5e1]" : "text-[#475569]",
                           )}
                         >
                           {d.getDate()}
                         </span>
-                        {!past && <Plus className="h-3.5 w-3.5 text-white/0 transition-colors group-hover:text-white/40" />}
+                        {!past && <Plus className="h-3.5 w-3.5 text-transparent transition-colors group-hover:text-[#8fe383]" />}
                       </div>
                       <div className="space-y-1">
                         {items.slice(0, MAX_IN_CELL).map((p) => (
@@ -320,7 +323,7 @@ export function SchedulerView() {
                     const id = e.dataTransfer.getData("text/plain");
                     if (id && !past) moveTo(id, key);
                   }}
-                  className="min-h-[10rem] rounded-xl border border-white/[0.06] bg-white/[0.03] p-2"
+                  className="min-h-[10rem] rounded-xl border border-[#253244]/70 bg-[#0B1220] p-2"
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <p className={cn("text-xs font-medium", key === todayKey ? "text-emerald-300" : "text-white/60")}>
@@ -346,7 +349,7 @@ export function SchedulerView() {
 
         {/* List */}
         {view === "list" && (
-          <div className="divide-y divide-white/[0.06]">
+          <div className="divide-y divide-[#253244]/60">
             {(posts ?? [])
               .filter((p) => p.scheduled_at)
               .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))
@@ -359,19 +362,22 @@ export function SchedulerView() {
           </div>
         )}
 
-        <div className="flex items-center justify-between px-2 pb-1 pt-3 text-xs text-white/45">
-          <span>Times shown in {tz}. Drag a scheduled post to move it.</span>
-          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-semibold text-emerald-300">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-3 text-xs text-[#94A3B8]">
+          <span>Times shown in {tz}. Click a day to schedule · drag a scheduled post to move it.</span>
+          <span className="rounded-md bg-[#54D045]/10 px-2.5 py-0.5 font-semibold text-[#a6ec9c]">
             {(posts ?? []).filter((p) => p.status === "scheduled").length} scheduled
           </span>
         </div>
       </div>
+      </div>
+      <UpcomingPanel tz={tz} refreshKey={posts} onOpen={setDetail} onCreate={() => setComposer({})} />
+      </div>
 
       {/* Drafts */}
       {drafts.length > 0 && (
-        <div className="mt-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="mb-2 text-sm font-semibold text-white">Drafts</p>
-          <div className="divide-y divide-white/[0.06]">
+        <div className="mt-5 rounded-2xl border border-[#253244] bg-[#101824] p-4">
+          <p className="mb-2 text-sm font-semibold text-[#F8FAFC]">Drafts <span className="font-normal text-[#64748B]">{drafts.length}</span></p>
+          <div className="divide-y divide-[#253244]/60">
             {drafts.map((p) => (
               <PostRow key={p.id} post={p} tz={tz} onOpen={() => setDetail(p)} />
             ))}
@@ -431,7 +437,7 @@ export function SchedulerView() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[120] -translate-x-1/2 rounded-full border border-white/10 bg-zinc-900 px-4 py-2 text-sm text-white shadow-2xl">
+        <div role="status" className="fixed bottom-6 left-1/2 z-[120] -translate-x-1/2 rounded-lg border border-[#253244] bg-[#101824] px-4 py-2 text-sm text-[#F8FAFC] shadow-2xl">
           {toast}
         </div>
       )}
@@ -439,8 +445,95 @@ export function SchedulerView() {
   );
 }
 
-const navBtn = "flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/[0.1]";
-const selectCls = "rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 outline-none [color-scheme:dark]";
+const navBtn = "flex h-8 w-8 items-center justify-center rounded-lg border border-[#253244] bg-[#101824] text-[#cbd5e1] hover:border-[#35445a] hover:text-white";
+const selectCls = "h-8 rounded-lg border border-[#253244] bg-[#101824] px-3 text-xs text-[#F8FAFC] outline-none focus:border-[#54D045]/60 [color-scheme:dark]";
+
+/** Next scheduled posts from now, independent of the month being viewed. */
+function UpcomingPanel({
+  tz,
+  refreshKey,
+  onOpen,
+  onCreate,
+}: {
+  tz: string;
+  refreshKey: unknown;
+  onOpen: (p: ScheduledPost) => void;
+  onCreate: () => void;
+}) {
+  const [items, setItems] = useState<ScheduledPost[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const token = await getAccessToken();
+      if (!token) return;
+      const now = new Date();
+      const qs = new URLSearchParams({
+        startDate: now.toISOString(),
+        endDate: addDays(now, 60).toISOString(),
+        status: "scheduled",
+      });
+      const res = await apiFetch<ScheduledPost[]>(`/api/v1/scheduled-posts/calendar?${qs}`, { token });
+      if (cancelled) return;
+      setItems(
+        (res.data ?? [])
+          .filter((p) => p.scheduled_at)
+          .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!))
+          .slice(0, 6),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  return (
+    <aside className="h-fit rounded-2xl border border-[#253244] bg-[#101824] p-4 xl:sticky xl:top-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-[#F8FAFC]">Upcoming</p>
+        <span className="text-[11px] text-[#64748B]">next 60 days</span>
+      </div>
+      {items === null ? (
+        <div className="mt-3 space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-lg bg-[#0B1220]" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="py-8 text-center">
+          <p className="text-sm text-[#94A3B8]">Nothing scheduled yet.</p>
+          <button type="button" onClick={onCreate} className="mt-2 text-xs font-medium text-[#8fe383] hover:underline">
+            Schedule your first post
+          </button>
+        </div>
+      ) : (
+        <ul className="mt-3 space-y-1.5">
+          {items.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => onOpen(p)}
+                className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-white/[0.03]"
+              >
+                <Thumb post={p} className="h-12 w-8 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-medium text-[#F8FAFC]">{p.title || p.caption || "Untitled"}</span>
+                  <span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#94A3B8]">
+                    {formatDateTime(p.scheduled_at!, tz)}
+                  </span>
+                  <span className="mt-0.5 flex gap-1">
+                    {p.scheduled_post_targets.map((t) => (
+                      <PlatformIcon key={t.id} platform={t.platform} className="h-3 w-3" />
+                    ))}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </aside>
+  );
+}
 
 function Thumb({ post, className }: { post: ScheduledPost; className?: string }) {
   return post.media_thumbnail_url ? (
@@ -467,7 +560,7 @@ function PostChip({ post, tz, onOpen, large }: { post: ScheduledPost; tz: string
       className={cn("flex w-full items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left", st.chip)}
       title={`${st.label} · ${post.caption || "No caption"}`}
     >
-      <Thumb post={post} className={large ? "h-10 w-7 shrink-0" : "h-6 w-4 shrink-0"} />
+      <Thumb post={post} className={large ? "h-10 w-7 shrink-0" : "h-7 w-5 shrink-0"} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1 text-[10px] font-semibold">
           {post.scheduled_at && formatTime(post.scheduled_at, tz)}
@@ -475,7 +568,7 @@ function PostChip({ post, tz, onOpen, large }: { post: ScheduledPost; tz: string
             <PlatformIcon key={t.id} platform={t.platform} className="h-2.5 w-2.5" />
           ))}
         </span>
-        {large && <span className="line-clamp-2 text-[11px] text-white/80">{post.caption || "No caption"}</span>}
+        <span className={cn("text-[11px] text-white/85", large ? "line-clamp-2" : "line-clamp-1")}>{post.title || post.caption || "Untitled"}</span>
       </span>
     </button>
   );
@@ -513,7 +606,7 @@ function Overlay({ title, onClose, children }: { title: string; onClose: () => v
       role="dialog"
       aria-modal="true"
     >
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/10 bg-[#0b0f14] p-5 shadow-2xl">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#253244] bg-[#101824] p-5 shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">{title}</h2>
           <button type="button" aria-label="Close" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-white/50 hover:bg-white/[0.08] hover:text-white">
@@ -655,7 +748,7 @@ function PostDetail({
                 type="button"
                 disabled={!!busy}
                 onClick={() => act("publish")}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-90"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#54D045] px-4 py-2 text-sm font-semibold text-[#070B12] hover:bg-[#62dc53]"
               >
                 {busy === "publish" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 Publish now
@@ -668,4 +761,4 @@ function PostDetail({
   );
 }
 
-const ghostBtn = "inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/[0.06]";
+const ghostBtn = "inline-flex items-center gap-1.5 rounded-lg border border-[#253244] px-3 py-2 text-sm text-[#cbd5e1] hover:bg-white/[0.04]";
