@@ -11,8 +11,8 @@ export type BlogPost = {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
-    slug: "youtube-to-tiktok-guide-2025",
-    title: "How to Turn YouTube Videos into TikTok Clips (2025 Guide)",
+    slug: "youtube-to-tiktok-guide-2026",
+    title: "How to Turn YouTube Videos into TikTok Clips (2026 Guide)",
     description:
       "Step-by-step guide to repurposing YouTube content for TikTok using AI clipping, captions, and vertical export — without spending hours in an editor.",
     keywords: [
@@ -79,7 +79,7 @@ export const BLOG_POSTS: BlogPost[] = [
     sections: [
       {
         paragraphs: [
-          "Short-form isn't a side project anymore — it's how channels grow in 2025. But filming unique Shorts daily while maintaining long-form quality is brutal.",
+          "Short-form isn't a side project anymore — it's how channels grow in 2026. But filming unique Shorts daily while maintaining long-form quality is brutal.",
           "The sustainable approach: treat every long video as a clip factory. One import, multiple platform-ready outputs.",
         ],
       },
@@ -157,7 +157,7 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     slug: "best-ai-video-clipping-tools",
-    title: "Best AI Video Clipping Tools for Creators in 2025",
+    title: "Best AI Video Clipping Tools for Creators in 2026",
     description:
       "Compare AI video clipping workflows for YouTube, TikTok, and podcast repurposing — and when an automated pipeline beats manual editing.",
     keywords: [
@@ -171,7 +171,7 @@ export const BLOG_POSTS: BlogPost[] = [
     sections: [
       {
         paragraphs: [
-          "AI clipping tools exploded in 2024–2025. Most promise 'one click viral clips' — but workflows, pricing, and export quality vary widely.",
+          "AI clipping tools have exploded since 2024. Most promise 'one click viral clips' — but workflows, pricing, and export quality vary widely.",
           "Here's an honest framework for choosing a tool based on how you actually create content.",
         ],
       },

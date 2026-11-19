@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { source: "/favicon.ico", destination: "/icon", permanent: false },
       // Billing page was renamed; keep old links (emails, bookmarks) working.
       { source: "/billing", destination: "/subscription", permanent: true },
+      // Blog post slug was refreshed for 2026; keep old links and rankings.
+      { source: "/blog/youtube-to-tiktok-guide-2025", destination: "/blog/youtube-to-tiktok-guide-2026", permanent: true },
     ];
   },
   images: {
