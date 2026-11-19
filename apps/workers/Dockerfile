@@ -40,6 +40,12 @@ ENV NODE_ENV=production
 ARG YTDLP_VERSION=latest
 
 # Install ffmpeg, python3 + pip (required by yt-dlp), then yt-dlp with full extras
+# Fonts for burned-in captions (see src/pipeline/caption-styles.ts). Noto covers
+# emoji, Hindi and Arabic so those captions don't render as empty boxes.
+RUN apk add --no-cache fontconfig font-montserrat font-dejavu font-pacifico font-eb-garamond \
+  font-noto-emoji font-noto-devanagari font-noto-arabic \
+  && fc-cache -f
+
 RUN apk add --no-cache ffmpeg python3 py3-pip \
   && if [ "$YTDLP_VERSION" = "latest" ]; then \
        pip3 install --break-system-packages --no-cache-dir --upgrade 'yt-dlp[default]'; \

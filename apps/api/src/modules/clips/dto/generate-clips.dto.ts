@@ -9,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { CAPTION_STYLE_IDS } from '../../videos/dto/caption-styles';
 
 export class GenerateClipsDto {
   @IsUUID()
@@ -35,7 +36,7 @@ export class GenerateClipsDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['animated', 'emoji', 'karaoke', 'viral'])
+  @IsIn([...CAPTION_STYLE_IDS])
   caption_style?: string;
 
   @IsOptional()

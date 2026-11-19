@@ -10,12 +10,8 @@ const QUALITY_PRESETS: Record<string, { crf: string; scale: string }> = {
   '4k': { crf: '18', scale: '2160:3840' },
 };
 
-/** Alpine `ttf-dejavu` font directory (used by libass subtitles filter). */
-const SUBTITLE_FONT_DIRS = [
-  '/usr/share/fonts/dejavu',
-  '/usr/share/fonts/truetype/dejavu',
-  '/usr/share/fonts/TTF',
-];
+/** Font directories libass should search (Alpine installs fonts under /usr/share/fonts). */
+const SUBTITLE_FONT_DIRS = ['/usr/share/fonts'];
 
 @Injectable()
 export class FfmpegService {
@@ -139,11 +135,11 @@ export class FfmpegService {
 
   async burnCaptions(
     inputPath: string,
-    srtPath: string,
+    captionsPath: string,
     outputPath: string,
     captionStyle: string,
   ): Promise<void> {
-    const escaped = escapeFfmpegPath(srtPath);
+    const escaped = escapeFfmpegPath(captionsPath);
     const attempts = this.buildSubtitleFilterAttempts(escaped, captionStyle);
 
     for (const [label, vf] of attempts) {
@@ -185,45 +181,22 @@ export class FfmpegService {
     await fs.copyFile(inputPath, outputPath);
   }
 
+  /**
+   * Captions are an ASS file that carries its own styles and animation, so
+   * the `ass` filter renders them as designed. Falls back to `subtitles`
+   * (which also reads ASS) if the first form isn't available.
+   */
   private buildSubtitleFilterAttempts(
-    escapedSrtPath: string,
-    captionStyle: string,
+    escapedPath: string,
+    _captionStyle: string,
   ): Array<[string, string]> {
-    const style = this.subtitleForceStyle(captionStyle).replace(/,/g, '\\,');
-    const attempts: Array<[string, string]> = [
-      ['plain', `subtitles=${escapedSrtPath}`],
-    ];
-
+    const attempts: Array<[string, string]> = [];
     for (const fontsDir of SUBTITLE_FONT_DIRS) {
-      attempts.push([
-        `fontsdir:${fontsDir}`,
-        `subtitles=${escapedSrtPath}:fontsdir=${escapeFfmpegPath(fontsDir)}`,
-      ]);
-      attempts.push([
-        `styled:${fontsDir}`,
-        `subtitles=${escapedSrtPath}:fontsdir=${escapeFfmpegPath(fontsDir)}:force_style='${style}'`,
-      ]);
+      attempts.push([`ass:${fontsDir}`, `ass=${escapedPath}:fontsdir=${escapeFfmpegPath(fontsDir)}`]);
     }
-
-    attempts.push(['styled-default', `subtitles=${escapedSrtPath}:force_style='${style}'`]);
-
+    attempts.push(['ass', `ass=${escapedPath}`]);
+    attempts.push(['subtitles', `subtitles=${escapedPath}`]);
     return attempts;
   }
 
-  private subtitleForceStyle(captionStyle: string): string {
-    const base =
-      'FontName=DejaVu Sans,FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,Outline=2,Shadow=1,Alignment=2,MarginV=80';
-
-    switch (captionStyle) {
-      case 'karaoke':
-        return `${base},Bold=1,FontSize=26`;
-      case 'emoji':
-        return `${base},FontSize=24`;
-      case 'animated':
-        return `${base},Bold=1,FontSize=24`;
-      case 'viral':
-      default:
-        return `${base},Bold=1,FontSize=28`;
-    }
-  }
 }

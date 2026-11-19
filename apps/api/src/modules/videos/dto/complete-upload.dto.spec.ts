@@ -23,7 +23,14 @@ describe('CompleteUploadDto', () => {
   });
 
   it('rejects out-of-range or unknown values', async () => {
-    const errors = await check({ clip_count: 50, caption_style: 'comic', export_quality: '8k' });
+    const errors = await check({ clip_count: 50, caption_style: 'not-a-style', export_quality: '8k' });
     expect(errors.map((e) => e.property).sort()).toEqual(['caption_style', 'clip_count', 'export_quality']);
   });
+
+  it.each(['marker', 'typewriter', 'punch', 'lime', 'neon', 'sticker', 'comic', 'retro', 'editorial', 'handwritten', 'minimal'])(
+    'accepts the %s caption style',
+    async (caption_style) => {
+      expect(await check({ caption_style })).toHaveLength(0);
+    },
+  );
 });

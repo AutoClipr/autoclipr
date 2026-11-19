@@ -75,20 +75,29 @@ export class WhisperService {
           model: this.model,
           language: languageHint && languageHint !== 'en' ? languageHint : undefined,
           response_format: 'verbose_json',
-          timestamp_granularities: ['segment'],
+          timestamp_granularities: ['word', 'segment'],
         });
 
         const verbose = response as unknown as {
           text?: string;
           language?: string;
           segments?: Array<{ start: number; end: number; text: string }>;
+          words?: Array<{ start: number; end: number; word: string }>;
         };
 
-        const segments: TranscriptSegment[] = (verbose.segments ?? []).map((s) => ({
-          start: s.start,
-          end: s.end,
-          text: s.text.trim(),
-        }));
+        const words = verbose.words ?? [];
+        const segments: TranscriptSegment[] = (verbose.segments ?? []).map((s) => {
+          const inSeg = words
+            .filter((w) => w.start >= s.start - 0.05 && w.start < s.end)
+            .map((w) => ({ start: w.start, end: w.end, word: w.word.trim() }))
+            .filter((w) => w.word.length > 0);
+          return {
+            start: s.start,
+            end: s.end,
+            text: s.text.trim(),
+            ...(inSeg.length ? { words: inSeg } : {}),
+          };
+        });
 
         return {
           text: verbose.text?.trim() ?? segments.map((s) => s.text).join(' '),

@@ -5,10 +5,18 @@ export type PipelineStep = {
   checks?: string[];
 };
 
+export type TranscriptWord = {
+  start: number;
+  end: number;
+  word: string;
+};
+
 export type TranscriptSegment = {
   start: number;
   end: number;
   text: string;
+  /** Word-level timings when Whisper returned them (used for animated captions). */
+  words?: TranscriptWord[];
 };
 
 export type TranscriptResult = {

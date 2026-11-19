@@ -1,9 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import type { TranscriptSegment } from './types';
+import { buildAss, clipWords } from './caption-styles';
 
 @Injectable()
 export class CaptionService {
+  /** Build the styled, word-timed ASS captions for a clip. */
+  async writeClipAss(
+    segments: TranscriptSegment[],
+    clipStartMs: number,
+    clipEndMs: number,
+    outputPath: string,
+    style: string,
+  ): Promise<void> {
+    const clipStart = clipStartMs / 1000;
+    const clipEnd = clipEndMs / 1000;
+    const words = clipWords(segments, clipStart, clipEnd);
+    await fs.writeFile(outputPath, buildAss(words, style, clipEnd - clipStart), 'utf8');
+  }
+
   /** Build SRT for a clip time range from full-video transcript segments. */
   async writeClipSrt(
     segments: TranscriptSegment[],

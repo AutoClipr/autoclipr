@@ -8,6 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { CAPTION_STYLE_IDS } from './caption-styles';
 
 export class ImportUrlDto {
   @IsUrl({}, { message: 'A valid video URL is required' })
@@ -30,7 +31,7 @@ export class ImportUrlDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['animated', 'emoji', 'karaoke', 'viral'])
+  @IsIn([...CAPTION_STYLE_IDS])
   caption_style?: string;
 
   @IsOptional()

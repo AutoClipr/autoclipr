@@ -1,4 +1,5 @@
 import { IsArray, IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { CAPTION_STYLE_IDS } from './caption-styles';
 
 /** Clip options chosen on the create screen after a file upload (all optional). */
 export class CompleteUploadDto {
@@ -15,7 +16,7 @@ export class CompleteUploadDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['animated', 'emoji', 'karaoke', 'viral'])
+  @IsIn([...CAPTION_STYLE_IDS])
   caption_style?: string;
 
   @IsOptional()

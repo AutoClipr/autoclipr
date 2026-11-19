@@ -388,6 +388,7 @@ export class UrlPipelineService {
     const rawClip = this.temp.jobPath(workDir, `clip_${index}_raw.mp4`);
     const captionedClip = this.temp.jobPath(workDir, `clip_${index}_final.mp4`);
     const srtPath = this.temp.jobPath(workDir, `clip_${index}.srt`);
+    const captionsPath = this.temp.jobPath(workDir, `clip_${index}.ass`);
     const clipThumb = this.temp.jobPath(workDir, `clip_${index}_thumb.jpg`);
 
     await this.ffmpeg.cutClip(
@@ -398,6 +399,7 @@ export class UrlPipelineService {
       exportQuality,
     );
 
+    // Plain SRT is uploaded as the clip's downloadable subtitle file.
     await this.captions.writeClipSrt(
       transcript,
       moment.start_ms,
@@ -405,8 +407,15 @@ export class UrlPipelineService {
       srtPath,
       captionStyle,
     );
+    await this.captions.writeClipAss(
+      transcript,
+      moment.start_ms,
+      moment.end_ms,
+      captionsPath,
+      captionStyle,
+    );
 
-    await this.ffmpeg.burnCaptions(rawClip, srtPath, captionedClip, captionStyle);
+    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, captionStyle);
 
     const durationSec = Math.round((moment.end_ms - moment.start_ms) / 1000);
 
