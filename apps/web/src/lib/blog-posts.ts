@@ -23,6 +23,84 @@ export function formatPostDate(iso: string): string {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    slug: "schedule-youtube-shorts-and-instagram-reels",
+    title: "Schedule YouTube Shorts and Instagram Reels with AutoClipr's Content Scheduler",
+    description:
+      "Plan a week of Shorts and Reels in one sitting. AutoClipr's Content Scheduler puts your clips on a calendar and publishes them automatically — included in the Creator and Business plans.",
+    keywords: [
+      "schedule YouTube Shorts",
+      "schedule Instagram Reels",
+      "content scheduler for creators",
+      "social media content calendar",
+      "auto publish Shorts and Reels",
+      "AutoClipr Content Scheduler",
+    ],
+    publishedAt: "2026-11-19",
+    readMinutes: 6,
+    sections: [
+      {
+        paragraphs: [
+          "Making clips is only half the job. The other half is posting them — every day, at a good time, on more than one platform. That's the part most creators quietly give up on: the clips pile up in a folder, and posting turns into a scramble whenever you remember.",
+          "AutoClipr's Content Scheduler fixes that. You line up your Shorts and Reels on a calendar once, and AutoClipr publishes each one at the time you picked — even when your laptop is closed. It's included in the Creator and Business plans.",
+        ],
+      },
+      {
+        heading: "Why posting on a schedule matters",
+        paragraphs: [
+          "Short-form platforms reward consistency. A channel that posts one clip a day for a month usually grows faster than one that posts thirty clips in a single afternoon and then goes quiet for weeks.",
+          "Doing that by hand means stopping whatever you're working on, every single day, to upload, paste a caption and hit publish — twice, if you post to both YouTube and Instagram. Batching that work into one planning session a week is far easier to keep up.",
+        ],
+      },
+      {
+        heading: "What the Content Scheduler does",
+        paragraphs: [
+          "Publishes to YouTube Shorts and Instagram Reels automatically, from the accounts you've already connected in AutoClipr.",
+          "Shows everything on a calendar, with month, week and list views. Each post shows its status at a glance: draft, scheduled, publishing, published or failed.",
+          "Lets you reschedule by dragging a post to another day. It keeps the same time of day, so moving Tuesday's 6 pm post to Thursday lands it at 6 pm Thursday.",
+          "Works in your timezone. Pick the time as you think of it — 7:30 pm in Mumbai, or 9 am in New York — and AutoClipr converts it correctly, including around daylight-saving changes.",
+        ],
+      },
+      {
+        heading: "How to schedule your first post",
+        paragraphs: [
+          "1. Open Content Scheduler from the dashboard sidebar and click a day on the calendar.",
+          "2. Choose your video. Pick a clip AutoClipr already made for you, or upload your own video (MP4, MOV or WebM, up to 500 MB).",
+          "3. Write the caption and hashtags. If a platform needs a different caption — a shorter hook for Shorts, more hashtags for Reels — you can override it for that platform only.",
+          "4. Pick where it goes (YouTube Shorts, Instagram Reels or both), set the date, time and timezone, and click Schedule. Not ready yet? Save it as a draft and come back later.",
+          "That's it. When the time comes, AutoClipr publishes the post and the calendar updates to show it's live, with a link to the published video.",
+        ],
+      },
+      {
+        heading: "What happens if something goes wrong",
+        paragraphs: [
+          "Platforms have bad moments. If an upload fails because of a network problem or a temporary platform error, AutoClipr retries it automatically, up to three attempts in total, with a pause between tries.",
+          "Some problems can't be fixed by retrying — for example, a disconnected account or an expired permission. In that case AutoClipr marks the post as failed straight away and tells you why, so you can reconnect and hit Retry.",
+          "You also get an email when a post publishes and when one fails, so you never have to keep checking. You can switch these emails off in Settings if you prefer.",
+          "If you post to both platforms and only one fails, the other still goes live — the post shows as partly published and you can retry just the one that failed.",
+        ],
+      },
+      {
+        heading: "A simple weekly routine",
+        paragraphs: [
+          "Here's a workflow many creators settle into. On Monday, paste in last week's long video or podcast episode and let AutoClipr cut it into clips with captions and 9:16 framing.",
+          "Then open the scheduler and drop one clip onto each day of the week, at the time your audience is most active. Post the same clip to Shorts and Reels with slightly different captions.",
+          "That's seven days of content planned in under half an hour. The rest of the week, you're free to film the next video instead of babysitting uploads.",
+        ],
+      },
+      {
+        heading: "Which plans include the Content Scheduler",
+        paragraphs: [
+          "The Content Scheduler is part of the Creator and Business plans. On the free Starter plan you can still create clips and download or publish them yourself — scheduling is the upgrade that takes posting off your plate.",
+          "If you move from a paid plan back to Starter, posts you've already scheduled won't publish: they're marked as failed with a note to upgrade, so nothing goes out unexpectedly. Upgrade again and you can retry them.",
+          "Ready to stop posting by hand? See the plans on the pricing page and start scheduling today.",
+        ],
+      },
+    ],
+    relatedTools: [
+      { label: "Content Scheduler — Creator & Business plans", href: "/pricing" },
+    ],
+  },
+  {
     slug: "youtube-to-tiktok-guide-2026",
     title: "How to Turn YouTube Videos into TikTok Clips (2026 Guide)",
     description:
