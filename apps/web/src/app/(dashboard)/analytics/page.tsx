@@ -28,5 +28,5 @@ export default async function AnalyticsPage() {
     publications: [],
   };
 
-  return <AnalyticsDashboard initialData={initialData} />;
+  return <AnalyticsDashboard initialData={initialData} loadFailed={!res.success} />;
 }
