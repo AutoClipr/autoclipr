@@ -39,38 +39,6 @@ export function SeoLandingPage({ page }: { page: LandingPage }) {
         </div>
       </section>
 
-      {page.comparison && (
-        <section className="px-4 py-16 sm:px-6">
-          <div className="mx-auto max-w-4xl">
-            <p className="section-label-white mx-auto mb-4 flex w-fit">Side by side</p>
-            <h2 className="text-center text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              AutoClipr vs {page.comparison.competitor}
-            </h2>
-            <div className="mt-10 overflow-x-auto rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur">
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 text-white">
-                    <th className="p-4 font-semibold">Feature</th>
-                    <th className="p-4 font-semibold text-emerald-300">AutoClipr</th>
-                    <th className="p-4 font-semibold">{page.comparison.competitor}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.comparison.rows.map((row) => (
-                    <tr key={row.feature} className="border-b border-white/[0.06] last:border-0">
-                      <td className="p-4 font-medium text-white/80">{row.feature}</td>
-                      <td className="p-4 text-white/70">{row.autoclipr}</td>
-                      <td className="p-4 text-white/50">{row.competitor}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-4 text-center text-xs text-white/35">{page.comparison.note}</p>
-          </div>
-        </section>
-      )}
-
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-3xl">
           <p className="section-label-white mx-auto mb-4 flex w-fit">How it works</p>
