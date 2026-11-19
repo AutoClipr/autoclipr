@@ -158,16 +158,41 @@ describe('VideosController (e2e)', () => {
       await request(app.getHttpServer()).post('/videos/v1/complete').expect(401);
     });
 
-    it('returns 200 on success', async () => {
-      service.completeUpload.mockResolvedValue({ status: 'processing' });
+    it('returns 201 on success with no options', async () => {
+      service.completeUpload.mockResolvedValue({ status: 'processing', credit_cost: 5 });
 
       const res = await request(app.getHttpServer())
         .post('/videos/v1/complete')
         .set('Authorization', auth())
         .expect(201);
 
-      expect(service.completeUpload).toHaveBeenCalledWith(TEST_USER.sub, 'v1');
-      expect(res.body.data).toEqual({ status: 'processing' });
+      expect(service.completeUpload).toHaveBeenCalledWith(TEST_USER.sub, 'v1', expect.any(Object));
+      expect(res.body.data).toEqual({ status: 'processing', credit_cost: 5 });
+    });
+
+    it('passes the chosen clip options through', async () => {
+      service.completeUpload.mockResolvedValue({ status: 'processing', credit_cost: 8 });
+
+      await request(app.getHttpServer())
+        .post('/videos/v1/complete')
+        .set('Authorization', auth())
+        .send({ clip_count: 8, durations: [30, 45], caption_style: 'karaoke', caption_language: 'hi' })
+        .expect(201);
+
+      expect(service.completeUpload).toHaveBeenCalledWith(
+        TEST_USER.sub,
+        'v1',
+        expect.objectContaining({ clip_count: 8, durations: [30, 45], caption_style: 'karaoke', caption_language: 'hi' }),
+      );
+    });
+
+    it('returns 400 for invalid options', async () => {
+      await request(app.getHttpServer())
+        .post('/videos/v1/complete')
+        .set('Authorization', auth())
+        .send({ clip_count: 50, caption_style: 'comic' })
+        .expect(400);
+      expect(service.completeUpload).not.toHaveBeenCalled();
     });
   });
 
