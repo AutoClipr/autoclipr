@@ -95,7 +95,7 @@ export function AppHeaderActions({ credits, plan = "free" }: { credits: number; 
         <button
           type="button"
           onClick={() => setPricingOpen(true)}
-          className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/[0.12] sm:text-sm"
+          className="flex items-center gap-1 rounded-full bg-[#54D045] px-3 py-1.5 text-xs font-semibold text-[#070B12] transition-colors hover:bg-[#62dc53] sm:text-sm"
         >
           <Plus className="h-3.5 w-3.5 sm:hidden" />
           <span className="hidden sm:inline">Add credits</span>
