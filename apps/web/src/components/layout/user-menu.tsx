@@ -11,7 +11,8 @@ import {
   History,
   Receipt,
   LogOut,
-  ChevronRight,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { beginNavigationLoading } from "@/lib/api-loading-store";
 import {
@@ -33,7 +35,6 @@ import {
 import {
   getUserAvatarFallback,
   getUserAvatarImageUrl,
-  getUserDisplayLabel,
   isEmojiAvatar,
 } from "@/lib/user-avatar";
 import { cn } from "@/lib/utils";
@@ -45,49 +46,59 @@ type UserMenuProps = {
   avatarUrl?: string | null;
   /** Subscription tier, e.g. "free" or "creator". */
   plan?: string;
+  /** Live balance on app pages; the credits row is hidden when unknown. */
+  credits?: number;
 };
 
-/** Icon chip with a per-item accent color that lights up on row hover. */
-function MenuIcon({
+function MenuLink({
+  href,
   icon: Icon,
-  accent,
+  children,
 }: {
+  href: string;
   icon: React.ComponentType<{ className?: string }>;
-  accent: string;
+  children: React.ReactNode;
 }) {
   return (
-    <span
-      className={cn(
-        "mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-        "bg-white/[0.04] ring-1 ring-white/[0.06] transition-colors duration-200",
-        accent,
-      )}
-    >
-      <Icon className="h-4 w-4" />
-    </span>
+    <DropdownMenuItem asChild className={itemClass}>
+      <Link href={href} onClick={() => beginNavigationLoading()}>
+        <Icon className={iconClass} />
+        {children}
+      </Link>
+    </DropdownMenuItem>
+  );
+}
+
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <DropdownMenuLabel className="px-2.5 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#64748B]">
+      {children}
+    </DropdownMenuLabel>
   );
 }
 
 const itemClass =
-  "group cursor-pointer rounded-xl px-2 py-2 text-sm font-medium text-zinc-300 transition-colors focus:bg-white/[0.06] focus:text-white data-[highlighted]:bg-white/[0.06]";
+  "group flex h-9 cursor-pointer items-center gap-3 rounded-lg px-2.5 text-sm font-medium text-[#cbd5e1] outline-none transition-colors focus:bg-[#19251F] focus:text-[#F8FAFC] data-[highlighted]:bg-[#19251F] data-[highlighted]:text-[#F8FAFC]";
+const iconClass =
+  "h-4 w-4 shrink-0 text-[#64748B] transition-colors group-data-[highlighted]:text-[#54D045] group-focus:text-[#54D045]";
 
-export function UserMenu({
-  email,
-  phone,
-  fullName,
-  avatarUrl,
-  plan,
-}: UserMenuProps) {
-  const planLabel = plan ? `${plan.charAt(0).toUpperCase()}${plan.slice(1)} Plan` : null;
+export function UserMenu({ email, phone, fullName, avatarUrl, plan, credits }: UserMenuProps) {
   const router = useRouter();
   const avatarFallback = getUserAvatarFallback({ email, phone, fullName, avatarUrl });
   const avatarImageUrl = getUserAvatarImageUrl(avatarUrl);
-  const displayLabel = getUserDisplayLabel({ email, phone, fullName });
+  const name = fullName?.trim() || email?.split("@")[0] || phone || "Your account";
+  const tier = (plan || "free").toLowerCase();
+  const planLabel = `${tier.charAt(0).toUpperCase()}${tier.slice(1)} Plan`;
+  const paid = tier !== "free" && tier !== "starter";
 
   async function signOut() {
     beginNavigationLoading();
     const supabase = createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Couldn't sign you out. Please try again.");
+      return;
+    }
     router.push("/");
     router.refresh();
   }
@@ -98,74 +109,83 @@ export function UserMenu({
     router.push("/dashboard");
   }
 
+  const avatar = (size: string, text: string) => (
+    <Avatar className={size}>
+      {avatarImageUrl && <AvatarImage src={avatarImageUrl} alt="" referrerPolicy="no-referrer" />}
+      <AvatarFallback className={cn(isEmojiAvatar(avatarFallback) ? "text-lg" : cn(text, "font-semibold"))}>
+        {avatarFallback}
+      </AvatarFallback>
+    </Avatar>
+  );
+
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="group relative rounded-full outline-none ring-ring transition-transform hover:scale-105 focus-visible:ring-2"
+          className="group flex items-center rounded-full p-0.5 outline-none transition-colors hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-[#54D045]/60 data-[state=open]:bg-white/[0.08]"
           aria-label="Open account menu"
         >
-          {/* Gradient ring around avatar */}
-          <span className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 opacity-70 blur-[1.5px] transition-opacity group-hover:opacity-100" />
-          <Avatar className="relative h-9 w-9 ring-2 ring-black/50">
-            {avatarImageUrl && (
-              <AvatarImage src={avatarImageUrl} alt="" referrerPolicy="no-referrer" />
-            )}
-            <AvatarFallback
-              className={cn(
-                isEmojiAvatar(avatarFallback) ? "text-lg" : "text-sm font-bold",
-              )}
-            >
-              {avatarFallback}
-            </AvatarFallback>
-          </Avatar>
+          <span className="rounded-full ring-1 ring-[#253244] transition-shadow group-hover:ring-[#54D045]/50 group-data-[state=open]:ring-[#54D045]/70">
+            {avatar("h-8 w-8", "text-xs")}
+          </span>
         </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="end"
-        sideOffset={10}
-        className="w-72 overflow-hidden rounded-2xl border-white/[0.08] bg-zinc-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl"
+        sideOffset={14}
+        collisionPadding={12}
+        className="z-[130] max-h-[80vh] w-[min(300px,calc(100vw-24px))] overflow-y-auto rounded-2xl border border-[#253244] bg-[#101824] p-1.5 text-[#F8FAFC] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.9),0_0_0_1px_rgba(84,208,69,0.04)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2"
       >
-        {/* Profile header with gradient backdrop */}
-        <div className="relative mb-1 overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-transparent p-3.5 ring-1 ring-white/[0.06]">
-          <div className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl" />
+        {/* Identity */}
+        <div className="relative overflow-hidden rounded-xl border border-[#54D045]/15 bg-[#14271F] p-3">
+          <div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-[#54D045]/20 blur-2xl" aria-hidden />
           <div className="relative flex items-center gap-3">
-            <Avatar className="h-11 w-11 ring-2 ring-emerald-400/30">
-              {avatarImageUrl && (
-                <AvatarImage src={avatarImageUrl} alt="" referrerPolicy="no-referrer" />
-              )}
-              <AvatarFallback
-                className={cn(
-                  isEmojiAvatar(avatarFallback) ? "text-xl" : "text-base font-bold",
-                )}
-              >
-                {avatarFallback}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              {fullName && (
-                <p className="truncate text-sm font-semibold text-white">{fullName}</p>
-              )}
-              <p className="truncate text-xs text-zinc-400">{displayLabel}</p>
+            <span className="rounded-full ring-1 ring-[#54D045]/30">{avatar("h-10 w-10", "text-sm")}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-[#F8FAFC]">{name}</p>
             </div>
-            {planLabel && (
-              <span className="ml-auto shrink-0 self-start rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/85 ring-1 ring-white/10">
-                {planLabel}
-              </span>
-            )}
+            <span
+              className={cn(
+                "shrink-0 self-start rounded-md border px-1.5 py-0.5 text-[10px] font-semibold",
+                paid ? "border-[#54D045]/35 bg-[#54D045]/15 text-[#a6ec9c]" : "border-white/10 bg-white/[0.06] text-[#cbd5e1]",
+              )}
+            >
+              {planLabel}
+            </span>
           </div>
         </div>
 
+        {/* Credits */}
+        {typeof credits === "number" && (
+          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-xl border border-[#253244] px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#54D045]/10">
+                <Zap className="h-3.5 w-3.5 fill-[#54D045] text-[#54D045]" />
+              </span>
+              <div className="leading-tight">
+                <p className="text-sm font-semibold tabular-nums text-[#F8FAFC]">{credits.toLocaleString()}</p>
+                <p className="text-[11px] text-[#94A3B8]">credits available</p>
+              </div>
+            </div>
+            <DropdownMenuItem asChild className="cursor-pointer rounded-md p-0 focus:bg-transparent data-[highlighted]:bg-transparent">
+              <Link
+                href="/subscription"
+                onClick={() => beginNavigationLoading()}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[#8fe383] hover:bg-[#54D045]/10 focus-visible:bg-[#54D045]/10"
+              >
+                Get more <ArrowRight className="h-3 w-3" />
+              </Link>
+            </DropdownMenuItem>
+          </div>
+        )}
+
+        <GroupLabel>General</GroupLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/" onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={Home} accent="text-zinc-400 group-data-[highlighted]:bg-sky-500/15 group-data-[highlighted]:text-sky-400 group-data-[highlighted]:ring-sky-500/30" />
-              Home
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
+          <MenuLink href="/" icon={Home}>
+            Home
+          </MenuLink>
           <DropdownMenuItem
             className={itemClass}
             onSelect={(e) => {
@@ -173,75 +193,45 @@ export function UserMenu({
               goDashboard();
             }}
           >
-            <MenuIcon icon={LayoutDashboard} accent="text-zinc-400 group-data-[highlighted]:bg-violet-500/15 group-data-[highlighted]:text-violet-400 group-data-[highlighted]:ring-violet-500/30" />
+            <LayoutDashboard className={iconClass} />
             Dashboard
-            <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
-        <DropdownMenuSeparator className="my-1.5 bg-white/[0.06]" />
-
-        <DropdownMenuLabel className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          Setup
-        </DropdownMenuLabel>
+        <GroupLabel>Setup</GroupLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href={DASHBOARD_CHANNEL_PATH} onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={Link2} accent="text-zinc-400 group-data-[highlighted]:bg-emerald-500/15 group-data-[highlighted]:text-emerald-400 group-data-[highlighted]:ring-emerald-500/30" />
-              Channel Setup
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href={DASHBOARD_PLATFORM_PATH} onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={Share2} accent="text-zinc-400 group-data-[highlighted]:bg-teal-500/15 group-data-[highlighted]:text-teal-400 group-data-[highlighted]:ring-teal-500/30" />
-              Platform Connection
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
+          <MenuLink href={DASHBOARD_CHANNEL_PATH} icon={Link2}>
+            Channel Setup
+          </MenuLink>
+          <MenuLink href={DASHBOARD_PLATFORM_PATH} icon={Share2}>
+            Platform Connections
+          </MenuLink>
         </DropdownMenuGroup>
 
-        <DropdownMenuSeparator className="my-1.5 bg-white/[0.06]" />
-
-        <DropdownMenuLabel className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          Account
-        </DropdownMenuLabel>
+        <GroupLabel>Account &amp; billing</GroupLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/subscription" onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={Crown} accent="text-zinc-400 group-data-[highlighted]:bg-amber-500/15 group-data-[highlighted]:text-amber-400 group-data-[highlighted]:ring-amber-500/30" />
-              Subscription
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/activity" onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={History} accent="text-zinc-400 group-data-[highlighted]:bg-sky-500/15 group-data-[highlighted]:text-sky-400 group-data-[highlighted]:ring-sky-500/30" />
-              Credit usage history
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className={itemClass}>
-            <Link href="/transactions" onClick={() => beginNavigationLoading()}>
-              <MenuIcon icon={Receipt} accent="text-zinc-400 group-data-[highlighted]:bg-emerald-500/15 group-data-[highlighted]:text-emerald-400 group-data-[highlighted]:ring-emerald-500/30" />
-              Transaction history
-              <ChevronRight className="ml-auto h-4 w-4 text-zinc-600 opacity-0 transition-opacity group-data-[highlighted]:opacity-100" />
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className={cn(
-              itemClass,
-              "text-red-400 focus:text-red-300 data-[highlighted]:bg-red-500/10",
-            )}
-            onSelect={(e) => {
-              e.preventDefault();
-              signOut();
-            }}
-          >
-            <MenuIcon icon={LogOut} accent="text-red-400/80 group-data-[highlighted]:bg-red-500/15 group-data-[highlighted]:text-red-400 group-data-[highlighted]:ring-red-500/30" />
-            Sign Out
-          </DropdownMenuItem>
+          <MenuLink href="/subscription" icon={Crown}>
+            Subscription
+          </MenuLink>
+          <MenuLink href="/activity" icon={History}>
+            Credit usage history
+          </MenuLink>
+          <MenuLink href="/transactions" icon={Receipt}>
+            Transaction history
+          </MenuLink>
         </DropdownMenuGroup>
+
+        <DropdownMenuSeparator className="my-1.5 bg-[#253244]" />
+        <DropdownMenuItem
+          className="group flex h-9 cursor-pointer items-center gap-3 rounded-lg px-2.5 text-sm font-medium text-[#F87171] outline-none transition-colors focus:bg-[#F87171]/10 data-[highlighted]:bg-[#F87171]/10"
+          onSelect={(e) => {
+            e.preventDefault();
+            void signOut();
+          }}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sign out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

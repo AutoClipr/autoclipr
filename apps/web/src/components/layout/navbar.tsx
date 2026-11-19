@@ -92,6 +92,7 @@ export async function Navbar({
                 phone={user.phone}
                 fullName={resolveUserFullName(user.user_metadata)}
                 plan={userPlan}
+                credits={credits}
                 avatarUrl={typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : undefined}
               />
             </div>
