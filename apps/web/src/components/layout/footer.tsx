@@ -25,6 +25,8 @@ const navColumns = [
       { href: "/youtube-to-instagram-reels", label: "YouTube to Reels" },
       { href: "/podcast-to-clips", label: "Podcast to Clips" },
       { href: "/schedule-youtube-shorts-and-reels", label: "Schedule Shorts & Reels" },
+      { href: "/opusclip-alternative", label: "OpusClip alternative" },
+      { href: "/vizard-alternative", label: "Vizard alternative" },
     ],
   },
   {

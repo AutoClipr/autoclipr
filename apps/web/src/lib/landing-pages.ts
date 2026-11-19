@@ -9,7 +9,16 @@ export type LandingPage = {
   benefits: { title: string; body: string }[];
   steps: { title: string; body: string }[];
   faq: { q: string; a: string }[];
+  /** Comparison pages: a feature table against another tool. */
+  comparison?: {
+    competitor: string;
+    rows: { feature: string; autoclipr: string; competitor: string }[];
+    note: string;
+  };
 };
+
+const COMPARISON_NOTE =
+  "Competitor details are based on their public websites at the time of writing and may have changed — check their site for current plans and pricing. OpusClip and Vizard are trademarks of their respective owners; AutoClipr is not affiliated with them.";
 
 export const LANDING_PAGES: LandingPage[] = [
   {
@@ -269,6 +278,146 @@ export const LANDING_PAGES: LandingPage[] = [
       {
         q: "Can I schedule in my own timezone?",
         a: "Yes. Pick the time in any timezone and AutoClipr converts it correctly, including around daylight-saving changes.",
+      },
+    ],
+  },
+  {
+    slug: "opusclip-alternative",
+    title: "AutoClipr vs OpusClip: The OpusClip Alternative",
+    description:
+      "Looking for an OpusClip alternative? Compare AutoClipr and OpusClip on AI clipping, captions, scheduling and pricing. Turn long videos into Shorts, Reels and TikToks — start free with 30 credits.",
+    keywords: [
+      "OpusClip alternative",
+      "AutoClipr vs OpusClip",
+      "OpusClip vs AutoClipr",
+      "Opus Clip alternative",
+      "OpusClip free alternative",
+      "apps like OpusClip",
+      "AI clip generator",
+      "AI shorts generator",
+    ],
+    h1: "The OpusClip alternative for creators who post every day",
+    subtitle:
+      "AutoClipr finds the best moments in your long videos, adds captions and exports vertical clips — then schedules them to YouTube Shorts and Instagram Reels for you. Clip and publish from one place.",
+    heroCta: "Try AutoClipr free",
+    benefits: [
+      {
+        title: "Clip and post in one tool",
+        body: "Make clips, then put them on a content calendar and let AutoClipr publish to Shorts and Reels on time. No second scheduling app.",
+      },
+      {
+        title: "Pay per clip with credits",
+        body: "Credits are spent only on the clips you make, and you see the exact cost before you click Create. Start with 30 free credits, no card needed.",
+      },
+      {
+        title: "Captions in your language",
+        body: "Viral, karaoke, animated and emoji caption styles in English, Hindi, Spanish, French, German and Arabic.",
+      },
+    ],
+    steps: [
+      { title: "Upload or paste a link", body: "Upload an MP4 or paste a YouTube, Vimeo, Loom or Google Drive link." },
+      { title: "Choose clips and captions", body: "Pick how many clips, their length, caption style and export quality." },
+      { title: "Schedule or download", body: "Download your clips or schedule them to YouTube Shorts and Instagram Reels." },
+    ],
+    comparison: {
+      competitor: "OpusClip",
+      rows: [
+        { feature: "AI picks the best moments", autoclipr: "Yes", competitor: "Yes" },
+        { feature: "Auto captions", autoclipr: "Yes — 4 styles, 6 languages", competitor: "Yes" },
+        { feature: "Vertical 9:16 export", autoclipr: "Yes, up to 4K", competitor: "Yes" },
+        { feature: "Import from a link", autoclipr: "YouTube, Vimeo, Loom, Google Drive, MP4", competitor: "Yes" },
+        { feature: "Schedule to Shorts & Reels", autoclipr: "Built-in content calendar (Creator & Business)", competitor: "Available on some plans" },
+        { feature: "Free to start", autoclipr: "30 free credits, no card", competitor: "Free plan with limits" },
+        { feature: "Pricing model", autoclipr: "Credits per clip, cost shown before you create", competitor: "Monthly plans with processing minutes" },
+      ],
+      note: COMPARISON_NOTE,
+    },
+    faq: [
+      {
+        q: "Is AutoClipr a good OpusClip alternative?",
+        a: "If you want AI clipping plus a built-in scheduler for YouTube Shorts and Instagram Reels, yes. AutoClipr covers the full path from long video to published clip in one place.",
+      },
+      {
+        q: "Is AutoClipr free?",
+        a: "Every new account gets 30 free credits on the Starter plan with no credit card, enough to try the full pipeline on real videos before you upgrade.",
+      },
+      {
+        q: "Can I move my workflow from OpusClip to AutoClipr?",
+        a: "Yes. Paste the same YouTube links or upload the same files you used before and AutoClipr will clip them. There's nothing to migrate.",
+      },
+      {
+        q: "Is AutoClipr affiliated with OpusClip?",
+        a: "No. AutoClipr is an independent product. OpusClip is a trademark of its owner.",
+      },
+    ],
+  },
+  {
+    slug: "vizard-alternative",
+    title: "AutoClipr vs Vizard: The Vizard.ai Alternative",
+    description:
+      "Looking for a Vizard.ai alternative? Compare AutoClipr and Vizard on AI clipping, captions, scheduling and pricing. Turn long videos into short clips in minutes — start free with 30 credits.",
+    keywords: [
+      "Vizard alternative",
+      "Vizard.ai alternative",
+      "AutoClipr vs Vizard",
+      "Vizard vs AutoClipr",
+      "apps like Vizard",
+      "Vizard free alternative",
+      "AI clipping tool",
+      "auto clip generator",
+    ],
+    h1: "A simpler Vizard alternative for short-form clips",
+    subtitle:
+      "Paste a link or upload a video and AutoClipr returns ready-to-post vertical clips with captions. Then schedule them to YouTube Shorts and Instagram Reels without leaving the app.",
+    heroCta: "Try AutoClipr free",
+    benefits: [
+      {
+        title: "Built for speed",
+        body: "Set clip count, length and captions on one screen, see the processing time estimate, and get clips without a timeline editor.",
+      },
+      {
+        title: "Know the cost upfront",
+        body: "AutoClipr shows the credit cost before you create, so there are no surprises. New accounts start with 30 free credits.",
+      },
+      {
+        title: "Publish on schedule",
+        body: "Put clips on a calendar and AutoClipr posts them to Shorts and Reels, with retries and email alerts if something needs attention.",
+      },
+    ],
+    steps: [
+      { title: "Add your video", body: "Upload an MP4 or paste a YouTube, Vimeo, Loom or Google Drive link." },
+      { title: "Set your options", body: "Choose clip count, length, caption style, language and quality." },
+      { title: "Post your clips", body: "Download them or schedule them to YouTube Shorts and Instagram Reels." },
+    ],
+    comparison: {
+      competitor: "Vizard",
+      rows: [
+        { feature: "AI picks the best moments", autoclipr: "Yes", competitor: "Yes" },
+        { feature: "Auto captions", autoclipr: "Yes — 4 styles, 6 languages", competitor: "Yes" },
+        { feature: "Vertical 9:16 export", autoclipr: "Yes, up to 4K", competitor: "Yes" },
+        { feature: "Import from a link", autoclipr: "YouTube, Vimeo, Loom, Google Drive, MP4", competitor: "Yes" },
+        { feature: "Schedule to Shorts & Reels", autoclipr: "Built-in content calendar (Creator & Business)", competitor: "Available on some plans" },
+        { feature: "Free to start", autoclipr: "30 free credits, no card", competitor: "Free plan with limits" },
+        { feature: "Pricing model", autoclipr: "Credits per clip, cost shown before you create", competitor: "Monthly plans with upload minutes" },
+      ],
+      note: COMPARISON_NOTE,
+    },
+    faq: [
+      {
+        q: "Is AutoClipr a good Vizard alternative?",
+        a: "If you want fast AI clipping with captions and a built-in scheduler for YouTube Shorts and Instagram Reels, yes.",
+      },
+      {
+        q: "Is AutoClipr free?",
+        a: "Yes, to start. Every new account gets 30 free credits on the Starter plan, no credit card required.",
+      },
+      {
+        q: "Which languages do captions support?",
+        a: "English, Hindi, Spanish, French, German and Arabic, in viral, karaoke, animated and emoji styles.",
+      },
+      {
+        q: "Is AutoClipr affiliated with Vizard?",
+        a: "No. AutoClipr is an independent product. Vizard is a trademark of its owner.",
       },
     ],
   },
