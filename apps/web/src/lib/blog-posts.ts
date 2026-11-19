@@ -97,7 +97,8 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
     relatedTools: [
-      { label: "Content Scheduler — Creator & Business plans", href: "/pricing" },
+      { label: "Content Scheduler", href: "/schedule-youtube-shorts-and-reels" },
+      { label: "Creator & Business plans", href: "/pricing" },
     ],
   },
   {

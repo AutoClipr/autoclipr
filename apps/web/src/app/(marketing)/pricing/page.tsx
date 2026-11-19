@@ -9,7 +9,7 @@ import { Check, Zap, Shield, HeadphonesIcon } from "lucide-react";
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "AutoClipr plans for solo creators, agencies, and teams. Flexible credits for AI clip generation, captions, and multi-platform export.",
+    "AutoClipr plans for solo creators, agencies, and teams. Credits for AI clip generation and captions, plus content scheduling for YouTube Shorts and Instagram Reels on Creator and Business.",
   path: "/pricing",
 });
 

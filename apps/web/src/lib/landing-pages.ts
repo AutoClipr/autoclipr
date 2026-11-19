@@ -212,6 +212,66 @@ export const LANDING_PAGES: LandingPage[] = [
       },
     ],
   },
+  {
+    slug: "schedule-youtube-shorts-and-reels",
+    title: "Schedule YouTube Shorts & Instagram Reels",
+    description:
+      "Schedule YouTube Shorts and Instagram Reels on a content calendar and let AutoClipr auto-publish them on time. Retries, timezone support and email alerts. Creator & Business plans.",
+    keywords: [
+      "schedule YouTube Shorts",
+      "schedule Instagram Reels",
+      "Shorts scheduler",
+      "Reels scheduler",
+      "auto publish YouTube Shorts",
+      "content calendar for creators",
+      "social media scheduler for video",
+    ],
+    h1: "Schedule YouTube Shorts and Instagram Reels",
+    subtitle:
+      "Plan a week of short-form posts in one sitting. Put your clips on a calendar and AutoClipr publishes them at the right time — even when your laptop is closed.",
+    heroCta: "Start scheduling",
+    benefits: [
+      {
+        title: "Content calendar",
+        body: "See every post in month, week or list view. Drag a post to another day to reschedule it — the time of day stays the same.",
+      },
+      {
+        title: "Auto-publish to Shorts & Reels",
+        body: "Post to YouTube Shorts, Instagram Reels or both, with a different caption per platform when you need one.",
+      },
+      {
+        title: "Reliable by design",
+        body: "Temporary platform errors are retried automatically, and you get an email when a post goes live or needs attention.",
+      },
+    ],
+    steps: [
+      { title: "Pick a clip", body: "Choose a clip AutoClipr made for you, or upload your own video up to 500 MB." },
+      { title: "Write the caption", body: "Add a caption and hashtags, with optional per-platform versions for Shorts and Reels." },
+      { title: "Set the time", body: "Choose the platforms, date, time and timezone. AutoClipr publishes it for you." },
+    ],
+    faq: [
+      {
+        q: "Which plans include the Content Scheduler?",
+        a: "The Content Scheduler is included in the Creator and Business plans. On the free Starter plan you can still create clips and post them yourself.",
+      },
+      {
+        q: "Which platforms can I schedule to?",
+        a: "YouTube Shorts and Instagram Reels, using the accounts you connect in AutoClipr. You can post the same clip to both at once.",
+      },
+      {
+        q: "Do I need to keep my computer on?",
+        a: "No. Scheduled posts are published from AutoClipr's servers at the time you choose, whether or not you're online.",
+      },
+      {
+        q: "What if a post fails to publish?",
+        a: "AutoClipr retries temporary errors automatically, up to three attempts. If something needs your attention, like a disconnected account, you get an email and can retry with one click.",
+      },
+      {
+        q: "Can I schedule in my own timezone?",
+        a: "Yes. Pick the time in any timezone and AutoClipr converts it correctly, including around daylight-saving changes.",
+      },
+    ],
+  },
 ];
 
 export function getLandingPage(slug: string): LandingPage | undefined {
