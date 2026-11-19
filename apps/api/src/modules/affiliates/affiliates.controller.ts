@@ -1,11 +1,18 @@
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { ApiResponse } from '../../common/api-response';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard, AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AffiliatesService } from './affiliates.service';
+import {
+  COMMISSION_HOLD_DAYS,
+  COMMISSION_TIERS,
+  MIN_PAYOUT_PAISE,
+  PAYOUT_METHODS,
+  PAYOUT_METHOD_IDS,
+} from './affiliate-program';
 
 class ApplyDto {
   @IsString()
@@ -30,10 +37,11 @@ class TrackSignupDto {
 
 class RequestPayoutDto {
   @IsNumber()
-  @Min(100000)
+  @Min(MIN_PAYOUT_PAISE)
   amountPaise!: number;
 
   @IsString()
+  @IsIn(PAYOUT_METHOD_IDS, { message: 'Choose PayPal, bank transfer or UPI.' })
   method!: string;
 
   @IsString()
@@ -58,6 +66,18 @@ export class AffiliatesController {
   async inquire(@Body() dto: InquireDto) {
     await this.service.sendInquiryConfirmation(dto.email, dto.channelUrl);
     return ApiResponse.ok({ received: true });
+  }
+
+  /** Program rules (tiers, minimum payout, payout methods). Public so the apply page can show them. */
+  @Public()
+  @Get('program')
+  program() {
+    return ApiResponse.ok({
+      tiers: COMMISSION_TIERS,
+      min_payout_paise: MIN_PAYOUT_PAISE,
+      commission_hold_days: COMMISSION_HOLD_DAYS,
+      payout_methods: PAYOUT_METHODS,
+    });
   }
 
   /** Submit affiliate application (authenticated — creates real account) */

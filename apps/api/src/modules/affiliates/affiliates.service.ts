@@ -1,4 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  COMMISSION_HOLD_DAYS,
+  COMMISSION_TIERS,
+  MIN_PAYOUT_PAISE,
+  PAYOUT_METHODS,
+  affiliateBalances,
+} from './affiliate-program';
 import { EmailService } from '@autoclipr/emails';
 import { UsersRepository } from '../users/users.repository';
 import { AffiliatesRepository } from './affiliates.repository';
@@ -64,13 +71,7 @@ export class AffiliatesService {
       this.repo.getPayouts(affiliate.id),
     ]);
 
-    const pendingEarningsPaise = commissions
-      .filter((c) => c.status === 'pending')
-      .reduce((sum, c) => sum + c.amount_paise, 0);
-
-    const paidOutPaise = payouts
-      .filter((p) => p.status === 'paid')
-      .reduce((sum, p) => sum + p.amount_paise, 0);
+    const balances = affiliateBalances(commissions, payouts);
 
     return {
       affiliate,
@@ -82,10 +83,17 @@ export class AffiliatesService {
         total_referrals: affiliate.total_referrals,
         total_conversions: affiliate.total_conversions,
         total_earnings_paise: affiliate.total_earnings_paise,
-        pending_earnings_paise: pendingEarningsPaise,
-        paid_out_paise: paidOutPaise,
-        available_paise: affiliate.total_earnings_paise - paidOutPaise,
+        pending_earnings_paise: balances.pending_paise,
+        paid_out_paise: balances.paid_out_paise,
+        requested_paise: balances.requested_paise,
+        available_paise: balances.available_paise,
         commission_rate: affiliate.commission_rate,
+      },
+      program: {
+        tiers: COMMISSION_TIERS,
+        min_payout_paise: MIN_PAYOUT_PAISE,
+        commission_hold_days: COMMISSION_HOLD_DAYS,
+        payout_methods: PAYOUT_METHODS,
       },
     };
   }
@@ -146,9 +154,22 @@ export class AffiliatesService {
     if (!affiliate) throw new NotFoundException('No affiliate account found.');
     if (affiliate.status !== 'active') throw new BadRequestException('Affiliate account is not active.');
 
-    const available = affiliate.total_earnings_paise - affiliate.total_paid_paise;
-    if (amountPaise > available) throw new BadRequestException('Requested amount exceeds available balance.');
-    if (amountPaise < 100000) throw new BadRequestException('Minimum payout is ₹1,000.'); // 100000 paise
+    if (amountPaise < MIN_PAYOUT_PAISE) {
+      throw new BadRequestException(`Minimum payout is ₹${(MIN_PAYOUT_PAISE / 100).toLocaleString('en-IN')}.`);
+    }
+
+    const [commissions, payouts] = await Promise.all([
+      this.repo.getCommissions(affiliate.id),
+      this.repo.getPayouts(affiliate.id),
+    ]);
+    // One open request at a time, so the same earnings can't be requested twice.
+    if (payouts.some((p) => p.status === 'pending' || p.status === 'processing')) {
+      throw new ConflictException('You already have a payout request in progress.');
+    }
+    const { available_paise } = affiliateBalances(commissions, payouts);
+    if (amountPaise > available_paise) {
+      throw new BadRequestException('Requested amount exceeds your available balance.');
+    }
 
     return this.repo.createPayout(affiliate.id, amountPaise, method, details);
   }

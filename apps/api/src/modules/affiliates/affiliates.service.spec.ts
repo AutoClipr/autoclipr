@@ -88,7 +88,9 @@ describe('AffiliatesService', () => {
       await expect(service.getMyDashboard('u1')).rejects.toThrow(NotFoundException);
     });
 
-    it('computes pending/paid/available earnings from commissions and payouts', async () => {
+    it('splits earnings into pending, cleared and available — pending is never withdrawable', async () => {
+      const old = new Date(Date.now() - 40 * 86400000).toISOString();
+      const recent = new Date(Date.now() - 5 * 86400000).toISOString();
       const affiliate = {
         id: 'a1',
         total_clicks: 100,
@@ -101,13 +103,15 @@ describe('AffiliatesService', () => {
         findByUserId: jest.fn().mockResolvedValue(affiliate),
         getReferrals: jest.fn().mockResolvedValue([{ id: 'r1' }]),
         getCommissions: jest.fn().mockResolvedValue([
-          { id: 'c1', status: 'pending', amount_paise: 10000 },
-          { id: 'c2', status: 'paid', amount_paise: 5000 },
-          { id: 'c3', status: 'pending', amount_paise: 2000 },
+          { id: 'c1', status: 'pending', amount_paise: 10000, created_at: recent }, // still on hold
+          { id: 'c2', status: 'approved', amount_paise: 30000, created_at: recent },
+          { id: 'c3', status: 'pending', amount_paise: 20000, created_at: old }, // past the 30-day hold
+          { id: 'c4', status: 'rejected', amount_paise: 9000, created_at: old },
         ]),
         getPayouts: jest.fn().mockResolvedValue([
           { id: 'p1', status: 'paid', amount_paise: 8000 },
           { id: 'p2', status: 'pending', amount_paise: 3000 },
+          { id: 'p3', status: 'rejected', amount_paise: 7000 },
         ]),
       });
       const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
@@ -119,11 +123,14 @@ describe('AffiliatesService', () => {
         total_referrals: 10,
         total_conversions: 5,
         total_earnings_paise: 50000,
-        pending_earnings_paise: 12000,
+        pending_earnings_paise: 10000,
         paid_out_paise: 8000,
-        available_paise: 42000, // 50000 - 8000
+        requested_paise: 3000,
+        available_paise: 39000, // cleared 50000 − paid 8000 − requested 3000
         commission_rate: 30,
       });
+      expect(dashboard.program.min_payout_paise).toBe(100000);
+      expect(dashboard.program.tiers.map((t) => t.rate)).toEqual([30, 35, 40]);
       expect(dashboard.referrals).toEqual([{ id: 'r1' }]);
     });
 
@@ -257,30 +264,49 @@ describe('AffiliatesService', () => {
       );
     });
 
+    const cleared = (amount: number) => [
+      { id: 'c1', status: 'approved', amount_paise: amount, created_at: new Date().toISOString() },
+    ];
+    const active = { id: 'a1', status: 'active', total_earnings_paise: 999999, total_paid_paise: 0 };
+
     it('throws BadRequestException when the requested amount exceeds available balance', async () => {
       const repo = makeRepo({
-        findByUserId: jest.fn().mockResolvedValue({
-          id: 'a1',
-          status: 'active',
-          total_earnings_paise: 100000,
-          total_paid_paise: 50000, // available = 50000
-        }),
+        findByUserId: jest.fn().mockResolvedValue(active),
+        getCommissions: jest.fn().mockResolvedValue(cleared(150000)),
+        getPayouts: jest.fn().mockResolvedValue([{ id: 'p0', status: 'paid', amount_paise: 50000 }]),
       });
       const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
-      await expect(service.requestPayout('u1', 60000, 'upi', 'x')).rejects.toThrow(
-        'Requested amount exceeds available balance.',
+      await expect(service.requestPayout('u1', 110000, 'upi', 'x')).rejects.toThrow(
+        'Requested amount exceeds your available balance.',
       );
     });
 
-    it('throws BadRequestException when the amount is below the minimum payout (₹1,000 / 100000 paise)', async () => {
+    it('does not let pending (on-hold) commissions be withdrawn', async () => {
       const repo = makeRepo({
-        findByUserId: jest.fn().mockResolvedValue({
-          id: 'a1',
-          status: 'active',
-          total_earnings_paise: 500000,
-          total_paid_paise: 0,
-        }),
+        findByUserId: jest.fn().mockResolvedValue(active),
+        getCommissions: jest.fn().mockResolvedValue([
+          { id: 'c1', status: 'pending', amount_paise: 500000, created_at: new Date().toISOString() },
+        ]),
+        getPayouts: jest.fn().mockResolvedValue([]),
       });
+      const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
+      await expect(service.requestPayout('u1', 100000, 'upi', 'x')).rejects.toThrow(BadRequestException);
+      expect(repo.createPayout).not.toHaveBeenCalled();
+    });
+
+    it('rejects a second request while one is still pending', async () => {
+      const repo = makeRepo({
+        findByUserId: jest.fn().mockResolvedValue(active),
+        getCommissions: jest.fn().mockResolvedValue(cleared(500000)),
+        getPayouts: jest.fn().mockResolvedValue([{ id: 'p0', status: 'pending', amount_paise: 100000 }]),
+      });
+      const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
+      await expect(service.requestPayout('u1', 100000, 'upi', 'x')).rejects.toThrow(ConflictException);
+      expect(repo.createPayout).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when the amount is below the minimum payout (₹1,000 / 100000 paise)', async () => {
+      const repo = makeRepo({ findByUserId: jest.fn().mockResolvedValue(active) });
       const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
       await expect(service.requestPayout('u1', 99999, 'upi', 'x')).rejects.toThrow('Minimum payout is ₹1,000.');
     });
@@ -288,12 +314,9 @@ describe('AffiliatesService', () => {
     it('creates the payout when amount is within [minimum, available]', async () => {
       const payout = { id: 'p1', amount_paise: 100000, status: 'pending' };
       const repo = makeRepo({
-        findByUserId: jest.fn().mockResolvedValue({
-          id: 'a1',
-          status: 'active',
-          total_earnings_paise: 500000,
-          total_paid_paise: 0,
-        }),
+        findByUserId: jest.fn().mockResolvedValue(active),
+        getCommissions: jest.fn().mockResolvedValue(cleared(500000)),
+        getPayouts: jest.fn().mockResolvedValue([{ id: 'px', status: 'rejected', amount_paise: 400000 }]),
         createPayout: jest.fn().mockResolvedValue(payout),
       });
       const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());
@@ -304,12 +327,9 @@ describe('AffiliatesService', () => {
 
     it('allows a payout request exactly equal to the available balance', async () => {
       const repo = makeRepo({
-        findByUserId: jest.fn().mockResolvedValue({
-          id: 'a1',
-          status: 'active',
-          total_earnings_paise: 150000,
-          total_paid_paise: 0,
-        }),
+        findByUserId: jest.fn().mockResolvedValue(active),
+        getCommissions: jest.fn().mockResolvedValue(cleared(150000)),
+        getPayouts: jest.fn().mockResolvedValue([]),
         createPayout: jest.fn().mockResolvedValue({ id: 'p2' }),
       });
       const service = new AffiliatesService(repo, makeEmail(), makeUsersRepo());

@@ -16,6 +16,14 @@ function makeService(overrides: Partial<Record<string, jest.Mock>> = {}) {
 const user: AuthUser = { sub: 'u1', email: 'u1@x.com' };
 
 describe('AffiliatesController', () => {
+  it('program() returns the tiers, minimum payout and payout methods', () => {
+    const controller = new AffiliatesController({} as never);
+    const res = controller.program();
+    expect(res.data?.min_payout_paise).toBe(100000);
+    expect(res.data?.tiers.map((t) => t.rate)).toEqual([30, 35, 40]);
+    expect(res.data?.payout_methods.map((m) => m.id)).toEqual(['paypal', 'bank_transfer', 'upi']);
+  });
+
   it('inquire calls sendInquiryConfirmation and returns received:true', async () => {
     const service = makeService();
     const controller = new AffiliatesController(service);

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseAdminService } from '../../database/supabase-admin.service';
+import { rateForConversions } from './affiliate-program';
 
 export interface Affiliate {
   id: string;
@@ -189,7 +190,7 @@ export class AffiliatesRepository {
   }
 
   async updateCommissionRate(affiliateId: string, conversions: number): Promise<void> {
-    const rate = conversions >= 21 ? 40 : conversions >= 6 ? 35 : 30;
+    const rate = rateForConversions(conversions);
     await this.db
       .from('affiliates')
       .update({ commission_rate: rate, updated_at: new Date().toISOString() })
