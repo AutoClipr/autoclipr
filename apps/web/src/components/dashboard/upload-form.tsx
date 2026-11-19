@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, FileVideo, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, Trash2, UploadCloud } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
 import { deleteVideoRequest } from "@/lib/delete-video";
@@ -11,8 +11,9 @@ import {
   ClipSettingsPanel,
   PANEL,
   ProcessingCard,
+  PublishTargets,
+  StepHeader,
   SummaryPanel,
-  VideoOptionsRow,
   VideoThumb,
   estimateProcessingSeconds,
   formatDuration,
@@ -71,6 +72,8 @@ export function UploadForm() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<Duplicate | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [pickError, setPickError] = useState<string | null>(null);
 
   const title = file ? file.name.replace(/\.[^.]+$/, "") : "";
 
@@ -150,7 +153,12 @@ export function UploadForm() {
   }
 
   async function onFileSelected(f: File | undefined) {
-    if (!f?.type.startsWith("video/")) return;
+    if (!f) return;
+    if (!f.type.startsWith("video/")) {
+      setPickError(`"${f.name}" isn't a video. Choose an MP4, MOV or WebM file.`);
+      return;
+    }
+    setPickError(null);
     setFile(f);
     setError(null);
     setPhase("checking");
@@ -168,6 +176,13 @@ export function UploadForm() {
     void startUpload(f);
   }
 
+  /** Upload failed: drop the half-made record and try the same file again. */
+  function retryUpload() {
+    if (!file) return;
+    if (upload.videoId) void deleteVideoRequest(upload.videoId);
+    void startUpload(file);
+  }
+
   function uploadAnyway() {
     if (!file) return;
     setDuplicate(null);
@@ -176,7 +191,7 @@ export function UploadForm() {
   }
 
   async function handleCreate() {
-    if (!upload.done || !upload.videoId) return;
+    if (!upload.done || !upload.videoId || creating) return;
     setCreating(true);
     setError(null);
     const token = await getAccessToken();
@@ -196,7 +211,8 @@ export function UploadForm() {
 
   if (phase === "idle") {
     return (
-      <div className={PANEL}>
+      <section className={cn(PANEL, "p-5 sm:p-6")}>
+        <StepHeader step="01" title="Video source" description="Upload a video from your computer." />
         <input
           id={FILE_INPUT_ID}
           type="file"
@@ -210,22 +226,40 @@ export function UploadForm() {
         />
         <label
           htmlFor={FILE_INPUT_ID}
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
           onDrop={(e) => {
             e.preventDefault();
+            setDragging(false);
             void onFileSelected(e.dataTransfer.files[0]);
           }}
-          className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/12 bg-white/[0.02] px-6 py-20 text-center transition-colors hover:border-emerald-400/50 hover:bg-emerald-500/[0.04]"
+          className={cn(
+            "group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-16 text-center transition-colors",
+            dragging
+              ? "border-[#54D045]/70 bg-[#54D045]/[0.06]"
+              : "border-[#253244] bg-[#0A111B] hover:border-[#54D045]/40 hover:bg-[#54D045]/[0.03]",
+          )}
         >
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] transition-transform group-hover:-translate-y-1">
-            <FileVideo className="h-6 w-6 text-white/80" />
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#54D045]/25 bg-[#54D045]/10 transition-transform group-hover:-translate-y-1">
+            <UploadCloud className="h-6 w-6 text-[#8fe383]" />
           </span>
-          <p className="text-[15px] font-semibold text-white">Drop a video here, or click to browse</p>
-          <p className="mt-1.5 text-sm text-white/45">
-            MP4, MOV or WebM. Upload starts right away while you pick your settings.
+          <p className="text-[15px] font-semibold text-[#F8FAFC]">
+            {dragging ? "Drop to upload" : "Drag & drop a video here"}
           </p>
+          <p className="mt-1.5 text-sm text-[#94A3B8]">MP4, MOV or WebM. Upload starts right away while you pick settings.</p>
+          <span className="mt-5 inline-flex h-10 items-center rounded-lg bg-[#F8FAFC] px-4 text-sm font-semibold text-[#070B12] group-hover:bg-white">
+            Browse files
+          </span>
         </label>
-      </div>
+        {pickError && (
+          <p className="mt-3 text-sm text-[#fca5a5]" role="alert">
+            {pickError}
+          </p>
+        )}
+      </section>
     );
   }
 
@@ -302,12 +336,14 @@ export function UploadForm() {
       ? `Uploading ${upload.progress}%…`
       : creating
         ? "Starting…"
-        : "Create";
+        : "Generate Viral Clips";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_300px] lg:items-start">
-      <div className="space-y-5">
-        <div className={cn(PANEL, "grid gap-5 p-4 sm:grid-cols-[260px_1fr] sm:p-5")}>
+    <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
+      <div className="min-w-0 space-y-5">
+        <section className={cn(PANEL, "p-5 sm:p-6")}>
+          <StepHeader step="01" title="Video source" />
+          <div className="grid gap-5 sm:grid-cols-[240px_1fr]">
           <VideoThumb src={thumbnail} className="aspect-video">
             <div className="absolute inset-0 flex items-center justify-center">
               {upload.error ? (
@@ -324,11 +360,6 @@ export function UploadForm() {
                 </span>
               )}
             </div>
-            {!upload.done && !upload.error && (
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
-                <div className="h-full bg-emerald-400 transition-all" style={{ width: `${upload.progress}%` }} />
-              </div>
-            )}
             <button
               type="button"
               onClick={reset}
@@ -341,19 +372,45 @@ export function UploadForm() {
 
           <div className="flex min-w-0 flex-col justify-between gap-4">
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-semibold text-white" title={title}>
+              <p className="truncate text-[15px] font-semibold text-[#F8FAFC]" title={title}>
                 {title}
               </p>
-              <p className="mt-1 text-xs text-white/45">
+              <p className="mt-1 text-xs text-[#94A3B8]">
                 {formatDuration(duration)} · {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : ""}
               </p>
-              {upload.error && <p className="mt-2 text-xs text-rose-300">{upload.error}</p>}
+              {upload.error && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-[#fca5a5]">{upload.error}</p>
+                  <button
+                    type="button"
+                    onClick={retryUpload}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#253244] px-2.5 text-xs font-medium text-[#F8FAFC] hover:bg-white/[0.04]"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Retry upload
+                  </button>
+                </div>
+              )}
+              {!upload.error && (
+                <div className="mt-4">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[#0A111B]">
+                    <div
+                      className="h-full rounded-full bg-[#54D045] transition-[width] duration-300"
+                      style={{ width: `${upload.progress}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-[#94A3B8]">
+                    {upload.done ? "Upload complete" : `Uploading… ${upload.progress}%`}
+                  </p>
+                </div>
+              )}
             </div>
-            <VideoOptionsRow opts={opts} />
           </div>
-        </div>
+          </div>
+        </section>
 
-        <ClipSettingsPanel opts={opts} />
+        <ClipSettingsPanel opts={opts}>
+          <PublishTargets opts={opts} />
+        </ClipSettingsPanel>
       </div>
 
       <SummaryPanel

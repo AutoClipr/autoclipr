@@ -7,11 +7,23 @@ export const SUPPORTED_SOURCES = [
   { id: "upload", label: "Uploaded Video", color: "text-pink-400" },
 ] as const;
 
+/** Must match the worker's caption engine (apps/workers/src/pipeline/caption-styles.ts). */
 export const CAPTION_STYLES = [
   { id: "viral", label: "Viral Style" },
   { id: "animated", label: "Animated" },
   { id: "emoji", label: "Emoji Captions" },
   { id: "karaoke", label: "Karaoke" },
+  { id: "marker", label: "Marker" },
+  { id: "punch", label: "Punch" },
+  { id: "lime", label: "Lime" },
+  { id: "typewriter", label: "Typewriter" },
+  { id: "neon", label: "Neon" },
+  { id: "sticker", label: "Sticker" },
+  { id: "comic", label: "Comic" },
+  { id: "retro", label: "Retro" },
+  { id: "editorial", label: "Editorial" },
+  { id: "handwritten", label: "Handwritten" },
+  { id: "minimal", label: "Minimal" },
 ] as const;
 
 export const LANGUAGES = [
@@ -23,7 +35,12 @@ export const LANGUAGES = [
   { id: "ar", label: "Arabic" },
 ] as const;
 
-export const DURATIONS = [15, 30, 45, 60] as const;
+export const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 300, 480, 600] as const;
+
+/** 15s … 90s, then whole minutes (2m, 3m, 5m, 8m, 10m). */
+export function formatClipLength(seconds: number): string {
+  return seconds < 120 ? `${seconds}s` : `${seconds / 60}m`;
+}
 
 export const PLATFORMS = [
   { id: "tiktok", label: "TikTok" },

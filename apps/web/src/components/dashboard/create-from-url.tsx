@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Link2, Send, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ClipboardPaste, Link2, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
-import { PLATFORMS, SUPPORTED_SOURCES } from "@/lib/video-sources";
+import { SUPPORTED_SOURCES } from "@/lib/video-sources";
 import { cn } from "@/lib/utils";
 import {
   ClipSettingsPanel,
   PANEL,
   ProcessingCard,
-  SectionTitle,
+  PublishTargets,
+  StepHeader,
   SummaryPanel,
-  VideoOptionsRow,
   VideoThumb,
   useClipOptions,
   useCredits,
@@ -37,7 +37,9 @@ function youtubeId(raw: string): string | null {
 
 function sourceLabel(raw: string): string | null {
   try {
-    const host = new URL(raw.trim()).hostname.replace(/^www\./, "");
+    const u = new URL(raw.trim());
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    const host = u.hostname.replace(/^www\./, "");
     if (/youtube\.com|youtu\.be/.test(host)) return "YouTube";
     if (host.includes("vimeo.com")) return "Vimeo";
     if (host.includes("loom.com")) return "Loom";
@@ -52,9 +54,9 @@ function sourceLabel(raw: string): string | null {
 export function CreateFromUrl() {
   const opts = useClipOptions();
   const { credits, costPerClip } = useCredits();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [url, setUrl] = useState("");
-  const [platforms, setPlatforms] = useState<string[]>(["tiktok", "instagram", "youtube", "linkedin"]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState<{ videoId: string; title: string } | null>(null);
@@ -65,13 +67,24 @@ export function CreateFromUrl() {
     if (fromQuery) setUrl(fromQuery);
   }, []);
 
+  const trimmed = url.trim();
   const ytId = youtubeId(url);
   const thumbnail = ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : null;
-  const source = url.trim() ? sourceLabel(url) : null;
+  const source = trimmed ? sourceLabel(url) : null;
   const validUrl = !!source;
+  const invalid = trimmed.length > 0 && !validUrl;
+
+  async function pasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) setUrl(text.trim());
+    } catch {
+      inputRef.current?.focus();
+    }
+  }
 
   async function handleCreate() {
-    if (!validUrl) return;
+    if (!validUrl || creating) return;
     setCreating(true);
     setError(null);
     const token = await getAccessToken();
@@ -83,9 +96,8 @@ export function CreateFromUrl() {
       method: "POST",
       token,
       body: JSON.stringify({
-        url: url.trim(),
+        url: trimmed,
         ...opts.payload(),
-        platforms,
         auto_publish: true,
       }),
     });
@@ -112,77 +124,80 @@ export function CreateFromUrl() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_300px] lg:items-start">
-      <div className="space-y-5">
-        {/* Link + preview */}
-        <div className={cn(PANEL, "grid gap-5 p-4 sm:grid-cols-[260px_1fr] sm:p-5")}>
-          <VideoThumb src={thumbnail} className="aspect-video">
-            {!thumbnail && (
-              <span className="absolute inset-x-0 bottom-3 text-center text-xs text-white/45">
-                {source ? `${source} link` : "Preview appears here"}
-              </span>
-            )}
-          </VideoThumb>
+    <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
+      <div className="min-w-0 space-y-5">
+        {/* Step 1: link + preview */}
+        <section className={cn(PANEL, "p-5 sm:p-6")}>
+          <StepHeader step="01" title="Video source" description="Paste a link to a public video." />
+          <div className="grid gap-5 sm:grid-cols-[240px_1fr]">
+            <VideoThumb src={thumbnail} className="aspect-video">
+              {!thumbnail && (
+                <span className="absolute inset-x-0 bottom-3 text-center text-xs text-[#64748B]">
+                  {source ? `${source} link` : "Preview appears here"}
+                </span>
+              )}
+              {thumbnail && source && (
+                <span className="absolute bottom-2 left-2 rounded-md bg-black/65 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                  {source}
+                </span>
+              )}
+            </VideoThumb>
 
-          <div className="flex min-w-0 flex-col justify-between gap-4">
             <div className="min-w-0">
-              <label htmlFor="video-url" className="text-[15px] font-semibold text-white">
-                Paste a video link
+              <label htmlFor="video-url" className="text-sm font-medium text-[#F8FAFC]">
+                Video URL
               </label>
-              <div className="mt-2 flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 transition-colors focus-within:border-emerald-400/50">
-                <Link2 className="h-4 w-4 shrink-0 text-white/40" />
+              <div
+                className={cn(
+                  "mt-2 flex items-center gap-2.5 rounded-xl border bg-[#0A111B] pl-4 pr-2 transition-colors focus-within:border-[#54D045]/60",
+                  invalid ? "border-[#EF4444]/50" : "border-[#253244]",
+                )}
+              >
+                <Link2 className="h-5 w-5 shrink-0 text-[#64748B]" />
                 <input
+                  ref={inputRef}
                   id="video-url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://youtube.com/watch?v=…"
-                  className="h-11 min-w-0 flex-1 bg-transparent font-mono text-sm text-white placeholder:text-white/30 outline-none"
+                  aria-invalid={invalid}
+                  aria-describedby="video-url-help"
+                  className="h-14 min-w-0 flex-1 border-0 bg-transparent text-[15px] text-[#F8FAFC] shadow-none outline-none ring-0 placeholder:text-[#64748B] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 />
-                {url && (
+                {url ? (
                   <button
                     type="button"
                     onClick={() => setUrl("")}
                     aria-label="Clear link"
-                    className="rounded-md p-1 text-white/40 hover:bg-white/10 hover:text-white"
+                    className="rounded-md p-1.5 text-[#64748B] hover:bg-white/[0.06] hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={pasteFromClipboard}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#253244] px-3 text-sm font-medium text-[#cbd5e1] hover:bg-white/[0.04] hover:text-white"
+                  >
+                    <ClipboardPaste className="h-3.5 w-3.5" /> Paste
+                  </button>
                 )}
               </div>
-              <p className="mt-2 text-xs text-white/40">
-                {SUPPORTED_SOURCES.filter((s) => s.id !== "upload")
-                  .map((s) => s.label)
-                  .join(" · ")}
+              <p id="video-url-help" className={cn("mt-2 text-xs", invalid ? "text-[#fca5a5]" : "text-[#64748B]")}>
+                {invalid
+                  ? "That doesn't look like a valid link. It should start with https://"
+                  : validUrl
+                    ? `${source} link detected. Title and length are read when the import starts.`
+                    : `Supported: ${SUPPORTED_SOURCES.filter((s) => s.id !== "upload")
+                        .map((s) => s.label)
+                        .join(" · ")}`}
               </p>
             </div>
-            <VideoOptionsRow opts={opts} />
           </div>
-        </div>
+        </section>
 
         <ClipSettingsPanel opts={opts}>
-          <section className="border-t border-white/[0.06] pt-6">
-            <SectionTitle icon={Send} title="Publish to" />
-            <div className="mt-4 flex flex-wrap gap-2">
-              {PLATFORMS.map((p) => {
-                const on = platforms.includes(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() =>
-                      setPlatforms((prev) => (on ? prev.filter((x) => x !== p.id) : [...prev, p.id]))
-                    }
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                      on ? "border-white/30 bg-white/10 text-white" : "border-white/10 text-white/45 hover:text-white/80",
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+          <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>
 
@@ -193,7 +208,7 @@ export function CreateFromUrl() {
         credits={credits}
         costPerClip={costPerClip}
         error={error}
-        buttonLabel={creating ? "Starting…" : validUrl ? "Create" : "Paste a link to start"}
+        buttonLabel={creating ? "Starting…" : validUrl ? "Generate Viral Clips" : "Paste a link to start"}
         busy={creating}
         disabled={!validUrl}
         onCreate={handleCreate}
