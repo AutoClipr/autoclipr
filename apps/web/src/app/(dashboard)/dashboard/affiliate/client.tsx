@@ -190,9 +190,9 @@ export function AffiliateDashboard({
           </div>
         </section>
 
-        <section className="relative flex flex-col overflow-hidden rounded-2xl bg-[#54D045] p-5 text-[#070B12] shadow-[0_20px_50px_-24px_rgba(84,208,69,0.8)] sm:p-6">
-          <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/25 blur-2xl" aria-hidden />
-          <p className="relative text-xs font-semibold uppercase tracking-wider text-[#070B12]/70">Your commission</p>
+        <section className="relative flex flex-col overflow-hidden rounded-2xl bg-[#54D045] p-5 text-white shadow-[0_20px_50px_-24px_rgba(84,208,69,0.8)] sm:p-6">
+          <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/20 blur-2xl" aria-hidden />
+          <p className="relative text-xs font-semibold uppercase tracking-wider text-white/85">Your commission</p>
           <p className="relative mt-1 text-5xl font-extrabold tabular-nums">
             {stats.commission_rate}
             <span className="text-2xl">%</span>
@@ -200,19 +200,19 @@ export function AffiliateDashboard({
           <p className="relative mt-1 text-sm font-semibold">
             recurring{current ? ` · ${current.name} tier` : ""}
           </p>
-          <p className="relative mt-3 text-xs leading-relaxed text-[#070B12]/75">
+          <p className="relative mt-3 text-xs leading-relaxed text-white/90">
             Earned on qualifying payments while your referrals stay subscribed, under the program terms.
           </p>
           <div className="relative mt-auto pt-4">
             {next && left != null ? (
               <>
-                <div className="flex justify-between text-xs font-medium text-[#070B12]/75">
+                <div className="flex justify-between text-xs font-medium text-white/90">
                   <span>{stats.total_conversions} paid conversions</span>
                   <span>{next.min_conversions} for {next.rate}%</span>
                 </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#070B12]/15">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/25">
                   <div
-                    className="h-full rounded-full bg-[#070B12]"
+                    className="h-full rounded-full bg-white"
                     style={{ width: `${Math.max(2, Math.min(100, (stats.total_conversions / next.min_conversions) * 100))}%` }}
                   />
                 </div>
