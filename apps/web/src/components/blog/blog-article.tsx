@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { BlogPost } from "@/lib/blog-posts";
+import { formatPostDate, type BlogPost } from "@/lib/blog-posts";
 
 export function BlogArticle({ post }: { post: BlogPost }) {
   return (
@@ -16,11 +16,15 @@ export function BlogArticle({ post }: { post: BlogPost }) {
 
       <header>
         <p className="text-sm text-muted-foreground">
-          {new Date(post.publishedAt).toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })}
+          {post.updatedAt ? (
+            <>
+              Updated <time dateTime={post.updatedAt}>{formatPostDate(post.updatedAt)}</time>
+              <span className="mx-2">·</span>
+              Originally published <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
+            </>
+          ) : (
+            <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
+          )}
           <span className="mx-2">·</span>
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />

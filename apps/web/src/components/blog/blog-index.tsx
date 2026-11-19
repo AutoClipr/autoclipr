@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
-import type { BlogPost } from "@/lib/blog-posts";
+import { formatPostDate, type BlogPost } from "@/lib/blog-posts";
 
 export function BlogIndex({ posts }: { posts: BlogPost[] }) {
   return (
@@ -12,11 +12,11 @@ export function BlogIndex({ posts }: { posts: BlogPost[] }) {
           className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-7 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20"
         >
           <p className="text-xs text-muted-foreground">
-            {new Date(post.publishedAt).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
+            {post.updatedAt ? (
+              <>Updated <time dateTime={post.updatedAt}>{formatPostDate(post.updatedAt)}</time></>
+            ) : (
+              <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
+            )}
             <span className="mx-2">·</span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3" />

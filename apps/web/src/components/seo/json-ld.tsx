@@ -158,7 +158,7 @@ export function BlogPostJsonLd({ post, url }: { post: BlogPost; url: string }) {
     description: post.description,
     image: `${SITE_URL}${OG_IMAGE_PATH}`,
     datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
+    dateModified: post.updatedAt ?? post.publishedAt,
     author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     publisher: {
       "@type": "Organization",
@@ -197,6 +197,7 @@ export function BlogIndexJsonLd({ posts }: { posts: BlogPost[] }) {
       description: p.description,
       url: `${SITE_URL}/blog/${p.slug}`,
       datePublished: p.publishedAt,
+      dateModified: p.updatedAt ?? p.publishedAt,
     })),
   };
 

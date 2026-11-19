@@ -188,7 +188,7 @@ export const SITEMAP_ROUTES = [
     path: `/blog/${p.slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.7,
-    lastModified: p.publishedAt,
+    lastModified: p.updatedAt ?? p.publishedAt,
   })),
   ...TOP_CREATOR_SLUGS.map((slug) => ({
     path: `/top-creators/${slug}`,

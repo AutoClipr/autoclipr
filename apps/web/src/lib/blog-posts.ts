@@ -4,10 +4,22 @@ export type BlogPost = {
   description: string;
   keywords: string[];
   publishedAt: string;
+  /** Set when the post was refreshed after publishing (YYYY-MM-DD). */
+  updatedAt?: string;
   readMinutes: number;
   sections: { heading?: string; paragraphs: string[] }[];
   relatedTools?: { label: string; href: string }[];
 };
+
+/** "2026-11-19" → "November 19, 2026" (date-only, no timezone shift). */
+export function formatPostDate(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
 
 export const BLOG_POSTS: BlogPost[] = [
   {
@@ -22,6 +34,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "AI video repurposing",
     ],
     publishedAt: "2025-06-01",
+    updatedAt: "2026-11-19",
     readMinutes: 6,
     sections: [
       {
@@ -75,6 +88,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "multi-platform clips",
     ],
     publishedAt: "2025-06-05",
+    updatedAt: "2026-11-19",
     readMinutes: 5,
     sections: [
       {
@@ -167,6 +181,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "video repurposing software",
     ],
     publishedAt: "2025-06-10",
+    updatedAt: "2026-11-19",
     readMinutes: 7,
     sections: [
       {
