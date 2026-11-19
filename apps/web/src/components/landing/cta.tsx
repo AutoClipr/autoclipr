@@ -6,7 +6,7 @@ import { ArrowRight, Check, Instagram, Link2, Youtube } from "lucide-react";
 import { Reveal, motion } from "@/components/ui/motion";
 import { AmbientBg, TikTokLogo } from "@/components/landing/feature-showcase";
 
-const TRUST = ["3-day free trial", "No credit card needed", "Cancel anytime"];
+const TRUST = ["Free Starter plan", "No credit card needed", "Cancel anytime"];
 
 const STROKE = {
   WebkitTextStroke: "1px black",

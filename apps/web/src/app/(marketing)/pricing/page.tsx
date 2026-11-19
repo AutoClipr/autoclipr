@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { PricingSkeleton } from "@/components/landing/pricing-skeleton";
 import { FAQ } from "@/components/landing/faq";
+import { PlanComparison } from "@/components/landing/plan-comparison";
 import { pageMetadata } from "@/lib/seo";
 import { Check, Zap, Shield, HeadphonesIcon } from "lucide-react";
 
@@ -54,7 +55,7 @@ export default function PricingPage() {
 
         <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
           Pay for what you{" "}
-          <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#54D045] to-[#35D6E8] bg-clip-text text-transparent">
             actually use
           </span>
         </h1>
@@ -81,6 +82,8 @@ export default function PricingPage() {
       <Suspense fallback={<PricingSkeleton showHeader={false} />}>
         <PricingSection showHeader={false} />
       </Suspense>
+
+      <PlanComparison />
 
       <FAQ />
     </div>
