@@ -11,6 +11,7 @@ import { StorageService } from '../storage/storage.service';
 import { VideosRepository, type VideoDeletionReason } from './videos.repository';
 import { InitUploadDto } from './dto/init-upload.dto';
 import { ImportUrlDto } from './dto/import-url.dto';
+import { CompleteUploadDto } from './dto/complete-upload.dto';
 import { getSourceLabel, parseVideoUrl } from './utils/video-url.util';
 
 @Injectable()
@@ -252,20 +253,57 @@ export class VideosService {
     };
   }
 
-  async completeUpload(userId: string, videoId: string) {
+  async completeUpload(userId: string, videoId: string, dto: CompleteUploadDto = {}) {
     const video = await this.videosRepo.getById(videoId, userId);
     if (!video) throw new NotFoundException('Video not found');
+    // Only an upload that hasn't started processing can be completed, so a
+    // double click or retry never charges twice.
+    if (video.status && video.status !== 'uploading') {
+      throw new BadRequestException('This video is already being processed.');
+    }
+
+    const clipCount = dto.clip_count ?? 5;
+    const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
+    const totalCost = costPerClip * clipCount;
+
+    // Charged up front, same as URL imports; the pipeline refunds on failure.
+    try {
+      await this.usersRepo.deductCredits(userId, totalCost, 'upload_pipeline', videoId);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        const balance = (await this.usersRepo.getById(userId))?.credits ?? 0;
+        throw new BadRequestException(
+          `Not enough credits: need ${totalCost} (${clipCount} clips × ${costPerClip} credits). You have ${balance}. Reduce clip count or upgrade your plan.`,
+        );
+      }
+      throw err;
+    }
 
     await this.videosRepo.updateStatus(videoId, 'processing');
 
-    await this.jobsService.enqueueAndDispatch({
-      user_id: userId,
-      video_id: videoId,
-      job_type: JobType.ANALYZE_VIDEO,
-      payload: { video_id: videoId },
-    });
+    try {
+      await this.jobsService.enqueueAndDispatch({
+        user_id: userId,
+        video_id: videoId,
+        job_type: JobType.ANALYZE_VIDEO,
+        payload: {
+          video_id: videoId,
+          clip_count: clipCount,
+          durations: dto.durations?.length ? dto.durations : [15, 30, 45, 60],
+          caption_style: dto.caption_style ?? 'viral',
+          caption_language: dto.caption_language ?? 'en',
+          platforms: dto.platforms ?? ['tiktok', 'instagram', 'youtube', 'linkedin'],
+          export_quality: dto.export_quality ?? 'hd',
+          credit_cost: totalCost,
+        },
+      });
+    } catch (err) {
+      await this.refundQuietly(userId, totalCost, 'upload_enqueue_failed', videoId);
+      await this.videosRepo.updateStatus(videoId, 'failed');
+      throw err;
+    }
 
-    return { status: 'processing' };
+    return { status: 'processing', credit_cost: totalCost };
   }
 
   async list(userId: string, page: number, limit: number) {

@@ -19,6 +19,7 @@ import { VideosService } from './videos.service';
 import { InitUploadDto } from './dto/init-upload.dto';
 import { ImportUrlDto } from './dto/import-url.dto';
 import { DeleteVideoDto } from './dto/delete-video.dto';
+import { CompleteUploadDto } from './dto/complete-upload.dto';
 
 @ApiTags('Videos')
 @ApiBearerAuth('JWT')
@@ -52,8 +53,12 @@ export class VideosController {
   }
 
   @Post(':id/complete')
-  async complete(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    const data = await this.videosService.completeUpload(user.sub, id);
+  async complete(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: CompleteUploadDto,
+  ) {
+    const data = await this.videosService.completeUpload(user.sub, id, dto ?? {});
     return ApiResponse.ok(data);
   }
 

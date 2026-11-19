@@ -50,12 +50,18 @@ describe('VideosController', () => {
   });
 
   it('complete delegates to completeUpload', async () => {
-    service.completeUpload.mockResolvedValue({ status: 'processing' });
+    service.completeUpload.mockResolvedValue({ status: 'processing', credit_cost: 5 });
 
-    const result = await controller.complete(user, 'v1');
+    const result = await controller.complete(user, 'v1', { clip_count: 5 });
 
-    expect(service.completeUpload).toHaveBeenCalledWith('u1', 'v1');
-    expect(result.data).toEqual({ status: 'processing' });
+    expect(service.completeUpload).toHaveBeenCalledWith('u1', 'v1', { clip_count: 5 });
+    expect(result.data).toEqual({ status: 'processing', credit_cost: 5 });
+  });
+
+  it('complete passes an empty options object when no body is sent', async () => {
+    service.completeUpload.mockResolvedValue({ status: 'processing', credit_cost: 5 });
+    await controller.complete(user, 'v1', undefined as never);
+    expect(service.completeUpload).toHaveBeenCalledWith('u1', 'v1', {});
   });
 
   describe('list', () => {

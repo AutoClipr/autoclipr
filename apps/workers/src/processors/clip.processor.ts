@@ -290,9 +290,15 @@ export class ClipProcessor extends WorkerHost {
       {
         video_id: videoId,
         source_url: v.source_url ?? `storage://${v.storage_path}`,
-        clip_count: 5,
-        durations: [30, 45, 60],
-      },
+        // Options chosen on the create screen; older jobs fall back to defaults.
+        clip_count: (data.clip_count as number) ?? 5,
+        durations: (data.durations as number[]) ?? [30, 45, 60],
+        caption_style: data.caption_style as string | undefined,
+        caption_language: data.caption_language as string | undefined,
+        platforms: data.platforms as string[] | undefined,
+        export_quality: data.export_quality as string | undefined,
+        ...(typeof data.credit_cost === 'number' ? { credit_cost: data.credit_cost } : {}),
+      } as UrlPipelinePayload,
       jobId,
     );
   }

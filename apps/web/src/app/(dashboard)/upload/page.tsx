@@ -16,7 +16,7 @@ export default function UploadPage() {
   const [tab, setTab] = useState<"url" | "file">("url");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className={cn("mx-auto space-y-6", tab === "file" ? "max-w-6xl" : "max-w-4xl")}>
       <PageHero
         label="Create"
         title="Create viral"

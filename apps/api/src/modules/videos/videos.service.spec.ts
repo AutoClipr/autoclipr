@@ -577,17 +577,99 @@ describe('VideosService', () => {
       await expect(service.completeUpload('u1', 'v1')).rejects.toThrow(NotFoundException);
     });
 
-    it('updates status, enqueues an analyze job, and returns processing status', async () => {
-      videosRepo.getById.mockResolvedValue({ id: 'v1' } as never);
+    it('refuses a video that is already processing (no double charge)', async () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'processing' } as never);
+      await expect(service.completeUpload('u1', 'v1')).rejects.toThrow(BadRequestException);
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+    });
+
+    it('charges credits and enqueues analysis with the chosen options', async () => {
+      config.get.mockReturnValue(2); // clipCreditCost
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
       jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
 
-      const result = await service.completeUpload('u1', 'v1');
+      const result = await service.completeUpload('u1', 'v1', {
+        clip_count: 8,
+        durations: [30],
+        caption_style: 'karaoke',
+        caption_language: 'hi',
+      });
 
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 16, 'upload_pipeline', 'v1');
       expect(videosRepo.updateStatus).toHaveBeenCalledWith('v1', 'processing');
       expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ job_type: JobType.ANALYZE_VIDEO, video_id: 'v1' }),
+        expect.objectContaining({
+          job_type: JobType.ANALYZE_VIDEO,
+          video_id: 'v1',
+          payload: expect.objectContaining({
+            clip_count: 8,
+            durations: [30],
+            caption_style: 'karaoke',
+            caption_language: 'hi',
+            credit_cost: 16,
+          }),
+        }),
       );
-      expect(result).toEqual({ status: 'processing' });
+      expect(result).toEqual({ status: 'processing', credit_cost: 16 });
+    });
+
+    it('uses defaults when no options are sent', async () => {
+      config.get.mockReturnValue(undefined);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await service.completeUpload('u1', 'v1');
+
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 5, 'upload_pipeline', 'v1');
+      expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            clip_count: 5,
+            durations: [15, 30, 45, 60],
+            caption_style: 'viral',
+            caption_language: 'en',
+            export_quality: 'hd',
+          }),
+        }),
+      );
+    });
+
+    it('explains the shortfall when credits are insufficient and does not start processing', async () => {
+      config.get.mockReturnValue(1);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      usersRepo.deductCredits.mockRejectedValue(new InsufficientCreditsError(10));
+      usersRepo.getById.mockResolvedValue({ credits: 3 } as never);
+
+      await expect(service.completeUpload('u1', 'v1', { clip_count: 10 })).rejects.toThrow(
+        /need 10 .* You have 3/,
+      );
+      expect(videosRepo.updateStatus).not.toHaveBeenCalled();
+      expect(jobsService.enqueueAndDispatch).not.toHaveBeenCalled();
+    });
+
+    it('reports zero balance when the profile cannot be read', async () => {
+      config.get.mockReturnValue(1);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      usersRepo.deductCredits.mockRejectedValue(new InsufficientCreditsError(5));
+      usersRepo.getById.mockResolvedValue(null);
+
+      await expect(service.completeUpload('u1', 'v1')).rejects.toThrow(/You have 0/);
+    });
+
+    it('rethrows unexpected charging errors', async () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      usersRepo.deductCredits.mockRejectedValue(new Error('db down'));
+      await expect(service.completeUpload('u1', 'v1')).rejects.toThrow('db down');
+    });
+
+    it('refunds and marks failed when the job cannot be queued', async () => {
+      config.get.mockReturnValue(1);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockRejectedValue(new Error('redis down'));
+
+      await expect(service.completeUpload('u1', 'v1', { clip_count: 4 })).rejects.toThrow('redis down');
+      expect(usersRepo.refundCredits).toHaveBeenCalledWith('u1', 4, 'upload_enqueue_failed', 'v1');
+      expect(videosRepo.updateStatus).toHaveBeenLastCalledWith('v1', 'failed');
     });
   });
 
