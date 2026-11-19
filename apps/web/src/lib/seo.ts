@@ -61,6 +61,21 @@ export const DEFAULT_KEYWORDS = [
   "vertical video maker",
   "schedule YouTube Shorts",
   "content creator tools",
+  "auto clip generator",
+  // Brand spellings and alternatives people search for
+  "AutoClippr",
+  "OpusClip",
+  "Vizard",
+  "vizard.ai",
+  "Choppity",
+  "Wayin",
+  "Vmaker AI",
+  "Kling AI",
+  "OpenArt",
+  "OpenArt AI",
+  "ImagineArt",
+  "Picsart",
+  "Free AI",
 ];
 
 type PageSeoOptions = {
