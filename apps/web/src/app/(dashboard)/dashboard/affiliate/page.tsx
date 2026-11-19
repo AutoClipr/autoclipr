@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
-import { AffiliateDashboard, AffiliateApply } from "./client";
+import { AffiliateDashboard, AffiliateApply, AffiliateLoadError } from "./client";
 
 export const metadata: Metadata = { title: "Refer & earn" };
 
@@ -13,7 +13,16 @@ export type AffiliateStats = {
   pending_earnings_paise: number;
   paid_out_paise: number;
   available_paise: number;
+  /** Payouts requested but not yet paid. */
+  requested_paise?: number;
   commission_rate: number;
+};
+
+export type AffiliateProgram = {
+  tiers: Array<{ id: string; name: string; min_conversions: number; max_conversions: number | null; rate: number }>;
+  min_payout_paise: number;
+  commission_hold_days: number;
+  payout_methods: Array<{ id: string; label: string }>;
 };
 
 export type AffiliateData = {
@@ -52,6 +61,7 @@ export type AffiliateData = {
     paid_at: string | null;
     created_at: string;
   }>;
+  program?: AffiliateProgram;
 };
 
 export default async function AffiliatePage() {
@@ -59,15 +69,18 @@ export default async function AffiliatePage() {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session!.access_token;
 
-  const res = await apiFetch<AffiliateData>("/api/v1/affiliates/me", {
-    token,
-    cache: "no-store",
-  });
+  const [res, programRes] = await Promise.all([
+    apiFetch<AffiliateData>("/api/v1/affiliates/me", { token, cache: "no-store" }),
+    apiFetch<AffiliateProgram>("/api/v1/affiliates/program", { cache: "no-store" }),
+  ]);
+  const program = res.data?.program ?? programRes.data ?? null;
 
-  if (!res.success || !res.data) {
-    // No affiliate account yet — show apply form
-    return <AffiliateApply token={token} />;
+  if (res.success && res.data) {
+    return <AffiliateDashboard data={res.data} program={program} token={token} />;
   }
-
-  return <AffiliateDashboard data={res.data} token={token} />;
+  // Only a missing account means "not an affiliate yet"; anything else is a load failure.
+  if (res.error?.code === "NOT_FOUND") {
+    return <AffiliateApply token={token} program={program} />;
+  }
+  return <AffiliateLoadError />;
 }
