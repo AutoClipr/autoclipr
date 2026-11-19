@@ -17,6 +17,7 @@ describe('VideosController (e2e)', () => {
       delete: jest.fn(),
       completeUpload: jest.fn(),
       list: jest.fn(),
+      findDuplicate: jest.fn(),
       getPipeline: jest.fn(),
       get: jest.fn(),
     } as unknown as jest.Mocked<VideosService>;
@@ -193,6 +194,22 @@ describe('VideosController (e2e)', () => {
         .send({ clip_count: 50, caption_style: 'comic' })
         .expect(400);
       expect(service.completeUpload).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /videos/duplicate', () => {
+    it('returns 401 without an authorization header', async () => {
+      await request(app.getHttpServer()).get('/videos/duplicate?title=x').expect(401);
+    });
+
+    it('returns the matching earlier upload', async () => {
+      service.findDuplicate.mockResolvedValue({ id: 'v9', title: 'Ashke' } as never);
+      const res = await request(app.getHttpServer())
+        .get('/videos/duplicate?title=Ashke&duration=218&size=1000')
+        .set('Authorization', auth())
+        .expect(200);
+      expect(service.findDuplicate).toHaveBeenCalledWith(TEST_USER.sub, 'Ashke', 218, 1000);
+      expect(res.body.data).toEqual({ duplicate: { id: 'v9', title: 'Ashke' } });
     });
   });
 

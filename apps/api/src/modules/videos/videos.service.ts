@@ -8,7 +8,7 @@ import { JobsRepository } from '../jobs/jobs.repository';
 import { JobType } from '../jobs/jobs.constants';
 import { InsufficientCreditsError, UsersRepository } from '../users/users.repository';
 import { StorageService } from '../storage/storage.service';
-import { VideosRepository, type VideoDeletionReason } from './videos.repository';
+import { VideosRepository, type Video, type VideoDeletionReason } from './videos.repository';
 import { InitUploadDto } from './dto/init-upload.dto';
 import { ImportUrlDto } from './dto/import-url.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
@@ -304,6 +304,30 @@ export class VideosService {
     }
 
     return { status: 'processing', credit_cost: totalCost };
+  }
+
+  /**
+   * An earlier upload of the same video: same title and the same length
+   * (within a second). If the earlier one hasn't been measured yet (still
+   * processing), the file size has to match instead.
+   */
+  async findDuplicate(
+    userId: string,
+    title: string,
+    durationSeconds?: number,
+    sizeBytes?: number,
+  ): Promise<Pick<Video, 'id' | 'title' | 'status' | 'created_at'> | null> {
+    const clean = title.trim();
+    if (!clean) return null;
+    const candidates = await this.videosRepo.findByTitle(userId, clean);
+    const match = candidates.find((v) => {
+      if (v.duration_seconds != null && durationSeconds != null) {
+        return Math.abs(Number(v.duration_seconds) - durationSeconds) <= 1;
+      }
+      // bigint column: arrives as a string
+      return v.file_size_bytes != null && sizeBytes != null && Number(v.file_size_bytes) === sizeBytes;
+    });
+    return match ? { id: match.id, title: match.title, status: match.status, created_at: match.created_at } : null;
   }
 
   async list(userId: string, page: number, limit: number) {

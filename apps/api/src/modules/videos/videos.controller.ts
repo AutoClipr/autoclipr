@@ -62,6 +62,19 @@ export class VideosController {
     return ApiResponse.ok(data);
   }
 
+  /** Has this user already uploaded this video? Checked before a new upload. */
+  @Get('duplicate')
+  async duplicate(
+    @CurrentUser() user: AuthUser,
+    @Query('title') title?: string,
+    @Query('duration') duration?: string,
+    @Query('size') size?: string,
+  ) {
+    const num = (v?: string) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : undefined);
+    const match = await this.videosService.findDuplicate(user.sub, title ?? '', num(duration), num(size));
+    return ApiResponse.ok({ duplicate: match });
+  }
+
   @Get()
   async list(
     @CurrentUser() user: AuthUser,

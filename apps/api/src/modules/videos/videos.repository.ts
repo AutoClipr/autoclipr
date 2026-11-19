@@ -73,6 +73,22 @@ export class VideosRepository {
     return { items: (data ?? []) as Video[], total: count ?? 0 };
   }
 
+  /** The user's non-failed videos with this exact title (case-insensitive). */
+  async findByTitle(userId: string, title: string): Promise<Video[]> {
+    const { data, error } = await this.supabase
+      .getClient()
+      .from('videos')
+      .select(VIDEO_COLUMNS)
+      .eq('user_id', userId)
+      .ilike('title', title.replace(/[\\%_]/g, (c) => `\\${c}`))
+      .neq('status', 'failed')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Video[];
+  }
+
   async getById(id: string, userId: string): Promise<Video | null> {
     const { data, error } = await this.supabase
       .getClient()

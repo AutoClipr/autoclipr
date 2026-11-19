@@ -13,6 +13,7 @@ describe('VideosController', () => {
       delete: jest.fn(),
       completeUpload: jest.fn(),
       list: jest.fn(),
+      findDuplicate: jest.fn(),
       getPipeline: jest.fn(),
       get: jest.fn(),
     } as unknown as jest.Mocked<VideosService>;
@@ -62,6 +63,22 @@ describe('VideosController', () => {
     service.completeUpload.mockResolvedValue({ status: 'processing', credit_cost: 5 });
     await controller.complete(user, 'v1', undefined as never);
     expect(service.completeUpload).toHaveBeenCalledWith('u1', 'v1', {});
+  });
+
+  describe('duplicate', () => {
+    it('parses numbers and returns the match', async () => {
+      service.findDuplicate.mockResolvedValue({ id: 'v9' } as never);
+      const result = await controller.duplicate(user, 'Ashke', '218', '1000');
+      expect(service.findDuplicate).toHaveBeenCalledWith('u1', 'Ashke', 218, 1000);
+      expect(result.data).toEqual({ duplicate: { id: 'v9' } });
+    });
+
+    it('ignores missing or non-numeric values', async () => {
+      service.findDuplicate.mockResolvedValue(null);
+      const result = await controller.duplicate(user, undefined, 'abc', '');
+      expect(service.findDuplicate).toHaveBeenCalledWith('u1', '', undefined, undefined);
+      expect(result.data).toEqual({ duplicate: null });
+    });
   });
 
   describe('list', () => {

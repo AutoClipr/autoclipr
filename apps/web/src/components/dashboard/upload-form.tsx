@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, FileVideo, Loader2, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, CheckCircle2, FileVideo, Loader2, Trash2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
 import { deleteVideoRequest } from "@/lib/delete-video";
@@ -21,7 +22,8 @@ import {
 
 const FILE_INPUT_ID = "autoclipr-video-upload";
 
-type Phase = "idle" | "configure" | "processing";
+type Phase = "idle" | "checking" | "duplicate" | "configure" | "processing";
+type Duplicate = { id: string; title: string; status: string; created_at: string };
 type UploadState = { progress: number; done: boolean; videoId: string | null; error: string | null };
 
 /** A frame about a second in, plus duration, read locally before upload. */
@@ -68,6 +70,7 @@ export function UploadForm() {
   const [upload, setUpload] = useState<UploadState>({ progress: 0, done: false, videoId: null, error: null });
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicate, setDuplicate] = useState<Duplicate | null>(null);
 
   const title = file ? file.name.replace(/\.[^.]+$/, "") : "";
 
@@ -82,6 +85,7 @@ export function UploadForm() {
     setDuration(null);
     setUpload({ progress: 0, done: false, videoId: null, error: null });
     setError(null);
+    setDuplicate(null);
   }, [phase, upload.videoId]);
 
   useEffect(() => () => xhrRef.current?.abort(), []);
@@ -132,15 +136,43 @@ export function UploadForm() {
     setUpload({ progress: 100, done: true, videoId, error: null });
   }
 
+  /** Has this account already uploaded the same video (same name and length)? */
+  async function findDuplicate(f: File, seconds: number | null): Promise<Duplicate | null> {
+    const token = await getAccessToken();
+    if (!token) return null;
+    const q = new URLSearchParams({ title: f.name.replace(/\.[^.]+$/, ""), size: String(f.size) });
+    if (seconds != null) q.set("duration", String(Math.round(seconds)));
+    const res = await apiFetch<{ duplicate: Duplicate | null }>(`/api/v1/videos/duplicate?${q}`, {
+      token,
+      skipGlobalLoader: true,
+    });
+    return res.success ? (res.data?.duplicate ?? null) : null;
+  }
+
   async function onFileSelected(f: File | undefined) {
     if (!f?.type.startsWith("video/")) return;
     setFile(f);
     setError(null);
-    setPhase("configure");
-    void startUpload(f);
+    setPhase("checking");
     const preview = await readVideoPreview(f);
     setThumbnail(preview.thumbnail);
     setDuration(preview.duration);
+
+    const dup = await findDuplicate(f, preview.duration);
+    if (dup) {
+      setDuplicate(dup);
+      setPhase("duplicate");
+      return;
+    }
+    setPhase("configure");
+    void startUpload(f);
+  }
+
+  function uploadAnyway() {
+    if (!file) return;
+    setDuplicate(null);
+    setPhase("configure");
+    void startUpload(file);
   }
 
   async function handleCreate() {
@@ -193,6 +225,61 @@ export function UploadForm() {
             MP4, MOV or WebM. Upload starts right away while you pick your settings.
           </p>
         </label>
+      </div>
+    );
+  }
+
+  if (phase === "checking") {
+    return (
+      <div className={cn(PANEL, "flex items-center justify-center gap-3 px-6 py-20 text-sm text-white/60")}>
+        <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+        Checking your video…
+      </div>
+    );
+  }
+
+  if (phase === "duplicate" && duplicate) {
+    const when = new Date(duplicate.created_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    return (
+      <div className={cn(PANEL, "grid gap-5 p-5 sm:grid-cols-[260px_1fr] sm:p-6")}>
+        <VideoThumb src={thumbnail} className="aspect-video" />
+        <div className="flex min-w-0 flex-col justify-center">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Already uploaded
+          </span>
+          <h2 className="mt-3 text-lg font-bold text-white">This video is already in your account</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-white/55">
+            You uploaded <span className="font-semibold text-white">{duplicate.title}</span> with the same length on{" "}
+            {when}. Uploading it again will use credits for clips you may already have.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              href={`/clips?video=${duplicate.id}`}
+              className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-black hover:opacity-90"
+            >
+              View its clips
+            </Link>
+            <button
+              type="button"
+              onClick={uploadAnyway}
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/[0.06]"
+            >
+              Upload anyway
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-white/55 hover:text-white"
+            >
+              Choose another video
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

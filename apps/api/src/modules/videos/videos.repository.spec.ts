@@ -91,6 +91,27 @@ describe('VideosRepository', () => {
     });
   });
 
+  describe('findByTitle', () => {
+    it('matches the title case-insensitively, skips failed videos, escapes wildcards', async () => {
+      chain.__setResult({ data: [{ id: 'v1' }], error: null });
+      const result = await repo.findByTitle('u1', 'My_video 100%');
+      expect(chain.eq).toHaveBeenCalledWith('user_id', 'u1');
+      expect(chain.ilike).toHaveBeenCalledWith('title', 'My\\_video 100\\%');
+      expect(chain.neq).toHaveBeenCalledWith('status', 'failed');
+      expect(result).toEqual([{ id: 'v1' }]);
+    });
+
+    it('returns [] when data is null', async () => {
+      chain.__setResult({ data: null, error: null });
+      expect(await repo.findByTitle('u1', 'x')).toEqual([]);
+    });
+
+    it('throws when supabase returns an error', async () => {
+      chain.__setResult({ data: null, error: { message: 'boom' } });
+      await expect(repo.findByTitle('u1', 'x')).rejects.toThrow('boom');
+    });
+  });
+
   describe('getById', () => {
     it('returns the video when found', async () => {
       const video = { id: 'v1' };

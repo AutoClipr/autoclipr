@@ -197,6 +197,7 @@ export type ChainableMock = {
   delete: jest.Mock;
   eq: jest.Mock;
   neq: jest.Mock;
+  ilike: jest.Mock;
   in: jest.Mock;
   order: jest.Mock;
   range: jest.Mock;
@@ -231,6 +232,7 @@ export function createSupabaseMock(
     'delete',
     'eq',
     'neq',
+    'ilike',
     'in',
     'order',
     'range',

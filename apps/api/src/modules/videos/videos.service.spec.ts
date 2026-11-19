@@ -23,6 +23,7 @@ describe('VideosService', () => {
     videosRepo = {
       create: jest.fn(),
       listByUser: jest.fn(),
+      findByTitle: jest.fn(),
       getById: jest.fn(),
       updateStatus: jest.fn(),
       updateAnalysis: jest.fn(),
@@ -670,6 +671,49 @@ describe('VideosService', () => {
       await expect(service.completeUpload('u1', 'v1', { clip_count: 4 })).rejects.toThrow('redis down');
       expect(usersRepo.refundCredits).toHaveBeenCalledWith('u1', 4, 'upload_enqueue_failed', 'v1');
       expect(videosRepo.updateStatus).toHaveBeenLastCalledWith('v1', 'failed');
+    });
+  });
+
+  describe('findDuplicate', () => {
+    const existing = {
+      id: 'v9',
+      title: 'Ashke',
+      status: 'ready',
+      created_at: '2026-11-19',
+      duration_seconds: 218,
+      file_size_bytes: '1000',
+    };
+
+    it('returns null for a blank title without querying', async () => {
+      expect(await service.findDuplicate('u1', '   ', 218)).toBeNull();
+      expect(videosRepo.findByTitle).not.toHaveBeenCalled();
+    });
+
+    it('matches the same title and length within a second', async () => {
+      videosRepo.findByTitle.mockResolvedValue([existing] as never);
+      expect(await service.findDuplicate('u1', ' Ashke ', 218.6)).toEqual({
+        id: 'v9',
+        title: 'Ashke',
+        status: 'ready',
+        created_at: '2026-11-19',
+      });
+      expect(videosRepo.findByTitle).toHaveBeenCalledWith('u1', 'Ashke');
+    });
+
+    it('does not match a different length', async () => {
+      videosRepo.findByTitle.mockResolvedValue([existing] as never);
+      expect(await service.findDuplicate('u1', 'Ashke', 300)).toBeNull();
+    });
+
+    it('falls back to file size while the earlier video has no length yet', async () => {
+      videosRepo.findByTitle.mockResolvedValue([{ ...existing, duration_seconds: null }] as never);
+      expect(await service.findDuplicate('u1', 'Ashke', 218, 1000)).not.toBeNull();
+      expect(await service.findDuplicate('u1', 'Ashke', 218, 999)).toBeNull();
+    });
+
+    it('does not match when neither length nor size can be compared', async () => {
+      videosRepo.findByTitle.mockResolvedValue([{ ...existing, duration_seconds: null, file_size_bytes: null }] as never);
+      expect(await service.findDuplicate('u1', 'Ashke')).toBeNull();
     });
   });
 
