@@ -190,37 +190,38 @@ export function AffiliateDashboard({
           </div>
         </section>
 
-        <section className={cn(CARD, "flex flex-col p-5 sm:p-6")}>
-          <p className="text-xs font-medium text-[#94A3B8]">Your commission</p>
-          <p className="mt-1 text-5xl font-bold tabular-nums text-[#F8FAFC]">
+        <section className="relative flex flex-col overflow-hidden rounded-2xl bg-[#54D045] p-5 text-[#070B12] shadow-[0_20px_50px_-24px_rgba(84,208,69,0.8)] sm:p-6">
+          <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/25 blur-2xl" aria-hidden />
+          <p className="relative text-xs font-semibold uppercase tracking-wider text-[#070B12]/70">Your commission</p>
+          <p className="relative mt-1 text-5xl font-extrabold tabular-nums">
             {stats.commission_rate}
-            <span className="text-2xl text-[#54D045]">%</span>
+            <span className="text-2xl">%</span>
           </p>
-          <p className="mt-1 text-sm text-[#cbd5e1]">
+          <p className="relative mt-1 text-sm font-semibold">
             recurring{current ? ` · ${current.name} tier` : ""}
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-[#94A3B8]">
+          <p className="relative mt-3 text-xs leading-relaxed text-[#070B12]/75">
             Earned on qualifying payments while your referrals stay subscribed, under the program terms.
           </p>
-          <div className="mt-auto pt-4">
+          <div className="relative mt-auto pt-4">
             {next && left != null ? (
               <>
-                <div className="flex justify-between text-xs text-[#94A3B8]">
+                <div className="flex justify-between text-xs font-medium text-[#070B12]/75">
                   <span>{stats.total_conversions} paid conversions</span>
                   <span>{next.min_conversions} for {next.rate}%</span>
                 </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#0A111B]">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#070B12]/15">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#54D045] to-[#35D6E8]"
-                    style={{ width: `${Math.min(100, (stats.total_conversions / next.min_conversions) * 100)}%` }}
+                    className="h-full rounded-full bg-[#070B12]"
+                    style={{ width: `${Math.max(2, Math.min(100, (stats.total_conversions / next.min_conversions) * 100))}%` }}
                   />
                 </div>
-                <p className="mt-1.5 text-xs text-[#cbd5e1]">
-                  {left} more to reach <span className="font-semibold text-[#F8FAFC]">{next.name}</span>
+                <p className="mt-1.5 text-xs">
+                  {left} more to reach <span className="font-bold">{next.name}</span>
                 </p>
               </>
             ) : (
-              <p className="text-xs text-[#a6ec9c]">You&apos;re on the top tier.</p>
+              <p className="text-xs font-semibold">You&apos;re on the top tier.</p>
             )}
           </div>
         </section>
