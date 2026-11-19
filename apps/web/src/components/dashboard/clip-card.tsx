@@ -1,64 +1,81 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Flame, Play, Scissors, Share2, Trash2, X, ExternalLink, AlertCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { memo, useEffect, useState } from "react";
+import {
+  AlertCircle,
+  Check,
+  Download,
+  ExternalLink,
+  Flame,
+  Loader2,
+  MoreHorizontal,
+  Play,
+  Scissors,
+  Share2,
+  Trash2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import type { Clip } from "@/lib/api";
 import { downloadFile, sanitizeFilename } from "@/lib/download";
 import { PostClipModal } from "@/components/dashboard/post-clip-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 type ClipCardProps = {
   clip: Clip;
   selectable?: boolean;
   selected?: boolean;
   onSelectChange?: (clipId: string, selected: boolean) => void;
-  onDelete?: (clipId: string) => void;
-  /** Highest-scoring clip in the list — gets a golden ring + Top pick ribbon */
+  onDelete?: (clipId: string) => void | Promise<void>;
+  /** Highest-scoring clip in the list. */
   topPick?: boolean;
 };
 
-const PLATFORM_META: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  youtube: {
-    label: "YouTube",
-    color: "#FF0000",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
-        <path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.54 3.5 12 3.5 12 3.5s-7.54 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.04 0 12 0 12s0 3.96.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.46 20.5 12 20.5 12 20.5s7.54 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.96 24 12 24 12s0-3.96-.5-5.81zM9.75 15.5v-7l6.5 3.5-6.5 3.5z" />
-      </svg>
-    ),
-  },
-  instagram: {
-    label: "Instagram",
-    color: "#E1306C",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
-      </svg>
-    ),
-  },
-  tiktok: {
-    label: "TikTok",
-    color: "#010101",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
-        <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-      </svg>
-    ),
-  },
-  facebook: {
-    label: "Facebook",
-    color: "#1877F2",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-      </svg>
-    ),
-  },
+const PLATFORM_LABEL: Record<string, string> = {
+  youtube: "YouTube",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  facebook: "Facebook",
 };
 
-export function ClipCard({
+export function clipDuration(clip: Clip): number {
+  return clip.duration_seconds ?? Math.max(0, Math.round((clip.end_time_ms - clip.start_time_ms) / 1000));
+}
+
+export function clipScore(clip: Clip): number | null {
+  return clip.viral_score ?? (clip.ai_score != null ? Math.round(clip.ai_score * 100) : null);
+}
+
+function formatSeconds(total: number): string {
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function relativeDate(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const day = 86_400_000;
+  if (diff < 60_000) return "Just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < day) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 7 * day) return `${Math.floor(diff / day)}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function scoreTone(score: number) {
+  if (score >= 80) return "border-[#54D045]/40 bg-[#54D045]/15 text-[#a6ec9c]";
+  if (score >= 60) return "border-[#35D6E8]/35 bg-[#35D6E8]/12 text-[#9beef7]";
+  return "border-white/15 bg-black/50 text-white/75";
+}
+
+function ClipCardInner({
   clip,
   selectable = false,
   selected = false,
@@ -72,18 +89,13 @@ export function ClipCard({
   const [postOpen, setPostOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const durationSec =
-    clip.duration_seconds ??
-    Math.round((clip.end_time_ms - clip.start_time_ms) / 1000);
-  const viralScore =
-    clip.viral_score ?? (clip.ai_score != null ? Math.round(clip.ai_score * 100) : null);
-  const canDownload = clip.status === "completed" && !!clip.download_url;
-  const canPost = clip.status === "completed";
+  const durationSec = clipDuration(clip);
+  const viralScore = clipScore(clip);
+  const ready = clip.status === "completed";
+  const canDownload = ready && !!clip.download_url;
 
-  const postedPubs =
-    clip.publications?.filter((p) => p.status === "posted") ?? [];
-  const failedPubs =
-    clip.publications?.filter((p) => p.status === "failed") ?? [];
+  const postedPubs = clip.publications?.filter((p) => p.status === "posted") ?? [];
+  const failedPubs = clip.publications?.filter((p) => p.status === "failed") ?? [];
   const pendingPubs =
     clip.publications?.filter((p) => p.status === "pending" || p.status === "processing") ?? [];
 
@@ -92,6 +104,8 @@ export function ClipCard({
     setDownloading(true);
     try {
       await downloadFile(clip.download_url, `${sanitizeFilename(clip.title)}.mp4`);
+    } catch {
+      toast.error("Download failed. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -108,249 +122,314 @@ export function ClipCard({
   }
 
   return (
-    <Card
-      className={
-        topPick
-          ? "group/card relative overflow-hidden border-amber-400/50 shadow-[0_0_40px_-12px_rgba(251,191,36,0.6)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_50px_-10px_rgba(251,191,36,0.75)]"
-          : "group/card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)]"
-      }
+    <article
+      className={cn(
+        "group/card relative flex flex-col overflow-hidden rounded-2xl border bg-[#101824] transition-all duration-300",
+        selected
+          ? "border-[#54D045]/70 shadow-[0_0_0_1px_rgba(84,208,69,0.35),0_16px_40px_-20px_rgba(84,208,69,0.6)]"
+          : topPick
+            ? "border-amber-300/35 hover:border-amber-300/55"
+            : "border-[#253244] hover:border-[#35445a]",
+        "hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-24px_rgba(0,0,0,0.95)]",
+      )}
     >
-      <div className="relative aspect-[9/16] w-full overflow-hidden rounded-t-3xl bg-black">
-        {/* Top pick ribbon */}
-        {topPick && (
-          <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-black shadow-[0_0_20px_-4px_rgba(251,191,36,0.9)]">
-            <Flame className="h-3 w-3" /> Top pick
-          </span>
-        )}
+      {/* Thumbnail */}
+      <div className="relative aspect-[9/16] w-full overflow-hidden bg-[#070B12]">
         {clip.thumbnail_url && !thumbError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={clip.thumbnail_url}
-            alt={clip.title}
-            className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover/card:scale-105"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.04]"
             onError={() => setThumbError(true)}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Scissors className="h-10 w-10 text-violet-400" />
+            <Scissors className="h-9 w-9 text-[#253244]" />
           </div>
         )}
 
+        {/* Legibility gradients */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/75 to-transparent" />
+
+        {/* Preview trigger */}
+        {canDownload ? (
+          <button
+            type="button"
+            aria-label={`Preview ${clip.title}`}
+            onClick={() => setPreviewOpen(true)}
+            className="absolute inset-0 flex items-center justify-center focus-visible:outline-none"
+          >
+            <span className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.8)] transition-all duration-200 group-hover/card:scale-100 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
+              <Play className="h-5 w-5 translate-x-0.5 fill-[#070B12] text-[#070B12]" />
+            </span>
+          </button>
+        ) : (
+          !ready && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 text-xs text-white/70">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="capitalize">{clip.status}</span>
+            </div>
+          )
+        )}
+
+        {/* Top-left: top pick */}
+        {topPick && (
+          <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+            <Flame className="h-3 w-3" /> Top pick
+          </span>
+        )}
+
+        {/* Top-right: select */}
         {selectable && (
-          <label className="group/sel absolute right-2 top-2 z-10 cursor-pointer">
+          <label className="absolute right-2.5 top-2.5 z-10 cursor-pointer">
             <input
               type="checkbox"
-              className="sr-only"
+              className="peer sr-only"
               checked={selected}
               onChange={(e) => onSelectChange?.(clip.id, e.target.checked)}
+              aria-label={`Select ${clip.title}`}
             />
             <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 shadow-lg transition-all duration-200
-                ${selected
-                  ? "scale-100 border-emerald-400 bg-emerald-500 shadow-emerald-500/40"
-                  : "scale-90 border-white/40 bg-black/50 opacity-70 group-hover/sel:scale-100 group-hover/sel:border-white/70 group-hover/sel:opacity-100"
-                }`}
-            >
-              {selected && (
-                <svg viewBox="0 0 12 10" className="h-3.5 w-3.5 fill-none stroke-white stroke-2">
-                  <polyline points="1,5 4.5,8.5 11,1" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded-md border transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-[#54D045]/60",
+                selected
+                  ? "border-[#54D045] bg-[#54D045] text-[#070B12]"
+                  : "border-white/50 bg-black/40 text-transparent opacity-80 backdrop-blur-sm hover:border-white group-hover/card:opacity-100",
               )}
+            >
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
             </span>
           </label>
         )}
 
-        {onDelete && (
-          <button
-            type="button"
-            aria-label={`Delete ${clip.title}`}
-            disabled={deleting}
-            onClick={handleDelete}
-            className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-rose-500/40 bg-black/70 text-rose-300 backdrop-blur transition hover:border-red-500/70 hover:bg-red-950/60 hover:text-red-300 disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Play button — only when clip is ready and has a playable URL */}
-        {canDownload && (
-          <button
-            type="button"
-            aria-label={`Play ${clip.title}`}
-            onClick={() => setPreviewOpen(true)}
-            className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 hover:opacity-100"
-          >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_0_30px_-4px_rgba(255,255,255,0.7)] transition hover:scale-105">
-              <Play className="h-6 w-6 translate-x-0.5 fill-black text-black" />
+        {/* Bottom: duration + score */}
+        <div className="pointer-events-none absolute inset-x-2.5 bottom-2.5 z-10 flex items-center justify-between gap-2">
+          <span className="rounded-md bg-black/65 px-1.5 py-0.5 font-mono text-[11px] font-medium text-white backdrop-blur-sm">
+            {formatSeconds(durationSec)}
+          </span>
+          {viralScore != null && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm",
+                scoreTone(viralScore),
+              )}
+              title="Viral score (0–100)"
+            >
+              <Flame className="h-3 w-3" />
+              {viralScore}
             </span>
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
-      <CardContent className="space-y-3 p-4">
-        <h3 className="line-clamp-2 font-semibold leading-snug text-white" title={clip.title}>
-          {clip.title}
-        </h3>
-        <div className="flex items-center justify-between">
-          {clip.status !== "completed" ? (
-            <Badge variant="outline">{clip.status}</Badge>
-          ) : (
-            <span />
-          )}
-          <span className="text-xs text-muted-foreground">
-            {durationSec}s · Vertical
-          </span>
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-3 p-3.5">
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-[#F8FAFC]" title={clip.title}>
+            {clip.title}
+          </h3>
+          <p className="mt-1 text-xs text-[#94A3B8]">
+            {relativeDate(clip.created_at)}
+            {clip.export_quality ? ` · ${clip.export_quality.replace("_", " ").toUpperCase()}` : ""}
+          </p>
         </div>
 
-        {/* Viral score row with explanation */}
-        {viralScore != null && (
-          <div className="flex items-center justify-between rounded-full border border-orange-400/25 bg-orange-500/[0.1] px-3 py-1.5">
-            <div className="flex items-center gap-1.5">
-              <Flame className="h-3.5 w-3.5 text-orange-400" />
-              <span className="text-xs font-semibold text-orange-300">Viral Score</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-bold text-orange-300">{viralScore}</span>
-              <span className="text-xs text-orange-400/60">/100</span>
-              <span className="ml-1 text-[10px] text-white/45">
-                {viralScore >= 80 ? "🔥 High" : viralScore >= 60 ? "⚡ Good" : "📈 Fair"}
+        {(postedPubs.length > 0 || pendingPubs.length > 0 || failedPubs.length > 0) && (
+          <div className="flex flex-wrap gap-1.5">
+            {postedPubs.map((pub) => (
+              <a
+                key={`p-${pub.platform}`}
+                href={pub.platform_post_url ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-[#54D045]/30 bg-[#54D045]/10 px-1.5 py-0.5 text-[11px] font-medium text-[#a6ec9c] hover:bg-[#54D045]/20"
+              >
+                {PLATFORM_LABEL[pub.platform] ?? pub.platform}
+                {pub.platform_post_url && <ExternalLink className="h-2.5 w-2.5" />}
+              </a>
+            ))}
+            {pendingPubs.map((pub) => (
+              <span
+                key={`q-${pub.platform}`}
+                className="inline-flex items-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-200"
+              >
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                {PLATFORM_LABEL[pub.platform] ?? pub.platform}
               </span>
-            </div>
-          </div>
-        )}
-
-        {/* Posted platforms — icons + Live link */}
-        {postedPubs.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {postedPubs.map((pub) => {
-              const meta = PLATFORM_META[pub.platform];
-              return (
-                <a
-                  key={pub.platform}
-                  href={pub.platform_post_url ?? undefined}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition hover:opacity-80"
-                  style={{
-                    backgroundColor: `${meta?.color ?? "#666"}22`,
-                    color: meta?.color ?? "#aaa",
-                    border: `1px solid ${meta?.color ?? "#666"}44`,
-                  }}
-                  title={pub.platform_post_url ? `View on ${meta?.label}` : meta?.label}
-                >
-                  {meta?.icon}
-                  <span>{meta?.label ?? pub.platform}</span>
-                  {pub.platform_post_url && <ExternalLink className="h-2.5 w-2.5 opacity-70" />}
-                  <span className="ml-0.5 text-[10px] opacity-70">✓ Live</span>
-                </a>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pending platforms */}
-        {pendingPubs.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {pendingPubs.map((pub) => {
-              const meta = PLATFORM_META[pub.platform];
-              return (
-                <span
-                  key={pub.platform}
-                  className="flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-400"
-                >
-                  {meta?.icon}
-                  <span>{meta?.label ?? pub.platform}</span>
-                  <span className="ml-0.5 animate-pulse text-[10px]">Posting…</span>
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Failed platforms */}
-        {failedPubs.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {failedPubs.map((pub) => {
-              const meta = PLATFORM_META[pub.platform];
-              return (
-                <span
-                  key={pub.platform}
-                  className="flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-300"
-                  title={pub.error_message ?? "Failed"}
-                >
-                  <AlertCircle className="h-3 w-3" />
-                  {meta?.icon}
-                  <span>{meta?.label ?? pub.platform} failed — retry</span>
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {(canDownload || canPost) && (
-          <div className={canDownload && canPost ? "grid grid-cols-2 gap-2" : ""}>
-            {canPost && (
-              <Button
-                type="button"
-                variant="gradient"
-                size="sm"
-                className="w-full"
-                onClick={() => setPostOpen(true)}
+            ))}
+            {failedPubs.map((pub) => (
+              <span
+                key={`f-${pub.platform}`}
+                title={pub.error_message ?? "Failed"}
+                className="inline-flex items-center gap-1 rounded-md border border-rose-400/30 bg-rose-500/10 px-1.5 py-0.5 text-[11px] font-medium text-rose-200"
               >
-                <Share2 className="mr-2 h-4 w-4" />
-                Post
-              </Button>
-            )}
-            {canDownload && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full"
-                disabled={downloading}
-                onClick={handleDownload}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {downloading ? "…" : "Download"}
-              </Button>
-            )}
+                <AlertCircle className="h-2.5 w-2.5" />
+                {PLATFORM_LABEL[pub.platform] ?? pub.platform} failed
+              </span>
+            ))}
           </div>
         )}
-      </CardContent>
-      <PostClipModal clip={clip} open={postOpen} onClose={() => setPostOpen(false)} />
 
-      {/* Video preview modal */}
-      {previewOpen && clip.download_url && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-          onClick={() => setPreviewOpen(false)}
-        >
-          <div
-            className="relative flex max-h-[90vh] w-full max-w-xs flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="mt-auto flex items-center gap-2">
+          {ready && (
             <button
               type="button"
-              aria-label="Close preview"
-              onClick={() => setPreviewOpen(false)}
-              className="absolute -right-2 -top-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              onClick={() => setPostOpen(true)}
+              className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#54D045] text-xs font-semibold text-[#070B12] transition-colors hover:bg-[#62dc53]"
             >
-              <X className="h-4 w-4" />
+              <Share2 className="h-3.5 w-3.5" /> Post
             </button>
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video
-              src={clip.download_url}
-              controls
-              autoPlay
-              playsInline
-              className="max-h-[85vh] w-full rounded-3xl border border-white/10 bg-black shadow-2xl"
-            />
-            <p className="mt-3 truncate text-center text-sm font-medium text-white/80">
-              {clip.title}
-            </p>
-          </div>
+          )}
+          {canDownload && (
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading}
+              aria-label={`Download ${clip.title}`}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#253244] text-[#cbd5e1] transition-colors hover:border-[#35445a] hover:bg-white/[0.04] hover:text-white disabled:opacity-50"
+            >
+              {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            </button>
+          )}
+          {onDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More actions"
+                  disabled={deleting}
+                  className={cn(
+                    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#253244] text-[#cbd5e1] transition-colors hover:border-[#35445a] hover:bg-white/[0.04] hover:text-white disabled:opacity-50",
+                    !ready && "ml-auto",
+                  )}
+                >
+                  {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {canDownload && (
+                  <DropdownMenuItem onSelect={() => setPreviewOpen(true)}>
+                    <Play className="mr-2 h-4 w-4" /> Preview
+                  </DropdownMenuItem>
+                )}
+                {canDownload && (
+                  <DropdownMenuItem onSelect={() => void handleDownload()}>
+                    <Download className="mr-2 h-4 w-4" /> Download
+                  </DropdownMenuItem>
+                )}
+                {canDownload && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onSelect={() => void handleDelete()}
+                  className="text-rose-300 focus:bg-rose-500/10 focus:text-rose-200"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
+      </div>
+
+      <PostClipModal clip={clip} open={postOpen} onClose={() => setPostOpen(false)} />
+      {previewOpen && clip.download_url && (
+        <ClipPreviewModal
+          clip={clip}
+          durationSec={durationSec}
+          downloading={downloading}
+          onDownload={handleDownload}
+          onClose={() => setPreviewOpen(false)}
+        />
       )}
-    </Card>
+    </article>
+  );
+}
+
+export const ClipCard = memo(ClipCardInner);
+
+function ClipPreviewModal({
+  clip,
+  durationSec,
+  downloading,
+  onDownload,
+  onClose,
+}: {
+  clip: Clip;
+  durationSec: number;
+  downloading: boolean;
+  onDownload: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070B12]/90 p-4 backdrop-blur-md"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Preview: ${clip.title}`}
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-full w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-[#253244] bg-[#101824] shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)]"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-[#253244] px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-[#F8FAFC]">{clip.title}</p>
+            <p className="text-xs text-[#94A3B8]">{formatSeconds(durationSec)} · 9:16</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close preview"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-white/[0.06] hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex min-h-0 justify-center bg-black">
+          <video
+            src={clip.download_url ?? undefined}
+            poster={clip.thumbnail_url ?? undefined}
+            controls
+            autoPlay
+            playsInline
+            className="aspect-[9/16] max-h-[68vh] w-auto max-w-full bg-black object-contain"
+          />
+        </div>
+        <div className="flex gap-2 p-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 flex-1 rounded-lg border border-[#253244] text-sm font-medium text-[#cbd5e1] hover:bg-white/[0.04]"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={downloading}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#54D045] text-sm font-semibold text-[#070B12] hover:bg-[#62dc53] disabled:opacity-60"
+          >
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Wand2 } from "lucide-react";
+import { Loader2, Wand2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 
 export function GenerateClipsButton({
   videoId,
@@ -60,11 +59,16 @@ export function GenerateClipsButton({
 
   return (
     <div className="space-y-2">
-      <Button size="sm" variant="gradient" onClick={generate} disabled={loading}>
-        <Wand2 className="mr-1 h-3 w-3" />
+      <button
+        type="button"
+        onClick={generate}
+        disabled={loading}
+        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-[#54D045]/35 bg-[#54D045]/10 text-xs font-semibold text-[#a6ec9c] transition-colors hover:bg-[#54D045]/20 hover:text-white disabled:opacity-60"
+      >
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
         {loading ? "Generating…" : "Generate more clips"}
-      </Button>
-      {error && <p className="text-center text-xs text-red-400">{error}</p>}
+      </button>
+      {error && <p className="text-center text-xs text-rose-300">{error}</p>}
     </div>
   );
 }
