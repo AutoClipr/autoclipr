@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, CreditCard, Download, Mail, Receipt, Zap } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CreditCard, Mail, Receipt, Zap } from "lucide-react";
 import { UpgradeButton } from "@/components/billing/pricing-modal";
 import { createClient } from "@/lib/supabase/server";
 import { apiFetch } from "@/lib/api";
 import { CreditUsageTable } from "@/components/billing/credit-usage-table";
+import { ReceiptButton } from "@/components/billing/transaction-history";
 import { CancelSubscriptionButton, CancellationScheduled } from "@/components/billing/cancel-subscription";
 import { getCreditUsageRows } from "@/lib/credit-usage";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,6 @@ export type Transaction = {
 
 type Plan = { id: string; name: string; price_cents: number; credits_per_month: number };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 /** Subscription status from the payment provider, with our labels and colours. */
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -250,12 +250,9 @@ export default async function BillingPage() {
                 </Row>
                 <Row label="Plan">{planName}</Row>
               </dl>
-              <a
-                href={invoiceUrl(lastPayment)}
-                className="mt-4 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-[#8fe383] hover:underline"
-              >
-                <Download className="h-3.5 w-3.5" /> Download receipt
-              </a>
+              <div className="mt-4">
+                <ReceiptButton tx={lastPayment} />
+              </div>
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
@@ -277,17 +274,6 @@ export default async function BillingPage() {
   );
 }
 
-function invoiceUrl(tx: Transaction) {
-  const plan = tx.plan_id.charAt(0).toUpperCase() + tx.plan_id.slice(1);
-  const q = new URLSearchParams({
-    invoiceNumber: tx.invoice_number,
-    plan,
-    amount: tx.amount,
-    date: new Date(tx.payment_date).toLocaleDateString("en-IN"),
-  });
-  if (tx.transaction_id) q.set("txId", tx.transaction_id);
-  return `${API_URL}/api/v1/billing/invoice/download?${q}`;
-}
 
 function Meta({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
   return (
