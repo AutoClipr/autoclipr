@@ -1,603 +1,203 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Link2,
-  Loader2,
-  Sparkles,
-  CheckCircle2,
-  Circle,
-  Flame,
-  Download,
-  Mic,
-  Zap,
-  Share2,
-  CreditCard,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link2, Send, X } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
-import { apiFetch, type Profile } from "@/lib/api";
-import {
-  CAPTION_STYLES,
-  DURATIONS,
-  EXPORT_QUALITIES,
-  LANGUAGES,
-  PLATFORMS,
-  SUPPORTED_SOURCES,
-} from "@/lib/video-sources";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { PLATFORMS, SUPPORTED_SOURCES } from "@/lib/video-sources";
 import { cn } from "@/lib/utils";
-import { motion } from "@/components/ui/motion";
-import { formatPipelineError } from "@/lib/pipeline-errors";
+import {
+  ClipSettingsPanel,
+  PANEL,
+  ProcessingCard,
+  SectionTitle,
+  SummaryPanel,
+  VideoOptionsRow,
+  VideoThumb,
+  useClipOptions,
+  useCredits,
+} from "./create-shared";
 
-type PipelineStep = {
-  id: string;
-  label: string;
-  status: "pending" | "active" | "completed" | "failed";
-  checks?: string[];
-};
+/** YouTube video id from watch, youtu.be, shorts, embed and live links. */
+function youtubeId(raw: string): string | null {
+  try {
+    const u = new URL(raw.trim());
+    const host = u.hostname.replace(/^www\.|^m\./, "");
+    if (host === "youtu.be") return u.pathname.slice(1).split("/")[0] || null;
+    if (host === "youtube.com" || host === "music.youtube.com") {
+      if (u.searchParams.get("v")) return u.searchParams.get("v");
+      const m = u.pathname.match(/^\/(shorts|embed|live)\/([\w-]{6,})/);
+      return m?.[2] ?? null;
+    }
+  } catch {
+    // not a URL yet
+  }
+  return null;
+}
 
-type PipelineResponse = {
-  video_id: string;
-  title: string;
-  status: string;
-  source_url: string | null;
-  current_step: number | null;
-  progress_percent: number;
-  steps: PipelineStep[];
-  clips_created: number;
-  analysis?: Record<string, unknown>;
-  job?: { status: string; error?: string };
-};
-
-const STEP_ICONS: Record<string, typeof Sparkles> = {
-  download: Download,
-  analyze: Mic,
-  clips: Sparkles,
-  captions: Zap,
-  export: Share2,
-};
-
-const PIPELINE_POLL_MS = 3000;
-
-const CAPTION_EMOJI: Record<string, string> = {
-  viral: "🔥",
-  animated: "✨",
-  emoji: "😄",
-  karaoke: "🎤",
-};
+function sourceLabel(raw: string): string | null {
+  try {
+    const host = new URL(raw.trim()).hostname.replace(/^www\./, "");
+    if (/youtube\.com|youtu\.be/.test(host)) return "YouTube";
+    if (host.includes("vimeo.com")) return "Vimeo";
+    if (host.includes("loom.com")) return "Loom";
+    if (host.includes("drive.google.com")) return "Google Drive";
+    if (/\.mp4($|\?)/i.test(raw)) return "Direct MP4";
+    return host;
+  } catch {
+    return null;
+  }
+}
 
 export function CreateFromUrl() {
-  const router = useRouter();
+  const opts = useClipOptions();
+  const { credits, costPerClip } = useCredits();
+
   const [url, setUrl] = useState("");
+  const [platforms, setPlatforms] = useState<string[]>(["tiktok", "instagram", "youtube", "linkedin"]);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [started, setStarted] = useState<{ videoId: string; title: string } | null>(null);
 
   // Prefill from ?url= (the landing page's "Get free clips" box sends people here).
   useEffect(() => {
     const fromQuery = new URLSearchParams(window.location.search).get("url");
     if (fromQuery) setUrl(fromQuery);
   }, []);
-  const [clipCount, setClipCount] = useState(5);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [creditCostPerClip, setCreditCostPerClip] = useState(1);
-  const [durations, setDurations] = useState<number[]>([15, 30, 45, 60]);
-  const [captionStyle, setCaptionStyle] = useState("viral");
-  const [language, setLanguage] = useState("en");
-  const [platforms, setPlatforms] = useState<string[]>([
-    "tiktok",
-    "instagram",
-    "youtube",
-    "linkedin",
-  ]);
-  const [exportQuality, setExportQuality] = useState("hd");
-  const [processing, setProcessing] = useState(false);
-  const [pipeline, setPipeline] = useState<PipelineResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const importCost = clipCount * creditCostPerClip;
-  const hasEnoughCredits = credits === null || credits >= importCost;
-  const noCredits = credits !== null && credits === 0;
-
-  useEffect(() => {
-    async function loadCredits() {
-      const token = await getAccessToken();
-      if (!token) return;
-      const res = await apiFetch<Profile>("/api/v1/users/me", { token });
-      if (res.success && res.data) {
-        setCredits(res.data.credits);
-        setCreditCostPerClip(res.data.clip_credit_cost ?? 1);
-      }
-    }
-    loadCredits();
-  }, []);
-
-  const pollPipeline = useCallback(async (videoId: string) => {
-    const token = await getAccessToken();
-    if (!token) return null;
-    const res = await apiFetch<PipelineResponse>(`/api/v1/videos/${videoId}/pipeline`, {
-      token,
-    });
-    if (res.success && res.data) return res.data;
-    return null;
-  }, []);
-
-  useEffect(() => {
-    if (!pipeline?.video_id) return;
-
-    const failed =
-      pipeline.job?.status === "failed" ||
-      pipeline.status === "failed";
-    const complete =
-      pipeline.progress_percent >= 100 ||
-      pipeline.status === "ready";
-
-    if (failed) {
-      setError(formatPipelineError(pipeline.job?.error));
-      setProcessing(false);
-      return;
-    }
-
-    if (complete) {
-      setProcessing(false);
-      return;
-    }
-
-    const interval = setInterval(async () => {
-      const data = await pollPipeline(pipeline.video_id);
-      if (!data) return;
-
-      setPipeline(data);
-
-      if (data.job?.status === "failed" || data.status === "failed") {
-        setError(formatPipelineError(data.job?.error));
-        setProcessing(false);
-        clearInterval(interval);
-        return;
-      }
-
-      if (data.progress_percent >= 100 || data.status === "ready") {
-        setProcessing(false);
-        clearInterval(interval);
-      }
-    }, PIPELINE_POLL_MS);
-
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pipeline?.video_id, pollPipeline]);
-
-  function toggleDuration(sec: number) {
-    setDurations((prev) =>
-      prev.includes(sec) ? prev.filter((d) => d !== sec) : [...prev, sec].sort((a, b) => a - b)
-    );
-  }
-
-  function togglePlatform(id: string) {
-    setPlatforms((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
-  }
+  const ytId = youtubeId(url);
+  const thumbnail = ytId ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg` : null;
+  const source = url.trim() ? sourceLabel(url) : null;
+  const validUrl = !!source;
 
   async function handleCreate() {
-    if (!url.trim()) return;
+    if (!validUrl) return;
+    setCreating(true);
     setError(null);
-    setProcessing(true);
-    setPipeline(null);
-
     const token = await getAccessToken();
     if (!token) {
-      setError("Please sign in again.");
-      setProcessing(false);
-      return;
+      setCreating(false);
+      return setError("Please sign in again.");
     }
-
-    const res = await apiFetch<{
-      video_id: string;
-      job_id: string;
-      source_label: string;
-      title: string;
-    }>("/api/v1/videos/import-url", {
+    const res = await apiFetch<{ video_id: string; title: string }>("/api/v1/videos/import-url", {
       method: "POST",
       token,
       body: JSON.stringify({
         url: url.trim(),
-        clip_count: clipCount,
-        durations: durations.length ? durations : [15, 30, 45, 60],
-        caption_style: captionStyle,
-        caption_language: language,
+        ...opts.payload(),
         platforms,
-        export_quality: exportQuality,
         auto_publish: true,
       }),
     });
-
-    if (!res.success || !res.data) {
-      setError(res.error?.message ?? "Failed to start import");
-      setProcessing(false);
-      return;
-    }
-
-    setCredits((c) => (c !== null ? Math.max(0, c - importCost) : c));
-
-    const initial = await pollPipeline(res.data.video_id);
-    if (initial) setPipeline(initial);
-    else {
-      setPipeline({
-        video_id: res.data.video_id,
-        title: res.data.title,
-        status: "importing",
-        source_url: url,
-        current_step: 1,
-        progress_percent: 5,
-        steps: [],
-        clips_created: 0,
-      });
-    }
+    setCreating(false);
+    if (!res.success || !res.data) return setError(res.error?.message ?? "Could not start the import.");
+    setStarted({ videoId: res.data.video_id, title: res.data.title });
   }
 
-  const isFailed =
-    pipeline?.job?.status === "failed" || pipeline?.status === "failed";
-  const isComplete =
-    !!pipeline &&
-    !isFailed &&
-    (pipeline.progress_percent >= 100 || pipeline.status === "ready");
-  const isProcessing = processing && !!pipeline && !isFailed && !isComplete;
+  if (started) {
+    return (
+      <ProcessingCard
+        videoId={started.videoId}
+        title={started.title}
+        thumbnail={thumbnail}
+        // Length isn't known until the download finishes; the live ETA takes over then.
+        estimateSeconds={null}
+        onReset={() => {
+          setStarted(null);
+          setUrl("");
+          setError(null);
+        }}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {isComplete ? (
-        <div className="relative overflow-hidden rounded-3xl border border-emerald-400/30 bg-white/[0.03] shadow-[0_0_60px_-20px_rgba(16,185,129,0.8)] backdrop-blur">
-          <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-emerald-500/25 blur-3xl" aria-hidden />
-          <div className="relative p-6 text-center sm:p-10">
-            <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl border border-orange-400/30 bg-orange-500/15 shadow-[0_0_40px_-8px_rgba(251,146,60,0.8)]">
-              <Flame className="h-8 w-8 text-orange-300" />
-            </span>
-            <h3 className="text-3xl font-extrabold tracking-tight text-white">{pipeline!.clips_created} clips ready</h3>
-            <p className="mt-2 text-muted-foreground">
-              Viral scores, captions, and exports are prepared for your platforms.
-            </p>
-            <Button
-              variant="gradient"
-              className="mt-6"
-              onClick={() => router.push(`/clips?video=${pipeline!.video_id}`)}
-            >
-              View My Clips
-            </Button>
-          </div>
-        </div>
-      ) : isProcessing ? (
-        <div className="space-y-6">
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
-            <div className="relative mb-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="section-label-white mb-2">Processing</p>
-                <h2 className="text-xl font-bold text-white">{pipeline?.title ?? "Your video"}</h2>
-              </div>
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-            </div>
-            <Progress value={pipeline?.progress_percent ?? 0} className="h-2" />
-            <p className="mt-2 text-right text-xs text-white/50">
-              {pipeline?.progress_percent ?? 0}%
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {pipeline?.steps.map((step) => {
-              const Icon = STEP_ICONS[step.id] ?? Sparkles;
-              const done = step.status === "completed";
-              const active = step.status === "active";
-              return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur transition-all",
-                    active && "border-emerald-400/40 shadow-[0_0_30px_-12px_rgba(16,185,129,0.8)]",
-                    done && "opacity-80"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    {done ? (
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-                    ) : active ? (
-                      <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-emerald-400" />
-                    ) : (
-                      <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/40" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-semibold text-white">{step.label}</p>
-                      </div>
-                      {step.checks && step.checks.length > 0 && (
-                        <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
-                          {step.checks.map((check) => (
-                            <li
-                              key={check}
-                              className="flex items-center gap-2 text-xs text-white/55"
-                            >
-                              <CheckCircle2
-                                className={cn(
-                                  "h-3 w-3",
-                                  active || done ? "text-emerald-400" : "text-white/20"
-                                )}
-                              />
-                              {check}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
-            {/* Corner ambient glow */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
-
-            <div className="relative mb-6 flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/15 shadow-[0_0_30px_-8px_rgba(16,185,129,0.8)]">
-                <Link2 className="h-5 w-5 text-emerald-200" />
+    <div className="grid gap-5 lg:grid-cols-[1fr_300px] lg:items-start">
+      <div className="space-y-5">
+        {/* Link + preview */}
+        <div className={cn(PANEL, "grid gap-5 p-4 sm:grid-cols-[260px_1fr] sm:p-5")}>
+          <VideoThumb src={thumbnail} className="aspect-video">
+            {!thumbnail && (
+              <span className="absolute inset-x-0 bottom-3 text-center text-xs text-white/45">
+                {source ? `${source} link` : "Preview appears here"}
               </span>
-              <div>
-                <h2 className="text-lg font-bold text-white">Paste a video link</h2>
-                <p className="text-sm text-white/50">
-                  YouTube, Vimeo, Loom, Google Drive, or direct MP4
-                </p>
-              </div>
-            </div>
+            )}
+          </VideoThumb>
 
-            <div className="relative space-y-2">
-              <Label htmlFor="video-url" className="sr-only">Video URL</Label>
-              <div className="group/url flex items-center gap-3 rounded-full border border-white/10 bg-black/30 px-5 transition-all duration-300 focus-within:border-emerald-400/50 focus-within:shadow-[0_0_30px_-8px_rgba(16,185,129,0.6)]">
-                <Link2 className="h-4 w-4 shrink-0 text-white/40 transition-colors group-focus-within/url:text-emerald-300" />
+          <div className="flex min-w-0 flex-col justify-between gap-4">
+            <div className="min-w-0">
+              <label htmlFor="video-url" className="text-[15px] font-semibold text-white">
+                Paste a video link
+              </label>
+              <div className="mt-2 flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 transition-colors focus-within:border-emerald-400/50">
+                <Link2 className="h-4 w-4 shrink-0 text-white/40" />
                 <input
                   id="video-url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                  className="h-14 min-w-0 flex-1 border-0 bg-transparent font-mono text-sm text-white placeholder:text-white/35 outline-none ring-0 focus:outline-none focus:ring-0"
+                  placeholder="https://youtube.com/watch?v=…"
+                  className="h-11 min-w-0 flex-1 bg-transparent font-mono text-sm text-white placeholder:text-white/30 outline-none"
                 />
-              </div>
-            </div>
-
-            <div className="relative mt-4 flex flex-wrap gap-2">
-              {SUPPORTED_SOURCES.map((s) => (
-                <span
-                  key={s.id}
-                  className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/55"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" />
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Clip count
-              </Label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {[5, 10, 15, 20].map((n) => (
+                {url && (
                   <button
-                    key={n}
                     type="button"
-                    onClick={() => setClipCount(n)}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
-                      clipCount === n
-                        ? "create-selected"
-                        : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
-                    )}
+                    onClick={() => setUrl("")}
+                    aria-label="Clear link"
+                    className="rounded-md p-1 text-white/40 hover:bg-white/10 hover:text-white"
                   >
-                    {n} clips
-                    <span className={cn("ml-1.5 text-[10px]", clipCount === n ? "text-black/55" : "text-white/35")}>
-                      {n * creditCostPerClip}cr
-                    </span>
+                    <X className="h-4 w-4" />
                   </button>
-                ))}
+                )}
               </div>
+              <p className="mt-2 text-xs text-white/40">
+                {SUPPORTED_SOURCES.filter((s) => s.id !== "upload")
+                  .map((s) => s.label)
+                  .join(" · ")}
+              </p>
             </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-              <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-                Duration
-              </Label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {DURATIONS.map((sec) => (
-                  <button
-                    key={sec}
-                    type="button"
-                    onClick={() => toggleDuration(sec)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
-                      durations.includes(sec)
-                        ? "create-selected"
-                        : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
-                    )}
-                  >
-                    {durations.includes(sec) && <CheckCircle2 className="h-3 w-3" />}
-                    {sec}s
-                  </button>
-                ))}
-              </div>
-            </div>
+            <VideoOptionsRow opts={opts} />
           </div>
+        </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              Caption style
-            </Label>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {CAPTION_STYLES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setCaptionStyle(s.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all duration-200",
-                    captionStyle === s.id
-                      ? "create-selected"
-                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
-                  )}
-                >
-                  {CAPTION_EMOJI[s.id] && <span className="text-xs">{CAPTION_EMOJI[s.id]}</span>}
-                  {s.label}
-                </button>
-              ))}
-            </div>
+        <ClipSettingsPanel opts={opts}>
+          <section className="border-t border-white/[0.06] pt-6">
+            <SectionTitle icon={Send} title="Publish to" />
             <div className="mt-4 flex flex-wrap gap-2">
-              {LANGUAGES.map((l) => (
-                <button
-                  key={l.id}
-                  type="button"
-                  onClick={() => setLanguage(l.id)}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-xs transition-colors",
-                    language === l.id ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100" : "border-transparent text-white/45 hover:text-white"
-                  )}
-                >
-                  {l.label}
-                </button>
-              ))}
+              {PLATFORMS.map((p) => {
+                const on = platforms.includes(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() =>
+                      setPlatforms((prev) => (on ? prev.filter((x) => x !== p.id) : [...prev, p.id]))
+                    }
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                      on ? "border-white/30 bg-white/10 text-white" : "border-white/10 text-white/45 hover:text-white/80",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </section>
+        </ClipSettingsPanel>
+      </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              Publish to
-            </Label>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm transition-all",
-                    platforms.includes(p.id)
-                      ? "create-selected"
-                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
-                  )}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-white/45">
-              Uses your connected channels — one-click publish when clips are ready
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur">
-            <Label className="text-xs font-semibold uppercase tracking-widest text-white/40">
-              Export quality
-            </Label>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {EXPORT_QUALITIES.map((q) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => setExportQuality(q.id)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm transition-all",
-                    exportQuality === q.id
-                      ? "create-selected"
-                      : "border border-white/10 bg-white/[0.03] text-white/65 hover:-translate-y-0.5 hover:border-white/25 hover:text-white"
-                  )}
-                >
-                  {q.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {error && (
-            <div className="space-y-3">
-              <p className="rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-200">
-                {error}
-              </p>
-              {(isFailed || error) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-rose-500/30 hover:border-rose-400/50"
-                  onClick={() => {
-                    setError(null);
-                    setPipeline(null);
-                    setProcessing(false);
-                  }}
-                >
-                  Try again
-                </Button>
-              )}
-            </div>
-          )}
-
-          {credits !== null && (
-            <div
-              className={cn(
-                "rounded-2xl border px-4 py-3 text-sm backdrop-blur",
-                hasEnoughCredits
-                  ? "border-emerald-400/25 bg-emerald-500/[0.07] text-emerald-100"
-                  : "border-amber-400/30 bg-amber-500/[0.08] text-amber-100"
-              )}
-            >
-              <p>
-                <span className="font-semibold">{importCost} credits</span> for this import (
-                {clipCount} clips × {creditCostPerClip} credit
-                {creditCostPerClip === 1 ? "" : "s"} each) · You have{" "}
-                <span className="font-semibold">{credits}</span> credits
-              </p>
-              {noCredits ? (
-                <p className="mt-1 text-xs opacity-90">
-                  You have no credits left. Subscribe to get more credits and continue generating clips.
-                </p>
-              ) : !hasEnoughCredits ? (
-                <p className="mt-1 text-xs opacity-90">
-                  Lower clip count to {Math.floor(credits! / creditCostPerClip) || 1} or fewer, or upgrade your plan for more credits.
-                </p>
-              ) : null}
-            </div>
-          )}
-
-          {noCredits ? (
-            <Button
-              variant="gradient"
-              size="lg"
-              className="h-14 w-full text-base font-bold"
-              onClick={() => router.push("/subscription")}
-            >
-              <CreditCard className="mr-2 h-5 w-5" />
-              Take Subscription
-            </Button>
-          ) : (
-            <Button
-              variant="gradient"
-              size="lg"
-              className="relative h-14 w-full overflow-hidden text-base font-bold"
-              disabled={!url.trim() || !hasEnoughCredits}
-              onClick={handleCreate}
-            >
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-1/4 -skew-x-12 bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent"
-                animate={{ x: ["-200%", "500%"] }}
-                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
-              />
-              <Sparkles className="mr-2 h-5 w-5" />
-              Create Viral Shorts
-            </Button>
-          )}
-        </>
-      )}
+      <SummaryPanel
+        opts={opts}
+        videoSeconds={null}
+        videoLengthLabel={source ? "Detected on import" : "–"}
+        credits={credits}
+        costPerClip={costPerClip}
+        error={error}
+        buttonLabel={creating ? "Starting…" : validUrl ? "Create" : "Paste a link to start"}
+        busy={creating}
+        disabled={!validUrl}
+        onCreate={handleCreate}
+      />
     </div>
   );
 }
