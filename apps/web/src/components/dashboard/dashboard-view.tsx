@@ -13,40 +13,50 @@ import {
   Loader2,
   Sparkles,
   Zap,
+  Cpu,
+  Film,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch, type Clip, type PlatformConnection, type Video as VideoType, type YoutubeChannel } from "@/lib/api";
 import { setConnectedPlatforms } from "@/lib/platforms-storage";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useConfirm } from "@/hooks/use-confirm";
+import { formatPipelineError } from "@/lib/pipeline-errors";
+import { cn } from "@/lib/utils";
 import { ClipsList } from "@/components/dashboard/clips-list";
 import { DashboardPlatformsPanel } from "@/components/dashboard/dashboard-platforms-panel";
-import {
-  ConnectedChannelRow,
-  ConnectedChannelsHeading,
-} from "@/components/dashboard/connected-channel-row";
+import { ConnectedChannelRow } from "@/components/dashboard/connected-channel-row";
 
 type DashboardViewProps = {
   initialChannels: YoutubeChannel[];
   initialClips: Clip[];
   initialVideos: VideoType[];
   initialPlatforms: PlatformConnection[];
+  /** Total clips on the server (the list itself is only the newest page). */
+  clipsTotal?: number;
+  loadFailed?: boolean;
 };
 
-function TikTokStatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6 fill-emerald-400" aria-hidden>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.77 1.52V6.76a4.85 4.85 0 0 1-1-.07z" />
-    </svg>
-  );
-}
+const TABS = [
+  { id: "channels", label: "Channels" },
+  { id: "platforms", label: "Platforms" },
+  { id: "runs", label: "Agent Runs" },
+  { id: "clips", label: "My Clips" },
+] as const;
+
+const RUN_ACTIVE = new Set(["importing", "uploading", "processing", "analyzing"]);
+type RunFilter = "all" | "active" | "failed" | "completed";
 
 export function DashboardView({
   initialChannels,
   initialClips,
   initialVideos,
   initialPlatforms,
+  clipsTotal,
+  loadFailed = false,
 }: DashboardViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,14 +68,30 @@ export function DashboardView({
   const [clips, setClips] = useState(initialClips);
   const [videos, setVideos] = useState(initialVideos);
   const [platformCount, setPlatformCount] = useState(initialPlatforms.length);
-  const [activeTab, setActiveTab] = useState("channels");
+  const [activeTab, setActiveTabState] = useState(() => {
+    const t = searchParams.get("tab");
+    return t && TABS.some((x) => x.id === t) ? t : "channels";
+  });
+  // Keep the tab in the URL so refreshes and shared links land on it, without a navigation.
+  const setActiveTab = (t: string) => {
+    setActiveTabState(t);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", t);
+    window.history.replaceState(null, "", url.toString());
+  };
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirm();
   const [removingChannelId, setRemovingChannelId] = useState<string | null>(null);
+  const [totalClips, setTotalClips] = useState(clipsTotal ?? initialClips.length);
 
   const activeRuns =
     videos.filter((v) => v.status === "uploading" || v.status === "processing").length +
     clips.filter((c) => c.status === "pending" || c.status === "processing").length;
 
+  const refreshingRef = useRef(false);
   const refreshData = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
     setRefreshing(true);
     const supabase = createClient();
     const {
@@ -73,6 +99,7 @@ export function DashboardView({
     } = await supabase.auth.getSession();
     if (!session?.access_token) {
       setRefreshing(false);
+      refreshingRef.current = false;
       return;
     }
     const token = session.access_token;
@@ -86,8 +113,13 @@ export function DashboardView({
     if (chRes.success && chRes.data) setChannels(chRes.data);
     if (clipsRes.success && clipsRes.data) setClips(clipsRes.data);
     if (videosRes.success && videosRes.data) setVideos(videosRes.data);
+    if (clipsRes.meta?.total != null) setTotalClips(clipsRes.meta.total);
+    const ok = chRes.success && clipsRes.success && videosRes.success;
+    setRefreshNote(ok ? "Dashboard updated" : "Some data couldn't be refreshed. Try again in a moment.");
+    setTimeout(() => setRefreshNote(null), 3000);
     setRefreshKey((k) => k + 1);
     setRefreshing(false);
+    refreshingRef.current = false;
     startTransition(() => router.refresh());
   }, [router]);
 
@@ -141,6 +173,13 @@ export function DashboardView({
   }, [refreshData]);
 
   async function disconnectChannel(id: string) {
+    const ch = channels.find((c) => c.id === id);
+    const ok = await confirm({
+      title: `Remove ${ch?.channel_name ?? "this channel"}?`,
+      description: "It will be removed from your source channels. Videos you imported and clips you made from it stay in your library.",
+      confirmLabel: "Remove",
+    });
+    if (!ok) return;
     setRemovingChannelId(id);
     const supabase = createClient();
     const {
@@ -157,55 +196,61 @@ export function DashboardView({
   }
 
   const isLoading = refreshing || isPending;
+  const [runFilter, setRunFilter] = useState<RunFilter>("all");
+
+  // Jobs come from the user's videos: each video is one processing run.
+  const runs = videos.filter((v) => {
+    if (runFilter === "active") return RUN_ACTIVE.has(v.status);
+    if (runFilter === "failed") return v.status === "failed";
+    if (runFilter === "completed") return v.status === "ready";
+    return true;
+  });
 
   return (
-    <div className="space-y-6">
-      {/* Header — hero banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur sm:p-8">
-        <div className="pointer-events-none absolute -left-24 -top-32 h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
+    <div className="space-y-5">
+      {dialog}
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-2xl border border-[#253244] bg-gradient-to-br from-[#101824] via-[#0B1220] to-[#070B12] p-6 sm:p-7">
+        <div className="pointer-events-none absolute -left-20 -top-28 h-72 w-72 rounded-full bg-[#54D045]/[0.12] blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-28 right-0 h-64 w-64 rounded-full bg-[#35D6E8]/[0.06] blur-3xl" aria-hidden />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
           style={{
             backgroundImage:
               "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
             backgroundSize: "40px 40px",
             maskImage: "radial-gradient(ellipse at top left, black 25%, transparent 70%)",
           }}
+          aria-hidden
         />
-
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="section-label-white mb-4">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
-              Dashboard
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.16em] text-[#54D045]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#54D045] shadow-[0_0_6px_2px_rgba(84,208,69,0.6)]" />
+              DASHBOARD
             </p>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
-              Your command{" "}
-              <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
-                center
-              </span>
-            </h1>
-            <p className="mt-2 text-white/55">Monitor channels, track clips, and manage your content pipeline.</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#F8FAFC] sm:text-4xl">Your command center.</h1>
+            <p className="mt-1.5 max-w-lg text-sm text-[#94A3B8]">
+              Monitor your channels, track AI-generated clips, and manage your content pipeline.
+            </p>
           </div>
-
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/create"
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg shadow-white/10 transition-transform hover:scale-[1.03]"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#54D045] px-4 text-sm font-semibold text-[#070B12] shadow-[0_10px_30px_-12px_rgba(84,208,69,0.7)] transition-colors hover:bg-[#62dc53]"
             >
               <Sparkles className="h-4 w-4" />
               Create Viral Shorts
             </Link>
             {[
-              { href: "/channels", label: "Connect Channels", icon: <Plus className="h-4 w-4" /> },
+              { href: "/channels", label: "Channels", icon: <Plus className="h-4 w-4" /> },
               { href: "/setup/platforms?from=dashboard", label: "Platforms", icon: <Share2 className="h-4 w-4" /> },
-              { href: "/pricing", label: "Upgrade", icon: <Zap className="h-4 w-4 text-amber-300" /> },
+              { href: "/subscription", label: "Upgrade", icon: <Zap className="h-4 w-4 text-[#54D045]" /> },
             ].map((b) => (
               <Link
                 key={b.href}
                 href={b.href}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-medium text-white/85 backdrop-blur transition-colors hover:bg-white/[0.1] hover:text-white"
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#253244] bg-[#101824] px-3 text-sm font-medium text-[#F8FAFC] transition-colors hover:border-[#35445a]"
               >
                 {b.icon}
                 {b.label}
@@ -214,168 +259,179 @@ export function DashboardView({
             <button
               onClick={refreshData}
               disabled={isLoading}
-              aria-label="Refresh"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/70 transition-colors hover:bg-white/[0.1] hover:text-white disabled:opacity-60"
+              aria-label="Refresh dashboard"
+              title="Refresh dashboard"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#253244] bg-[#101824] text-[#cbd5e1] transition-colors hover:border-[#35445a] hover:text-white disabled:opacity-60"
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </button>
           </div>
         </div>
-      </div>
+      </section>
+
+      {(loadFailed || refreshNote) && (
+        <p
+          role="status"
+          className={cn(
+            "rounded-xl border px-4 py-2.5 text-sm",
+            refreshNote === "Dashboard updated"
+              ? "border-[#22C55E]/30 bg-[#22C55E]/10 text-[#86efac]"
+              : "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-amber-100",
+          )}
+        >
+          {refreshNote ?? "Some dashboard data couldn't be loaded. Use refresh to try again."}
+        </p>
+      )}
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={<Youtube className="h-7 w-7 text-red-500" />}
-          iconClass="bg-red-500/15 ring-red-500/25 group-hover:shadow-red-500/25"
-          glowClass="from-red-500/15"
-          barClass="from-red-500/70 to-red-500/0"
-          value={channels.length}
-          label="Connected Channels"
-          hint={channels.length === 0 ? "Connect your first channel" : "Auto-clipping new uploads"}
-        />
-        <StatCard
-          icon={<TikTokStatIcon />}
-          iconClass="bg-emerald-500/15 ring-emerald-500/25 group-hover:shadow-emerald-500/25"
-          glowClass="from-emerald-500/15"
-          barClass="from-emerald-500/70 to-emerald-500/0"
-          value={platformCount}
-          label="Platforms Connected"
-          hint={platformCount === 0 ? "Connect to start posting" : "Ready to publish"}
-        />
-        <StatCard
-          icon={<Clock className="h-7 w-7 text-amber-400" />}
-          iconClass="bg-amber-500/15 ring-amber-500/25 group-hover:shadow-amber-500/25"
-          glowClass="from-amber-500/15"
-          barClass="from-amber-500/70 to-amber-500/0"
-          value={activeRuns}
-          label="Active Runs"
-          hint={activeRuns > 0 ? "Processing now" : "All caught up"}
-          live={activeRuns > 0}
-        />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard icon={<Youtube className="h-5 w-5 text-[#FF4d4d]" />} accent="#FF0000" value={channels.length} label="Source channels" hint={channels.length === 0 ? "Add a channel you clip from" : "Saved clip sources"} />
+        <StatCard icon={<Share2 className="h-5 w-5 text-[#54D045]" />} accent="#54D045" value={platformCount} label="Platforms connected" hint={platformCount === 0 ? "Connect to start posting" : "Where you publish"} />
+        <StatCard icon={<Clock className="h-5 w-5 text-[#F59E0B]" />} accent="#F59E0B" value={activeRuns} label="Active runs" hint={activeRuns > 0 ? "Processing now" : "All caught up"} live={activeRuns > 0} />
+        <StatCard icon={<Film className="h-5 w-5 text-[#35D6E8]" />} accent="#35D6E8" value={totalClips} label="Clips generated" hint={totalClips === 0 ? "Create your first clips" : "In your library"} />
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 backdrop-blur sm:grid-cols-4">
-          <TabsTrigger value="channels" className={TAB_TRIGGER}>Channels</TabsTrigger>
-          <TabsTrigger value="platforms" className={TAB_TRIGGER}>Platforms</TabsTrigger>
-          <TabsTrigger value="runs" className={TAB_TRIGGER}>Agent Runs</TabsTrigger>
-          <TabsTrigger value="clips" className={TAB_TRIGGER}>My Clips</TabsTrigger>
+        <TabsList className="flex h-auto w-full gap-1 overflow-x-auto rounded-xl border border-[#253244] bg-[#0B1220] p-1">
+          {TABS.map((t) => (
+            <TabsTrigger key={t.id} value={t.id} className={TAB_TRIGGER}>
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* Channels tab */}
         <TabsContent value="channels">
           <TabPanel
-            title="Connected Channels"
+            title="Connected channels"
+            description="The YouTube channels you use as sources for AI clipping."
             onRefresh={refreshData}
             refreshing={isLoading}
+            action={
+              <Link href="/channels" className="text-xs font-medium text-[#8fe383] hover:underline">
+                Manage channels →
+              </Link>
+            }
           >
             {channels.length === 0 ? (
               <EmptyState
-                icon={<Youtube className="h-12 w-12" />}
-                title="No Channels Connected"
-                description="Connect a YouTube channel to start auto-clipping new uploads."
-                action={
-                  <Button variant="gradient" size="sm" asChild>
-                    <Link href="/channels">Connect Channel</Link>
-                  </Button>
-                }
+                icon={<Youtube className="h-7 w-7 text-[#FF4d4d]" />}
+                title="No source channels yet"
+                description="Add a YouTube channel you clip from so it's one click away."
+                action={<PrimaryLink href="/channels">Add a channel</PrimaryLink>}
               />
             ) : (
-              <div>
-                <ConnectedChannelsHeading count={channels.length} />
-                <ul className="space-y-3">
-                  {channels.map((ch) => (
-                    <li key={ch.id}>
-                      <ConnectedChannelRow
-                        channel={ch}
-                        onRemove={disconnectChannel}
-                        removing={removingChannelId === ch.id}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="space-y-2">
+                {channels.map((ch) => (
+                  <li key={ch.id}>
+                    <ConnectedChannelRow channel={ch} onRemove={disconnectChannel} removing={removingChannelId === ch.id} />
+                  </li>
+                ))}
+              </ul>
             )}
           </TabPanel>
         </TabsContent>
 
         {/* Platforms tab */}
         <TabsContent value="platforms">
-          <TabPanel title="Connected Platforms" onRefresh={refreshData} refreshing={isLoading}>
-            <DashboardPlatformsPanel
-              initialPlatforms={initialPlatforms}
-              refreshKey={refreshKey}
-              onCountChange={setPlatformCount}
-            />
+          <TabPanel
+            title="Connected platforms"
+            description="The social accounts where AutoClipr can publish your clips."
+            onRefresh={refreshData}
+            refreshing={isLoading}
+          >
+            <DashboardPlatformsPanel initialPlatforms={initialPlatforms} refreshKey={refreshKey} onCountChange={setPlatformCount} />
           </TabPanel>
         </TabsContent>
 
         {/* Agent Runs tab */}
         <TabsContent value="runs">
-          <TabPanel title="Agent Runs" onRefresh={refreshData} refreshing={isLoading}>
-            {activeRuns === 0 ? (
+          <TabPanel
+            title="Agent runs"
+            description="Your AI video processing jobs."
+            onRefresh={refreshData}
+            refreshing={isLoading}
+          >
+            {videos.length === 0 ? (
               <EmptyState
-                icon={<Loader2 className="h-12 w-12" />}
-                title="No Active Runs"
-                description="When AutoClipr processes videos or generates clips, jobs appear here."
+                icon={<Cpu className="h-7 w-7 text-[#94A3B8]" />}
+                title="No runs yet"
+                description="When AutoClipr processes videos or generates clips, your jobs will appear here."
+                action={<PrimaryLink href="/create">Create Viral Shorts</PrimaryLink>}
               />
             ) : (
-              <ul className="space-y-3">
-                {videos
-                  .filter((v) => v.status !== "ready")
-                  .map((v) => (
-                    <li
-                      key={v.id}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:bg-white/[0.05]"
+              <>
+                <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Filter runs">
+                  {(
+                    [
+                      ["all", "All"],
+                      ["active", "Processing"],
+                      ["completed", "Completed"],
+                      ["failed", "Failed"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={runFilter === id}
+                      onClick={() => setRunFilter(id)}
+                      className={cn(
+                        "h-8 rounded-lg px-3 text-xs font-medium transition-colors",
+                        runFilter === id
+                          ? "bg-[#19251F] text-[#F8FAFC] shadow-[inset_0_0_0_1px_rgba(84,208,69,0.4)]"
+                          : "text-[#94A3B8] hover:bg-white/[0.04] hover:text-[#F8FAFC]",
+                      )}
                     >
-                      <div>
-                        <p className="font-medium">{v.title}</p>
-                        <p className="text-xs text-muted-foreground">Video · {v.status}</p>
-                      </div>
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                    </li>
+                      {label}
+                    </button>
                   ))}
-                {clips
-                  .filter((c) => c.status === "pending" || c.status === "processing")
-                  .map((c) => (
-                    <li
-                      key={c.id}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:bg-white/[0.05]"
-                    >
-                      <div>
-                        <p className="font-medium">{c.title}</p>
-                        <p className="text-xs text-muted-foreground">Clip · {c.status}</p>
-                      </div>
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                    </li>
-                  ))}
-              </ul>
+                </div>
+                {runs.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-[#94A3B8]">
+                    {runFilter === "active" ? "Nothing is processing right now." : "No runs match this filter."}
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {runs.map((v) => (
+                      <RunRow key={v.id} video={v} />
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-3 text-[11px] text-[#64748B]">Showing your latest {videos.length} videos.</p>
+              </>
             )}
           </TabPanel>
         </TabsContent>
 
         {/* My Clips tab */}
         <TabsContent value="clips">
-          <TabPanel title="My Clips" onRefresh={refreshData} refreshing={isLoading}>
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70">
-              Clips are not posted automatically yet. Connect platforms below, then use the{" "}
-              <span className="font-semibold">Post</span> button on each completed clip.
-            </div>
+          <TabPanel
+            title="My clips"
+            description="Your AI-generated shorts, ready to review, download, and publish."
+            onRefresh={refreshData}
+            refreshing={isLoading}
+            action={
+              <Link href="/clips" className="text-xs font-medium text-[#8fe383] hover:underline">
+                Open My Clips →
+              </Link>
+            }
+          >
             {clips.length === 0 ? (
               <EmptyState
-                icon={<Video className="h-12 w-12" />}
-                title="No Clips Yet"
-                description="Upload a video or connect a channel to generate your first clips."
-                action={
-                  <Button variant="gradient" size="sm" asChild>
-                    <Link href="/create">Create Viral Shorts</Link>
-                  </Button>
-                }
+                icon={<Video className="h-7 w-7 text-[#94A3B8]" />}
+                title="No clips yet"
+                description="Paste a video link or upload a file to generate your first clips."
+                action={<PrimaryLink href="/create">Create Viral Shorts</PrimaryLink>}
               />
             ) : (
-              <ClipsList clips={clips} />
+              <>
+                <p className="mb-4 rounded-xl border border-[#253244] bg-[#0A111B] px-4 py-2.5 text-xs text-[#94A3B8]">
+                  Clips aren&apos;t posted automatically. Use <span className="font-semibold text-[#F8FAFC]">Post</span> on a clip, or schedule it in the Content Scheduler.
+                </p>
+                <ClipsList clips={clips} total={totalClips} />
+              </>
             )}
           </TabPanel>
         </TabsContent>
@@ -385,95 +441,134 @@ export function DashboardView({
 }
 
 const TAB_TRIGGER =
-  "rounded-full py-2 text-sm font-semibold text-white/55 transition-all hover:text-white data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow";
+  "flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-[#94A3B8] transition-colors hover:text-[#F8FAFC] data-[state=active]:bg-[#19251F] data-[state=active]:text-[#F8FAFC] data-[state=active]:shadow-[inset_0_0_0_1px_rgba(84,208,69,0.4)]";
 
 function StatCard({
   icon,
-  iconClass,
-  glowClass,
-  barClass,
+  accent,
   value,
   label,
   hint,
   live = false,
 }: {
   icon: React.ReactNode;
-  iconClass: string;
-  glowClass: string;
-  barClass: string;
+  accent: string;
   value: number;
   label: string;
   hint: string;
   live?: boolean;
 }) {
   return (
-    <Card className="group relative overflow-hidden rounded-3xl border-white/10 bg-white/[0.03] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
-      {/* Corner glow on hover */}
-      <div
-        className={`pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${glowClass} to-transparent opacity-60 blur-2xl transition-opacity duration-300 group-hover:opacity-100`}
-      />
-      {/* Accent bar */}
-      <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${barClass}`} />
+    <div className="relative overflow-hidden rounded-2xl border border-[#253244] bg-[#101824] p-4 sm:p-5">
+      <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, ${accent}aa, transparent)` }} aria-hidden />
+      <div className="flex items-center justify-between">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#253244] bg-[#0A111B]">{icon}</span>
+        {live && (
+          <span className="flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" /> LIVE
+          </span>
+        )}
+      </div>
+      <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-[#F8FAFC]">{value.toLocaleString()}</p>
+      <p className="text-sm font-medium text-[#cbd5e1]">{label}</p>
+      <p className="mt-0.5 truncate text-xs text-[#64748B]">{hint}</p>
+    </div>
+  );
+}
 
-      <CardContent className="relative flex items-center gap-4 p-6">
-        <div
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 shadow-lg shadow-transparent transition-shadow duration-300 ${iconClass}`}
-        >
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-4xl font-extrabold tracking-tight text-white">{value}</p>
-            {live && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400 ring-1 ring-amber-500/25">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-70" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
-                </span>
-                LIVE
-              </span>
-            )}
-          </div>
-          <p className="text-sm font-medium text-foreground/90">{label}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{hint}</p>
-        </div>
-      </CardContent>
-    </Card>
+const RUN_STATUS: Record<string, { label: string; cls: string }> = {
+  importing: { label: "Importing", cls: "border-[#35D6E8]/30 bg-[#35D6E8]/10 text-[#9beef7]" },
+  uploading: { label: "Uploading", cls: "border-[#35D6E8]/30 bg-[#35D6E8]/10 text-[#9beef7]" },
+  processing: { label: "Processing", cls: "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-amber-200" },
+  analyzing: { label: "Analyzing", cls: "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-amber-200" },
+  ready: { label: "Completed", cls: "border-[#22C55E]/30 bg-[#22C55E]/10 text-[#86efac]" },
+  failed: { label: "Failed", cls: "border-[#EF4444]/30 bg-[#EF4444]/10 text-[#fca5a5]" },
+};
+
+function RunRow({ video }: { video: VideoType }) {
+  const st = RUN_STATUS[video.status] ?? { label: video.status, cls: "border-[#253244] bg-[#131D2B] text-[#94A3B8]" };
+  const active = RUN_ACTIVE.has(video.status);
+  const err = (video as VideoType & { error_message?: string | null }).error_message;
+  return (
+    <li className="flex items-center gap-3 rounded-xl border border-[#253244] bg-[#0B1220] p-3">
+      <span className="relative h-12 w-20 shrink-0 overflow-hidden rounded-md bg-[#0A111B]">
+        {video.thumbnail_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={video.thumbnail_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <Film className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-[#475569]" />
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-[#F8FAFC]">{video.title}</p>
+        <p className="text-xs text-[#64748B]">
+          {video.source_type === "upload" ? "Upload" : "Link import"} ·{" "}
+          {new Date(video.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+        </p>
+        {video.status === "failed" && err && (
+          <p className="mt-0.5 line-clamp-1 flex items-center gap-1 text-xs text-[#fca5a5]">
+            <AlertTriangle className="h-3 w-3 shrink-0" /> {formatPipelineError(err)}
+          </p>
+        )}
+      </div>
+      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium", st.cls)}>
+        {active ? <Loader2 className="h-3 w-3 animate-spin" /> : video.status === "ready" ? <CheckCircle2 className="h-3 w-3" /> : null}
+        {st.label}
+      </span>
+      {video.status === "ready" && (
+        <Link href={`/clips?video=${video.id}`} className="hidden shrink-0 items-center gap-1 text-xs font-medium text-[#8fe383] hover:underline sm:inline-flex">
+          Clips <ArrowRight className="h-3 w-3" />
+        </Link>
+      )}
+    </li>
   );
 }
 
 function TabPanel({
   title,
+  description,
   children,
   onRefresh,
   refreshing,
+  action,
 }: {
   title: string;
+  description?: string;
   children: React.ReactNode;
   onRefresh: () => void;
   refreshing: boolean;
+  action?: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden rounded-3xl border-white/10 bg-white/[0.03] backdrop-blur">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
-        <h2 className="text-lg font-bold text-white">{title}</h2>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 text-xs text-muted-foreground"
-          onClick={onRefresh}
-          disabled={refreshing}
-        >
-          {refreshing ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-1 h-3 w-3" />
-          )}
-          Refresh
-        </Button>
+    <section className="mt-4 overflow-hidden rounded-2xl border border-[#253244] bg-[#101824]">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#253244] px-5 py-4">
+        <div>
+          <h2 className="text-base font-semibold text-[#F8FAFC]">{title}</h2>
+          {description && <p className="mt-0.5 text-sm text-[#94A3B8]">{description}</p>}
+        </div>
+        <div className="flex items-center gap-3">
+          {action}
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs text-[#94A3B8] hover:bg-white/[0.04] hover:text-white disabled:opacity-60"
+          >
+            {refreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Refresh
+          </button>
+        </div>
       </div>
-      <CardContent className="p-6">{children}</CardContent>
-    </Card>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
+  );
+}
+
+function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="inline-flex h-9 items-center rounded-lg bg-[#54D045] px-4 text-sm font-semibold text-[#070B12] hover:bg-[#62dc53]">
+      {children}
+    </Link>
   );
 }
 
@@ -489,11 +584,11 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center py-12 text-center">
-      <div className="mb-4 text-muted-foreground/40">{icon}</div>
-      <p className="text-lg font-medium">{title}</p>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
-      {action && <div className="mt-6">{action}</div>}
+    <div className="flex flex-col items-center py-10 text-center">
+      <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#253244] bg-[#0A111B]">{icon}</span>
+      <p className="font-semibold text-[#F8FAFC]">{title}</p>
+      <p className="mt-1.5 max-w-sm text-sm text-[#94A3B8]">{description}</p>
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }

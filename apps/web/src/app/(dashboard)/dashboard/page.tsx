@@ -27,6 +27,8 @@ export default async function DashboardPage() {
         initialClips={clipsRes.data ?? []}
         initialVideos={videosRes.data ?? []}
         initialPlatforms={platformsRes.data ?? []}
+        clipsTotal={clipsRes.meta?.total ?? clipsRes.data?.length ?? 0}
+        loadFailed={!channelsRes.success || !clipsRes.success || !videosRes.success}
       />
     </Suspense>
   );

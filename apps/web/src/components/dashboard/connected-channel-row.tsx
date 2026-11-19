@@ -1,5 +1,4 @@
 import { Check, ExternalLink, Info, Loader2, Trash2, Youtube } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import type { YoutubeChannel } from "@/lib/api";
 import { formatConnectedDate } from "@/lib/utils";
 
@@ -15,23 +14,28 @@ export function ConnectedChannelRow({
   removing,
 }: ConnectedChannelRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-white/[0.12] hover:bg-white/[0.05]">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-[#253244] bg-[#0B1220] p-3 transition-colors hover:border-[#35445a]">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <Youtube className="h-5 w-5 shrink-0 text-red-500" />
+        {channel.thumbnail_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={channel.thumbnail_url} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-10 w-10 shrink-0 rounded-full border border-[#253244] object-cover" />
+        ) : (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF0000]/15">
+            <Youtube className="h-4 w-4 text-[#FF4d4d]" />
+          </span>
+        )}
         <div className="min-w-0">
-          <p className="font-semibold">{channel.channel_name}</p>
-          <p className="truncate text-xs text-muted-foreground">{channel.channel_url}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Connected {formatConnectedDate(channel.created_at)}
-          </p>
+          <p className="truncate font-semibold text-[#F8FAFC]">{channel.channel_name}</p>
+          <p className="truncate text-xs text-[#64748B]">{channel.channel_url}</p>
+          <p className="mt-0.5 text-[11px] text-[#64748B]">Added {formatConnectedDate(channel.created_at)}</p>
         </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <Badge variant="success" className="border-0">
-          <Check className="mr-1 h-3 w-3" />
-          active
-        </Badge>
+        <span className="hidden items-center gap-1 rounded-md border border-[#22C55E]/30 bg-[#22C55E]/10 px-1.5 py-0.5 text-[11px] font-medium text-[#86efac] sm:inline-flex">
+          <Check className="h-3 w-3" />
+          Saved
+        </span>
         <a
           href={channel.channel_url}
           target="_blank"

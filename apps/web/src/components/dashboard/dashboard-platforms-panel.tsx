@@ -209,7 +209,7 @@ export function DashboardPlatformsPanel({
           return (
             <li
               key={def.id}
-              className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-xl border border-[#253244] bg-[#0B1220] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 {def.icon}
@@ -231,7 +231,7 @@ export function DashboardPlatformsPanel({
                     {row?.can_post ? "Ready" : "Connected"}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-white/10 text-muted-foreground">
+                  <Badge variant="outline" className="border-[#253244] text-muted-foreground">
                     Not connected
                   </Badge>
                 )}
@@ -302,14 +302,14 @@ export function DashboardPlatformsPanel({
       </ul>
 
       <div className="mt-6">
-        <Button variant="outline" size="sm" asChild className="border-white/10">
+        <Button variant="outline" size="sm" asChild className="border-[#253244]">
           <Link href="/setup/platforms?from=dashboard">Manage all platforms</Link>
         </Button>
       </div>
 
       {pendingPlatform && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-xl border border-[#253244] bg-zinc-950 p-6 shadow-2xl">
             <div className="mb-4 flex justify-center">{pendingPlatform.icon}</div>
             <h3 className="text-center text-lg font-bold">Connect {pendingPlatform.name}</h3>
             <p className="mt-3 text-center text-sm text-muted-foreground">
