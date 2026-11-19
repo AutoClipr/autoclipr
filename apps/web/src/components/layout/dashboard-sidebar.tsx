@@ -50,7 +50,7 @@ const sections: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-export function DashboardSidebar({ credits, plan = "starter" }: { credits: number; plan?: string }) {
+export function DashboardSidebar({ plan = "starter" }: { plan?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -85,20 +85,7 @@ export function DashboardSidebar({ credits, plan = "starter" }: { credits: numbe
           <span className="font-bold">Auto<span className="text-emerald-400">Clipr</span></span>
         </div>
 
-        <div className="mx-4 mt-6 overflow-hidden rounded-xl border border-emerald-700/25 bg-gradient-to-br from-emerald-950/40 to-emerald-900/20 p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Credits remaining
-          </p>
-          <p className="mt-1 text-3xl font-bold gradient-text">{credits}</p>
-          <Link
-            href="/subscription"
-            className="mt-3 inline-block text-xs font-medium text-emerald-400 hover:text-emerald-300"
-          >
-            Upgrade plan →
-          </Link>
-        </div>
-
-        <div className="mx-4 mt-4">
+        <div className="mx-4 mt-5">
           <Link
             href="/create"
             onClick={() => setOpen(false)}
