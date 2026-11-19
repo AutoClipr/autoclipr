@@ -329,6 +329,17 @@ export class SubscriptionsService {
     }
   }
 
+  /** One of the user's own payments, or null — used to build its receipt. */
+  async getTransaction(userId: string, id: string) {
+    const { data } = await this.supabase.getClient()
+      .from('billing_transactions')
+      .select('id, invoice_number, plan_id, amount, status, transaction_id, payment_date, period_end, billing_period')
+      .eq('user_id', userId)
+      .eq('id', id)
+      .maybeSingle();
+    return data ?? null;
+  }
+
   async getTransactions(userId: string) {
     const { data } = await this.supabase.getClient()
       .from('billing_transactions')

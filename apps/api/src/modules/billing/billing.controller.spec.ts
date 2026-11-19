@@ -142,6 +142,52 @@ describe('BillingController', () => {
     });
   });
 
+  describe('receipt', () => {
+    const tx = {
+      id: 'tx-1',
+      invoice_number: 'INV-1',
+      plan_id: 'creator',
+      amount: '₹399.00',
+      status: 'paid',
+      transaction_id: 'TRN1',
+      payment_date: '2026-11-18T00:00:00Z',
+    };
+
+    it("builds the PDF from the user's stored payment, not from the request", async () => {
+      (subscriptions as any).getTransaction = jest.fn().mockResolvedValue(tx);
+      (usersService as any).getMe = jest.fn().mockResolvedValue({ email: 'a@b.com', full_name: 'Ada' });
+      invoicePdf.generate.mockResolvedValue(Buffer.from('pdf'));
+      const res = { set: jest.fn(), end: jest.fn() } as any;
+
+      await controller.receipt(user, 'tx-1', res);
+
+      expect((subscriptions as any).getTransaction).toHaveBeenCalledWith('user-1', 'tx-1');
+      expect(invoicePdf.generate).toHaveBeenCalledWith(
+        expect.objectContaining({ invoiceNumber: 'INV-1', amount: '₹399.00', planName: 'Creator', userName: 'Ada', userEmail: 'a@b.com' }),
+      );
+      expect(res.set).toHaveBeenCalledWith(expect.objectContaining({ 'Content-Type': 'application/pdf', 'Cache-Control': 'private, no-store' }));
+      expect(res.end).toHaveBeenCalledWith(Buffer.from('pdf'));
+    });
+
+    it("returns 404 for a payment that isn't the user's", async () => {
+      (subscriptions as any).getTransaction = jest.fn().mockResolvedValue(null);
+      const res = { set: jest.fn(), end: jest.fn() } as any;
+      await expect(controller.receipt(user, 'someone-elses', res)).rejects.toThrow('Receipt not found');
+      expect(invoicePdf.generate).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the token email when the profile cannot be loaded', async () => {
+      (subscriptions as any).getTransaction = jest.fn().mockResolvedValue({ ...tx, transaction_id: null });
+      (usersService as any).getMe = jest.fn().mockRejectedValue(new Error('x'));
+      invoicePdf.generate.mockResolvedValue(Buffer.from('pdf'));
+      const res = { set: jest.fn(), end: jest.fn() } as any;
+      await controller.receipt({ ...user, email: 'tok@x.com' } as any, 'tx-1', res);
+      expect(invoicePdf.generate).toHaveBeenCalledWith(
+        expect.objectContaining({ userEmail: 'tok@x.com', userName: 'tok', transactionId: '-' }),
+      );
+    });
+  });
+
   describe('downloadInvoice', () => {
     it('generates a PDF and streams it with the correct headers', async () => {
       const pdfBuffer = Buffer.from('pdf-bytes');

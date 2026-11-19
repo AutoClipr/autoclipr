@@ -567,6 +567,22 @@ describe('SubscriptionsService', () => {
     });
   });
 
+  describe('getTransaction', () => {
+    it("scopes the lookup to the user and returns the row", async () => {
+      const builder = createQueryBuilderMock({ data: { id: 'tx-1' }, error: null });
+      supabaseMock.__client.from.mockImplementation(() => builder);
+
+      await expect(service.getTransaction('user-1', 'tx-1')).resolves.toEqual({ id: 'tx-1' });
+      expect(builder.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(builder.eq).toHaveBeenCalledWith('id', 'tx-1');
+    });
+
+    it('returns null when there is no such payment', async () => {
+      supabaseMock.__client.from.mockImplementation(() => createQueryBuilderMock({ data: null, error: null }));
+      await expect(service.getTransaction('user-1', 'nope')).resolves.toBeNull();
+    });
+  });
+
   describe('getTransactions', () => {
     it('returns the ordered transaction list', async () => {
       const rows = [{ id: 'tx-1' }];

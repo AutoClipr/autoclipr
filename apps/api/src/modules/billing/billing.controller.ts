@@ -4,6 +4,8 @@ import {
   Controller,
   Get,
   HttpCode,
+  NotFoundException,
+  Param,
   Post,
   Query,
   Res,
@@ -141,6 +143,38 @@ export class BillingController {
   async transactions(@CurrentUser() user: AuthUser) {
     const data = await this.subscriptions.getTransactions(user.sub);
     return ApiResponse.ok(data);
+  }
+
+  /**
+   * Receipt PDF for one of the signed-in user's own payments, built from the
+   * stored payment record (nothing is taken from the URL but its id).
+   */
+  @Get('billing/transactions/:id/receipt')
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  async receipt(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() res: Response) {
+    const tx = await this.subscriptions.getTransaction(user.sub, id);
+    if (!tx) throw new NotFoundException('Receipt not found');
+    const profile = await this.usersService.getMe(user.sub).catch(() => null);
+    const email = profile?.email || user.email || '';
+    const pdf = await this.invoicePdf.generate({
+      invoiceNumber: tx.invoice_number,
+      transactionId: tx.transaction_id || '-',
+      paymentDate: new Date(tx.payment_date).toLocaleDateString('en-IN'),
+      userName: profile?.full_name || email.split('@')[0] || 'Customer',
+      userEmail: email,
+      planName: tx.plan_id.charAt(0).toUpperCase() + tx.plan_id.slice(1),
+      amount: tx.amount,
+      companyName: 'AutoClipr',
+      companyWebsite: process.env.WEB_APP_URL ?? 'https://autoclipr.com',
+    });
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="autoclipr-invoice-${tx.invoice_number}.pdf"`,
+      'Content-Length': pdf.length,
+      'Cache-Control': 'private, no-store',
+    });
+    res.end(pdf);
   }
 
   @Get('billing/invoice/download')
