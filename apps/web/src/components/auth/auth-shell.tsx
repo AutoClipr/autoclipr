@@ -138,7 +138,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             <Link href="/" className="flex items-center gap-2.5">
               <LogoIcon size={36} className="rounded-xl shadow-lg shadow-emerald-500/30" />
               <span className="text-lg font-bold text-white">
-                Auto<span className="text-emerald-400">Clipr</span>
+                Auto<span className="text-[#54D045]">Clipr</span>
               </span>
             </Link>
           </div>

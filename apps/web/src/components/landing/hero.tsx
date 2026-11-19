@@ -217,7 +217,7 @@ function HeroUrlForm() {
           aria-label="Video link"
           className="min-w-0 flex-1 bg-transparent py-3 text-base text-white placeholder:text-white/40 focus:outline-none"
         />
-        <Button type="submit" className="h-12 shrink-0 rounded-full bg-gradient-brand px-7 text-base text-white shadow-glow hover:scale-[1.02] hover:opacity-100 hover:shadow-glow-lg active:scale-[0.98]">
+        <Button type="submit" className="h-12 shrink-0 rounded-full bg-[#54D045] px-7 text-base font-semibold text-[#070B12] shadow-[0_10px_30px_-12px_rgba(84,208,69,0.7)] hover:scale-[1.02] hover:bg-[#62dc53] hover:opacity-100 active:scale-[0.98]">
           Get free clips
         </Button>
       </div>

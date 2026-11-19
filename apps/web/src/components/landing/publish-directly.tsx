@@ -471,7 +471,7 @@ export function PublishDirectly() {
           <p className="section-label-white mx-auto mb-4">Multi-platform</p>
           <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Publish directly to{" "}
-            <span className="text-aurora">every platform</span>
+            <span className="text-[#54D045]">every platform</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground sm:text-lg">
             Clip once. Publish everywhere. AutoClipr formats and pushes your content to YouTube Shorts,

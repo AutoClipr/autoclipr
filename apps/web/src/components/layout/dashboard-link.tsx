@@ -14,7 +14,7 @@ export function DashboardLink() {
   return (
     <Link
       href="/dashboard"
-      className="hidden rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 md:inline-flex"
+      className="hidden rounded-full bg-[#54D045] px-4 py-1.5 text-sm font-semibold text-[#070B12] transition-colors hover:bg-[#62dc53] md:inline-flex"
     >
       Dashboard
     </Link>

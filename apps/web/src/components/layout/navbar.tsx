@@ -49,7 +49,7 @@ export async function Navbar({
           <span className="absolute -inset-2 -z-10 rounded-2xl bg-emerald-500/0 blur-xl transition-colors duration-300 group-hover:bg-emerald-500/15" />
           <LogoIcon size={36} className="rounded-xl shadow-glow transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
           <span className="text-base sm:text-lg">
-            Auto<span className="gradient-text">Clipr</span>
+            Auto<span className="text-[#54D045]">Clipr</span>
           </span>
         </Link>
 
@@ -76,7 +76,7 @@ export async function Navbar({
           {!user && (
             <Link
               href="/register"
-              className="rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition-colors md:hidden"
+              className="rounded-full bg-[#54D045] px-3 py-1.5 text-xs font-semibold text-[#070B12] hover:bg-[#62dc53] transition-colors md:hidden"
             >
               Sign up free
             </Link>
@@ -103,7 +103,7 @@ export async function Navbar({
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400"
+                className="rounded-full bg-[#54D045] px-4 py-1.5 text-sm font-semibold text-[#070B12] shadow-lg shadow-[#54D045]/20 transition-colors hover:bg-[#62dc53]"
               >
                 <span className="xl:hidden">Sign up</span>
                 <span className="hidden xl:inline">Sign up — it&apos;s free</span>
