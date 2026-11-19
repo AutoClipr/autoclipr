@@ -170,11 +170,28 @@ export function DashboardSidebar({
             href="/create"
             aria-label="Create new clips"
             className={cn(
-              "group relative mb-4 mt-1 block rounded-2xl lg:mt-9 border border-[#54D045]/25 bg-gradient-to-br from-[#54D045]/[0.12] to-[#54D045]/[0.03] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#54D045]/45 hover:shadow-[0_10px_30px_-14px_rgba(84,208,69,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54D045]/60",
+              "group relative mb-4 mt-1 block overflow-hidden rounded-2xl lg:mt-9 border border-[#54D045]/25 bg-gradient-to-br from-[#54D045]/[0.12] to-[#54D045]/[0.03] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#54D045]/45 hover:shadow-[0_10px_30px_-14px_rgba(84,208,69,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54D045]/60",
               collapsed ? "p-3 lg:flex lg:justify-center lg:p-2.5" : "p-3",
             )}
           >
-            <div className={cn("flex items-center gap-2.5", collapsed && "lg:justify-center")}>
+            {/* Sample clip behind the card; still image when motion is reduced or collapsed. */}
+            <span aria-hidden className={cn("pointer-events-none absolute inset-0", collapsed && "lg:hidden")}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/showcase/talking-head.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[70%_30%]" />
+              <video
+                src="/showcase/talking-head.mp4"
+                poster="/showcase/talking-head.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-cover object-[70%_30%] motion-reduce:hidden"
+              />
+              <span className="absolute inset-0 bg-gradient-to-r from-[#080D18]/95 via-[#080D18]/70 to-[#080D18]/10" />
+              <span className="absolute inset-0 bg-gradient-to-t from-[#080D18]/80 via-transparent to-transparent" />
+            </span>
+            <div className={cn("relative flex items-center gap-2.5", collapsed && "lg:justify-center")}>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#54D045] text-[#070B12]">
                 <Wand2 className="h-4 w-4" />
               </span>
@@ -182,8 +199,8 @@ export function DashboardSidebar({
                 Create Viral Shorts
               </span>
             </div>
-            <div className={cn(collapsed && "lg:hidden")}>
-              <p className="mt-1.5 text-xs leading-snug text-[#94A3B8]">
+            <div className={cn("relative", collapsed && "lg:hidden")}>
+              <p className="mt-1.5 text-xs leading-snug text-[#cbd5e1]">
                 Turn long videos into engaging shorts with AI.
               </p>
               <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#8fe383]">
