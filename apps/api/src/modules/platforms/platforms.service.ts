@@ -69,7 +69,7 @@ export class PlatformsService {
     // Only send for non-YouTube platforms (YouTube sends after OAuth callback)
     if (dto.platform !== 'youtube') {
       void this.usersRepo.getById(userId).then((profile) => {
-        if (profile?.email && profile.email_notifications_enabled !== false) {
+        if (profile?.email && profile.email_notifications_enabled !== false && profile.platform_email_notifications !== false) {
           void this.email.sendPlatformConnected(profile.email, {
             userName: profile.full_name || profile.email.split('@')[0],
             platformName: PLATFORM_LABELS[dto.platform],
@@ -140,7 +140,7 @@ export class PlatformsService {
 
     // Fire-and-forget: notify user of successful YouTube connection
     void this.usersRepo.getById(userId).then((profile) => {
-      if (profile?.email && profile.email_notifications_enabled !== false) {
+      if (profile?.email && profile.email_notifications_enabled !== false && profile.platform_email_notifications !== false) {
         void this.email.sendPlatformConnected(profile.email, {
           userName: profile.full_name || profile.email.split('@')[0],
           platformName: 'YouTube Shorts',
@@ -194,7 +194,7 @@ export class PlatformsService {
     });
 
     void this.usersRepo.getById(userId).then((profile) => {
-      if (profile?.email && profile.email_notifications_enabled !== false) {
+      if (profile?.email && profile.email_notifications_enabled !== false && profile.platform_email_notifications !== false) {
         void this.email.sendPlatformConnected(profile.email, {
           userName: profile.full_name || profile.email.split('@')[0],
           platformName: 'Instagram Reels',

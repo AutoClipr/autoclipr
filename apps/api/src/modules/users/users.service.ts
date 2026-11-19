@@ -111,6 +111,9 @@ export class UsersService {
           ? dto.avatar_url.trim() || null
           : undefined,
       email_notifications_enabled: dto.email_notifications_enabled,
+      clips_ready_email_notifications: dto.clips_ready_email_notifications,
+      platform_email_notifications: dto.platform_email_notifications,
+      scheduler_email_notifications: dto.scheduler_email_notifications,
     });
   }
 

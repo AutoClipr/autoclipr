@@ -1,173 +1,195 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Bell,
-  BellOff,
-  CheckCircle2,
-  CreditCard,
-  Mail,
-  Scissors,
-  ShieldAlert,
-  TriangleAlert,
-} from "lucide-react";
+import { Bell, BellOff, CalendarClock, CreditCard, Link2, Lock, Scissors } from "lucide-react";
+import { toast } from "sonner";
 import { getAccessToken } from "@/lib/auth-token";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const EMAIL_TYPES = [
+/** Optional email types the user can switch off. Keys are profile columns. */
+export type EmailPrefKey =
+  | "clips_ready_email_notifications"
+  | "scheduler_email_notifications"
+  | "platform_email_notifications";
+
+export type EmailPrefs = Record<EmailPrefKey, boolean>;
+
+const OPTIONAL_TYPES: { key: EmailPrefKey; icon: typeof Bell; label: string; description: string }[] = [
   {
-    icon: Mail,
-    label: "Welcome & onboarding",
-    description: "Account creation confirmation and getting-started tips.",
-  },
-  {
+    key: "clips_ready_email_notifications",
     icon: Scissors,
     label: "Clips ready",
-    description: "Notified as soon as your AI clip generation completes.",
+    description: "When AI clip generation for a video finishes.",
   },
   {
-    icon: CreditCard,
-    label: "Subscription & billing",
-    description: "Purchase confirmations, invoices, and renewal reminders.",
+    key: "scheduler_email_notifications",
+    icon: CalendarClock,
+    label: "Scheduled posts",
+    description: "When a scheduled post goes live or needs your attention.",
   },
   {
-    icon: TriangleAlert,
-    label: "Trial expiry warnings",
-    description: "3-day heads-up before your free trial ends.",
-  },
-  {
-    icon: ShieldAlert,
-    label: "Payment failures",
-    description: "Alerts and retry reminders when a charge doesn't go through.",
+    key: "platform_email_notifications",
+    icon: Link2,
+    label: "Platform connections",
+    description: "When a social account is connected or disconnected.",
   },
 ];
 
+async function patchProfile(body: Record<string, boolean>) {
+  const token = await getAccessToken();
+  if (!token) return { ok: false, message: "Your session expired. Please sign in again." };
+  const res = await apiFetch("/api/v1/users/me", { method: "PATCH", token, body: JSON.stringify(body) });
+  return { ok: res.success, message: res.error?.message ?? "Couldn't save your preference. Please try again." };
+}
+
 export function EmailNotificationsSection({
   initialEnabled,
+  initialPrefs,
 }: {
   initialEnabled: boolean;
+  initialPrefs: EmailPrefs;
 }) {
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<EmailPrefs>(initialPrefs);
+  const [saving, setSaving] = useState<string | null>(null);
 
-  async function toggle(next: boolean) {
+  async function toggleMaster(next: boolean) {
     setEnabled(next);
-    setSaving(true);
-    setError(null);
-    setSaved(false);
-
-    const token = await getAccessToken();
-    if (!token) {
-      setError("Session expired — please sign in again.");
+    setSaving("master");
+    // Only the master switch changes, so individual choices come back when it's re-enabled.
+    const res = await patchProfile({ email_notifications_enabled: next });
+    setSaving(null);
+    if (!res.ok) {
       setEnabled(!next);
-      setSaving(false);
+      toast.error(res.message);
       return;
     }
+    toast.success(next ? "Email notifications turned on" : "Email notifications paused");
+  }
 
-    const res = await apiFetch("/api/v1/users/me", {
-      method: "PATCH",
-      token,
-      body: JSON.stringify({ email_notifications_enabled: next }),
-    });
-
-    setSaving(false);
-
-    if (!res.success) {
-      setError(res.error?.message ?? "Failed to save preference.");
-      setEnabled(!next);
+  async function toggleType(key: EmailPrefKey, next: boolean) {
+    setPrefs((p) => ({ ...p, [key]: next }));
+    setSaving(key);
+    const res = await patchProfile({ [key]: next });
+    setSaving(null);
+    if (!res.ok) {
+      setPrefs((p) => ({ ...p, [key]: !next }));
+      toast.error(res.message);
       return;
     }
-
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    toast.success("Preference saved");
   }
 
   return (
-    <div className="space-y-5">
-      {/* Master toggle */}
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+    <div className="space-y-4">
+      {/* Master switch */}
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5 transition-colors",
+          enabled ? "border-[#54D045]/30 bg-[#54D045]/[0.06]" : "border-[#253244] bg-[#0B1220]",
+        )}
+      >
         <div className="flex items-center gap-3">
-          {enabled ? (
-            <Bell className="h-5 w-5 shrink-0 text-emerald-400" />
-          ) : (
-            <BellOff className="h-5 w-5 shrink-0 text-muted-foreground" />
-          )}
+          <span
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
+              enabled ? "border-[#54D045]/30 bg-[#54D045]/10 text-[#8fe383]" : "border-[#253244] text-[#94A3B8]",
+            )}
+          >
+            {enabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+          </span>
           <div>
-            <p className="font-medium">Email notifications</p>
-            <p className="text-sm text-muted-foreground">
-              {enabled ? "You will receive emails for the events below." : "All email notifications are paused."}
+            <p id="master-label" className="text-sm font-medium text-[#F8FAFC]">
+              Email notifications
+            </p>
+            <p className="text-xs text-[#94A3B8]">
+              {enabled
+                ? "Optional emails follow your choices below."
+                : "Optional emails are paused. Your choices below are kept for when you turn this back on."}
             </p>
           </div>
         </div>
-
-        {/* Toggle switch */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          disabled={saving}
-          onClick={() => void toggle(!enabled)}
-          className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
-            enabled ? "bg-emerald-500" : "bg-white/10",
-          )}
-        >
-          <span
-            className={cn(
-              "pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform",
-              enabled ? "translate-x-5" : "translate-x-0",
-            )}
-          />
-        </button>
+        <Switch
+          checked={enabled}
+          disabled={saving === "master"}
+          onChange={toggleMaster}
+          labelledBy="master-label"
+        />
       </div>
 
-      {/* List of email types */}
-      <div
-        className={cn(
-          "space-y-2 transition-opacity",
-          !enabled && "pointer-events-none opacity-40",
-        )}
-      >
-        {EMAIL_TYPES.map((item) => {
-          const Icon = item.icon;
+      {/* Per-type */}
+      <ul className="divide-y divide-[#253244] overflow-hidden rounded-xl border border-[#253244]">
+        {OPTIONAL_TYPES.map((t) => {
+          const Icon = t.icon;
+          const on = prefs[t.key];
           return (
-            <div
-              key={item.label}
-              className="flex items-start gap-3 rounded-lg border border-white/[0.05] bg-white/[0.02] px-4 py-3"
+            <li
+              key={t.key}
+              className={cn("flex items-center gap-3 bg-[#0B1220]/40 px-4 py-3.5 transition-opacity", !enabled && "opacity-50")}
             >
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400/80" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
+              <Icon className="h-4 w-4 shrink-0 text-[#94A3B8]" />
+              <div className="min-w-0 flex-1">
+                <p id={`${t.key}-label`} className="text-sm font-medium text-[#F8FAFC]">
+                  {t.label}
+                </p>
+                <p className="text-xs text-[#94A3B8]">{t.description}</p>
               </div>
-              <CheckCircle2
-                className={cn(
-                  "ml-auto mt-0.5 h-4 w-4 shrink-0",
-                  enabled ? "text-emerald-400" : "text-white/20",
-                )}
+              <Switch
+                checked={on}
+                disabled={!enabled || saving === t.key}
+                onChange={(next) => void toggleType(t.key, next)}
+                labelledBy={`${t.key}-label`}
               />
-            </div>
+            </li>
           );
         })}
-      </div>
-
-      {/* Feedback */}
-      {error && (
-        <p className="rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
-      )}
-      {saved && (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-300">
-          Notification preference saved.
-        </p>
-      )}
-      {saving && (
-        <p className="text-sm text-muted-foreground">Saving…</p>
-      )}
+        <li className="flex items-center gap-3 bg-[#0B1220]/40 px-4 py-3.5">
+          <CreditCard className="h-4 w-4 shrink-0 text-[#94A3B8]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-[#F8FAFC]">Billing &amp; receipts</p>
+            <p className="text-xs text-[#94A3B8]">Purchase confirmations, invoices and subscription changes.</p>
+          </div>
+          <span className="inline-flex items-center gap-1 rounded-md border border-[#253244] px-2 py-1 text-[11px] text-[#94A3B8]">
+            <Lock className="h-3 w-3" /> Always on
+          </span>
+        </li>
+      </ul>
     </div>
+  );
+}
+
+function Switch({
+  checked,
+  disabled,
+  onChange,
+  labelledBy,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (next: boolean) => void;
+  labelledBy: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-labelledby={labelledBy}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54D045]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#101824] disabled:cursor-not-allowed",
+        checked ? "bg-[#54D045]" : "bg-[#253244]",
+        disabled && "opacity-60",
+      )}
+    >
+      <span
+        className={cn(
+          "block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200",
+          checked ? "translate-x-[22px]" : "translate-x-0.5",
+        )}
+      />
+    </button>
   );
 }

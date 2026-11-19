@@ -234,6 +234,29 @@ describe('UsersService', () => {
       });
     });
 
+    it('forwards per-type email preferences to the repo without touching auth', async () => {
+      usersRepo.getById.mockResolvedValue(makeProfile());
+      usersRepo.updateProfile.mockResolvedValue(makeProfile());
+      const updateUserById = jest.fn();
+      supabaseAdmin.getClient.mockReturnValue({ auth: { admin: { deleteUser: jest.fn(), updateUserById } } });
+
+      await service.updateProfile('user-1', {
+        clips_ready_email_notifications: false,
+        platform_email_notifications: true,
+        scheduler_email_notifications: false,
+      });
+
+      expect(updateUserById).not.toHaveBeenCalled();
+      expect(usersRepo.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({
+          clips_ready_email_notifications: false,
+          platform_email_notifications: true,
+          scheduler_email_notifications: false,
+        }),
+      );
+    });
+
     it('validates and sets a trimmed, allow-listed avatar_url', async () => {
       config.get.mockReturnValue('https://supabase.example.com');
       storage.avatarsBucket.mockReturnValue('avatars');

@@ -197,6 +197,24 @@ describe('UsersRepository', () => {
       expect(builder.update).toHaveBeenCalledWith(expect.objectContaining({ avatar_url: null }));
     });
 
+    it('patches per-type email preferences and leaves unset ones alone', async () => {
+      const builder = createQueryBuilderMock({ data: { id: 'user-1' }, error: null });
+      supabaseMock.__client.from.mockReturnValue(builder);
+
+      await repo.updateProfile('user-1', {
+        clips_ready_email_notifications: false,
+        scheduler_email_notifications: true,
+      });
+
+      const updates = builder.update.mock.calls[0][0];
+      expect(updates).toMatchObject({
+        clips_ready_email_notifications: false,
+        scheduler_email_notifications: true,
+      });
+      expect(updates).not.toHaveProperty('platform_email_notifications');
+      expect(updates).not.toHaveProperty('email_notifications_enabled');
+    });
+
     it('includes email_notifications_enabled=false when explicitly patched', async () => {
       const builder = createQueryBuilderMock({ data: { id: 'user-1' }, error: null });
       supabaseMock.__client.from.mockReturnValue(builder);

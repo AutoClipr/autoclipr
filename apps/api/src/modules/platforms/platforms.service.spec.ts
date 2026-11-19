@@ -304,6 +304,29 @@ describe('PlatformsService', () => {
       expect(email.sendPlatformConnected).not.toHaveBeenCalled();
     });
 
+    it('does not send email when platform emails are turned off', async () => {
+      usersRepo.upsertFromAuth.mockResolvedValue(undefined as never);
+      repo.getByPlatform.mockResolvedValue(null);
+      repo.upsert.mockResolvedValue({
+        platform: 'facebook',
+        account_name: 'My FB',
+        auth_status: 'connected',
+        has_tokens: false,
+      } as never);
+      usersRepo.getById.mockResolvedValue({
+        email: 'a@b.com',
+        email_notifications_enabled: true,
+        platform_email_notifications: false,
+      } as never);
+
+      const service = makeService();
+      await service.connect('u1', { platform: 'facebook' } as never, 'a@b.com');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(email.sendPlatformConnected).not.toHaveBeenCalled();
+    });
+
     it('does not send email when profile has no email', async () => {
       usersRepo.upsertFromAuth.mockResolvedValue(undefined as never);
       repo.getByPlatform.mockResolvedValue(null);

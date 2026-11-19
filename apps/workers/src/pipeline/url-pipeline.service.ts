@@ -557,12 +557,13 @@ export class UrlPipelineService {
   private async sendClipReadyEmail(userId: string, videoId: string, videoTitle: string, clipsCount: number): Promise<void> {
     try {
       const userRes = await this.db.client.query(
-        `SELECT email, email_notifications_enabled FROM profiles WHERE id = $1`,
+        `SELECT email, email_notifications_enabled, clips_ready_email_notifications FROM profiles WHERE id = $1`,
         [userId],
       );
       const userEmail = userRes.rows[0]?.email as string | undefined;
       const notificationsEnabled = userRes.rows[0]?.email_notifications_enabled as boolean | undefined;
-      if (!userEmail || notificationsEnabled === false) return;
+      const clipsReadyEnabled = userRes.rows[0]?.clips_ready_email_notifications as boolean | undefined;
+      if (!userEmail || notificationsEnabled === false || clipsReadyEnabled === false) return;
 
       const appUrl = this.config.get<string>('appUrl') ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://autoclipr.com';
       await this.email.sendClipReady(userEmail, {

@@ -64,4 +64,13 @@ describe('UpdateProfileDto', () => {
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
   });
+
+  it.each(['clips_ready_email_notifications', 'platform_email_notifications', 'scheduler_email_notifications'])(
+    'validates %s as a boolean',
+    async (key) => {
+      expect(await validate(plainToInstance(UpdateProfileDto, { [key]: false }))).toHaveLength(0);
+      const errors = await validate(plainToInstance(UpdateProfileDto, { [key]: 'no' }));
+      expect(errors.map((e) => e.property)).toContain(key);
+    },
+  );
 });

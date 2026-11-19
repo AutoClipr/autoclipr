@@ -10,13 +10,24 @@ export interface Profile {
   credits: number;
   subscription_tier: string;
   email_notifications_enabled: boolean;
+  clips_ready_email_notifications?: boolean;
+  platform_email_notifications?: boolean;
+  scheduler_email_notifications?: boolean;
   welcome_sent: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
+/** Per-type email preferences, stored alongside the master switch. */
+export const EMAIL_TYPE_PREF_KEYS = [
+  'clips_ready_email_notifications',
+  'platform_email_notifications',
+  'scheduler_email_notifications',
+] as const;
+export type EmailTypePrefs = Partial<Record<(typeof EMAIL_TYPE_PREF_KEYS)[number], boolean>>;
+
 const PROFILE_COLUMNS =
-  'id, email, full_name, avatar_url, phone, credits, subscription_tier, email_notifications_enabled, welcome_sent, created_at, updated_at';
+  'id, email, full_name, avatar_url, phone, credits, subscription_tier, email_notifications_enabled, clips_ready_email_notifications, platform_email_notifications, scheduler_email_notifications, welcome_sent, created_at, updated_at';
 
 /**
  * Raised when a credit deduction is rejected because the balance can't cover it.
@@ -88,7 +99,7 @@ export class UsersRepository {
 
   async updateProfile(
     userId: string,
-    patch: { full_name?: string; email?: string; phone?: string; avatar_url?: string | null; email_notifications_enabled?: boolean },
+    patch: { full_name?: string; email?: string; phone?: string; avatar_url?: string | null; email_notifications_enabled?: boolean } & EmailTypePrefs,
   ): Promise<Profile> {
     const updates: Record<string, string | boolean | null> = {
       updated_at: new Date().toISOString(),
@@ -98,6 +109,9 @@ export class UsersRepository {
     if (patch.phone !== undefined) updates.phone = patch.phone || null;
     if (patch.avatar_url !== undefined) updates.avatar_url = patch.avatar_url || null;
     if (patch.email_notifications_enabled !== undefined) updates.email_notifications_enabled = patch.email_notifications_enabled;
+    for (const key of EMAIL_TYPE_PREF_KEYS) {
+      if (patch[key] !== undefined) updates[key] = patch[key];
+    }
 
     const { data, error } = await this.supabase
       .getClient()

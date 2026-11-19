@@ -18,4 +18,16 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   email_notifications_enabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  clips_ready_email_notifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  platform_email_notifications?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  scheduler_email_notifications?: boolean;
 }
