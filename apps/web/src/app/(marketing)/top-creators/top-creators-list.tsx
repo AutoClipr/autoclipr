@@ -376,7 +376,8 @@ export function TopCreatorsList() {
               : " "}
           </p>
 
-          <div className="relative mx-auto mt-7 max-w-xl" role="search">
+          <div className="mx-auto mt-7 max-w-xl" role="search">
+            <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748B]" />
             <label htmlFor="creator-search" className="sr-only">Find a YouTube channel</label>
             <input
@@ -395,13 +396,14 @@ export function TopCreatorsList() {
                 <X className="h-4 w-4" />
               </button>
             ) : null}
+            </div>
             <p className="mt-2 text-center text-[11px] text-[#64748B]">Search by channel name, @handle or channel ID</p>
           </div>
         </header>
 
         {/* ── Controls ── */}
-        <div className="mt-12 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="mt-12 flex flex-col items-center gap-3">
+          <div className="scrollbar-none -mx-4 max-w-full overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <div role="tablist" aria-label="Rank by" className="flex w-max items-center gap-1 rounded-full border border-[#253244] bg-[#101824]/80 p-1">
               {SORTS.map(({ key, label, icon: Icon }) => (
                 <button
@@ -420,7 +422,7 @@ export function TopCreatorsList() {
               ))}
             </div>
           </div>
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 xl:pb-0" aria-label="Category">
+          <div className="scrollbar-none -mx-4 flex max-w-full items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0" aria-label="Category">
             {categories.map((c) => (
               <button
                 key={c.name}
