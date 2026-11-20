@@ -19,6 +19,7 @@ import {
   UPLOAD_EXTENSIONS,
   UploadUrlDto,
 } from './scheduled-posts.dto';
+import { PLANS, PLAN_IDS } from '../../common/plans';
 
 /** Target states the worker owns; the user cannot change a post in them. */
 const IN_FLIGHT = ['queued', 'publishing', 'retrying'];
@@ -26,9 +27,9 @@ const IN_FLIGHT = ['queued', 'publishing', 'retrying'];
 const MIN_LEAD_MS = 60 * 1000;
 const MAX_AHEAD_MS = 365 * 24 * 60 * 60 * 1000;
 /** Plans that include the Content Scheduler. */
-export const SCHEDULER_PLANS = ['creator', 'business'];
+export const SCHEDULER_PLANS: string[] = PLAN_IDS.filter((id) => PLANS[id].scheduling);
 export const SCHEDULER_UPGRADE_MESSAGE =
-  'Content scheduling is available on the Creator and Business plans. Upgrade to schedule posts.';
+  'Content scheduling is available on the Creator, Pro and Business plans. Upgrade to schedule posts.';
 
 const POST_COLUMNS =
   'id, user_id, clip_id, media_storage_path, media_thumbnail_url, media_duration_seconds, title, caption, description, hashtags, scheduled_at, timezone, status, published_at, cancelled_at, created_at, updated_at, scheduled_post_targets(id, platform, caption_override, status, platform_post_id, platform_post_url, error_message, retry_count, published_at)';

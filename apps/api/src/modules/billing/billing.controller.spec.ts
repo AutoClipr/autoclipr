@@ -31,7 +31,7 @@ describe('BillingController', () => {
       getMe: jest.fn(),
     } as unknown as jest.Mocked<UsersService>;
 
-    dodo = { verifyWebhook: jest.fn() } as unknown as jest.Mocked<DodoService>;
+    dodo = { verifyWebhook: jest.fn(), hasProduct: jest.fn((id: string) => id !== 'pro') } as unknown as jest.Mocked<DodoService>;
 
     subscriptions = {
       createCheckoutUrl: jest.fn(),
@@ -75,11 +75,32 @@ describe('BillingController', () => {
 
   describe('plans', () => {
     it('returns the wrapped plan list', async () => {
-      usersService.listPlans.mockResolvedValue([{ id: 'starter' }] as any);
+      usersService.listPlans.mockResolvedValue([{ id: 'creator', features: ['x'] }] as any);
 
       const result = await controller.plans();
 
-      expect(result).toEqual({ success: true, data: [{ id: 'starter' }], meta: undefined });
+      expect(result.data!.map((p) => p.id)).toEqual(['starter', 'creator', 'pro', 'business']);
+      const creator = result.data!.find((p) => p.id === 'creator')!;
+      expect(creator).toEqual(expect.objectContaining({
+        price_cents: 59_900, credits_per_month: 200, max_video_seconds: 600, watermark: false, checkout_available: true, features: ['x'],
+      }));
+      expect(result.data!.find((p) => p.id === 'starter')).toEqual(expect.objectContaining({ watermark: true, checkout_available: true, features: [] }));
+      expect(result.data!.find((p) => p.id === 'pro')!.checkout_available).toBe(false);
+    });
+
+    it('still serves plans when the feature lookup fails', async () => {
+      usersService.listPlans.mockRejectedValue(new Error('db'));
+      const result = await controller.plans();
+      expect(result.data).toHaveLength(4);
+    });
+  });
+
+  describe('changePlan', () => {
+    it('switches the caller\'s plan', async () => {
+      (subscriptions as any).changePlan = jest.fn().mockResolvedValue({ plan_id: 'pro', status: 'pending' });
+      const result = await controller.changePlan(user, { planId: 'pro' });
+      expect((subscriptions as any).changePlan).toHaveBeenCalledWith(user.sub, 'pro');
+      expect(result).toEqual({ success: true, data: { plan_id: 'pro', status: 'pending' }, meta: undefined });
     });
   });
 

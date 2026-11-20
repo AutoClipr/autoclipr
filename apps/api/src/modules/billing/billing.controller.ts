@@ -25,6 +25,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard, AuthUser } from '../../common/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { DodoService } from './dodo.service';
+import { PLANS, PLAN_IDS } from '../../common/plans';
 import { CANCELLATION_REASONS, SubscriptionsService } from './subscriptions.service';
 
 class CreateCheckoutDto {
@@ -44,6 +45,12 @@ class CreateCheckoutDto {
   @IsOptional()
   @Matches(/^[A-Za-z]{2}$/)
   country?: string;
+}
+
+class ChangePlanDto {
+  @IsString()
+  @Length(2, 20)
+  planId!: string;
 }
 
 class ActivatePlanDto {
@@ -87,9 +94,35 @@ export class BillingController {
     return ApiResponse.ok(data);
   }
 
+  /**
+   * Plans from the central config (common/plans.ts), merged with each plan's
+   * marketing feature list from the database.
+   */
   @Get('plans')
-  plans() {
-    return this.usersService.listPlans().then((plans) => ApiResponse.ok(plans));
+  async plans() {
+    const rows = (await this.usersService.listPlans().catch(() => [])) as Array<{ id: string; features?: unknown }>;
+    const features = new Map(rows.map((r) => [r.id, r.features]));
+    return ApiResponse.ok(
+      PLAN_IDS.map((id) => {
+        const p = PLANS[id];
+        return {
+          id: p.id,
+          name: p.name,
+          currency: p.currency,
+          price_cents: p.monthlyPaise,
+          billing_interval: 'monthly',
+          credits_per_month: p.creditsPerMonth,
+          estimated_clips: p.estimatedClips,
+          max_video_seconds: p.maxVideoSeconds,
+          watermark: p.watermark,
+          platforms: p.platforms,
+          scheduling: p.scheduling,
+          analytics: p.analytics,
+          checkout_available: p.monthlyPaise === 0 || this.dodo.hasProduct(id, 'monthly'),
+          features: features.get(id) ?? [],
+        };
+      }),
+    );
   }
 
   @Post('billing/checkout')
@@ -111,6 +144,16 @@ export class BillingController {
     }
     const url = await this.subscriptions.createCheckoutUrl(user.sub, email, dto.planId, dto.billingPeriod ?? 'yearly', dto.couponCode, dto.country);
     return ApiResponse.ok({ url });
+  }
+
+  /** Switch the caller's active subscription to another paid plan (prorated). */
+  @Post('billing/subscription/change-plan')
+  @HttpCode(200)
+  @ApiBearerAuth('JWT')
+  @UseGuards(JwtAuthGuard)
+  async changePlan(@CurrentUser() user: AuthUser, @Body() dto: ChangePlanDto) {
+    const data = await this.subscriptions.changePlan(user.sub, dto.planId);
+    return ApiResponse.ok(data);
   }
 
   /**

@@ -13,7 +13,7 @@ import {
 import { Transform } from 'class-transformer';
 
 /** Plans a coupon can be limited to. The free Starter plan has nothing to discount. */
-export const COUPON_PLANS = ['creator', 'business'] as const;
+export const COUPON_PLANS = ['creator', 'pro', 'business'] as const;
 
 /** Trim and lowercase plan names, so "Creator " still means creator. */
 const normalizePlans = ({ value }: { value: unknown }) =>

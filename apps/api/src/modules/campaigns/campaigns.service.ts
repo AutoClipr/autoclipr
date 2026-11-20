@@ -4,6 +4,7 @@ import { Cron } from '@nestjs/schedule';
 import { EmailService } from '@autoclipr/emails';
 import { CouponsService } from '../coupons/coupons.service';
 import { CampaignsRepository, ClaimedRecipient, EligibleUser } from './campaigns.repository';
+import { PAID_PLAN_IDS, PLANS } from '../../common/plans';
 
 export interface CampaignRunResult {
   dryRun: boolean;
@@ -26,10 +27,7 @@ export interface CampaignRunResult {
   daysRemaining?: number;
 }
 
-const PLAN_LABEL: Record<string, string> = {
-  creator: 'Creator',
-  business: 'Business',
-};
+const PLAN_LABEL: Record<string, string> = Object.fromEntries(PAID_PLAN_IDS.map((id) => [id, PLANS[id].name]));
 
 /**
  * The weekly discount campaign.

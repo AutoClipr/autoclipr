@@ -1,6 +1,7 @@
 const mockSubscriptionsCreate = jest.fn();
 const mockSubscriptionsRetrieve = jest.fn();
 const mockSubscriptionsUpdate = jest.fn();
+const mockSubscriptionsChangePlan = jest.fn();
 const mockWebhooksUnwrap = jest.fn();
 const mockDiscountsCreate = jest.fn();
 const mockCustomersList = jest.fn();
@@ -18,6 +19,7 @@ const MockDodoPayments = jest.fn().mockImplementation(() => ({
     create: mockSubscriptionsCreate,
     retrieve: mockSubscriptionsRetrieve,
     update: mockSubscriptionsUpdate,
+    changePlan: mockSubscriptionsChangePlan,
     list: mockSubscriptionsList,
   },
   customers: {
@@ -42,6 +44,7 @@ process.env.DODO_PRODUCT_CREATOR_MONTHLY = 'prod_creator_monthly';
 process.env.DODO_PRODUCT_CREATOR_YEARLY = 'prod_creator_yearly';
 process.env.DODO_PRODUCT_BUSINESS_MONTHLY = 'prod_business_monthly';
 process.env.DODO_PRODUCT_BUSINESS_YEARLY = 'prod_business_yearly';
+process.env.DODO_PRODUCT_PRO_MONTHLY = 'prod_pro_monthly';
 
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -93,6 +96,53 @@ describe('DodoService', () => {
     moduleRef.get(DodoService);
 
     expect(MockDodoPayments).toHaveBeenCalledWith({ bearerToken: '', environment: 'test_mode' });
+  });
+
+  describe('changePlan', () => {
+    it('updates the metadata, then moves the subscription to the monthly product, prorated', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({});
+      mockSubscriptionsChangePlan.mockResolvedValue(undefined);
+
+      await service.changePlan('sub_1', 'pro', { user_id: 'u1', plan_id: 'creator' });
+
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_1', {
+        metadata: { user_id: 'u1', plan_id: 'pro', billing_period: 'monthly' },
+      });
+      expect(mockSubscriptionsChangePlan).toHaveBeenCalledWith('sub_1', {
+        product_id: 'prod_pro_monthly',
+        quantity: 1,
+        proration_billing_mode: 'prorated_immediately',
+      });
+    });
+
+    it('restores the metadata when the plan change fails', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({});
+      mockSubscriptionsChangePlan.mockRejectedValue(new Error('declined'));
+
+      await expect(service.changePlan('sub_1', 'business', { user_id: 'u1', plan_id: 'creator' })).rejects.toThrow('declined');
+      expect(mockSubscriptionsUpdate).toHaveBeenLastCalledWith('sub_1', { metadata: { user_id: 'u1', plan_id: 'creator' } });
+    });
+
+    it('refuses a plan without a monthly product', async () => {
+      await expect(service.changePlan('sub_1', 'starter')).rejects.toThrow('No product configured');
+      expect(mockSubscriptionsChangePlan).not.toHaveBeenCalled();
+    });
+
+    it('defaults to empty metadata', async () => {
+      mockSubscriptionsUpdate.mockResolvedValue({});
+      mockSubscriptionsChangePlan.mockResolvedValue(undefined);
+      await service.changePlan('sub_1', 'pro');
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith('sub_1', { metadata: { plan_id: 'pro', billing_period: 'monthly' } });
+    });
+  });
+
+  describe('hasProduct', () => {
+    it('reports whether a product id is configured', () => {
+      expect(service.hasProduct('pro', 'monthly')).toBe(true);
+      expect(service.hasProduct('starter', 'monthly')).toBe(false);
+      expect(service.hasProduct('pro', 'yearly')).toBe(false);
+      expect(service.hasProduct('nope', 'monthly')).toBe(false);
+    });
   });
 
   describe('createCheckoutUrl', () => {

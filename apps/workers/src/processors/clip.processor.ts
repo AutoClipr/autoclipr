@@ -251,7 +251,10 @@ export class ClipProcessor extends WorkerHost {
         caption_language: captionLanguage,
         platforms,
         export_quality: exportQuality,
-      },
+        ...(typeof data.max_video_seconds === 'number' ? { max_video_seconds: data.max_video_seconds } : {}),
+        ...(typeof data.credit_cost === 'number' ? { credit_cost: data.credit_cost } : {}),
+        watermark: data.watermark === true,
+      } as UrlPipelinePayload,
       jobId,
     );
   }
@@ -298,6 +301,10 @@ export class ClipProcessor extends WorkerHost {
         platforms: data.platforms as string[] | undefined,
         export_quality: data.export_quality as string | undefined,
         ...(typeof data.credit_cost === 'number' ? { credit_cost: data.credit_cost } : {}),
+        ...(typeof data.max_video_seconds === 'number' ? { max_video_seconds: data.max_video_seconds } : {}),
+        ...(typeof data.plan_id === 'string' ? { plan_id: data.plan_id } : {}),
+        // Missing flag (jobs queued before plans existed) → no watermark.
+        watermark: data.watermark === true,
       } as UrlPipelinePayload,
       jobId,
     );

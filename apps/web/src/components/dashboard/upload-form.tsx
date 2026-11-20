@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   ClipSettingsPanel,
   PANEL,
+  PlanLimitHint,
   ProcessingCard,
   PublishTargets,
   StepHeader,
@@ -62,7 +63,7 @@ async function readVideoPreview(file: File): Promise<{ thumbnail: string | null;
 export function UploadForm() {
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const opts = useClipOptions();
-  const { credits, costPerClip } = useCredits();
+  const { credits, costPerClip, tier, maxVideoSeconds } = useCredits();
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [file, setFile] = useState<File | null>(null);
@@ -163,6 +164,15 @@ export function UploadForm() {
     setError(null);
     setPhase("checking");
     const preview = await readVideoPreview(f);
+    // Too long for the plan: stop before uploading (the server enforces this too).
+    if (preview.duration != null && preview.duration > maxVideoSeconds + 5) {
+      setFile(null);
+      setPhase("idle");
+      setPickError(
+        `This video is ${formatDuration(preview.duration)} long. Your plan supports videos up to ${Math.round(maxVideoSeconds / 60)} minutes — trim it or upgrade your plan.`,
+      );
+      return;
+    }
     setThumbnail(preview.thumbnail);
     setDuration(preview.duration);
 
@@ -202,7 +212,12 @@ export function UploadForm() {
     const res = await apiFetch(`/api/v1/videos/${upload.videoId}/complete`, {
       method: "POST",
       token,
-      body: JSON.stringify(opts.payload()),
+      body: JSON.stringify({
+        ...opts.payload(),
+        // Lets the API reject an over-length video before charging; the
+        // worker re-checks the real length either way.
+        ...(duration != null ? { source_duration_seconds: Math.round(duration) } : {}),
+      }),
     });
     setCreating(false);
     if (!res.success) return setError(res.error?.message ?? "Could not start processing.");
@@ -254,6 +269,7 @@ export function UploadForm() {
             Browse files
           </span>
         </label>
+        <PlanLimitHint tier={tier} />
         {pickError && (
           <p className="mt-3 text-sm text-[#fca5a5]" role="alert">
             {pickError}

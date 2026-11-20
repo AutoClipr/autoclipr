@@ -1,0 +1,35 @@
+import { PAID_PLAN_IDS, PLANS, formatInr, formatMinutes, isPlanId, planFor, planPricePaise } from './plans';
+
+describe('plans config', () => {
+  it('defines the four tiers with the agreed limits', () => {
+    expect(Object.values(PLANS).map((p) => [p.id, p.monthlyPaise, p.creditsPerMonth, p.maxVideoSeconds, p.watermark])).toEqual([
+      ['starter', 0, 30, 300, true],
+      ['creator', 59_900, 200, 600, false],
+      ['pro', 99_900, 500, 900, false],
+      ['business', 199_900, 1200, 1800, false],
+    ]);
+    expect(PAID_PLAN_IDS).toEqual(['creator', 'pro', 'business']);
+    expect(PLANS.starter.platforms).toEqual(['youtube', 'instagram']);
+    expect(PLANS.starter.analytics || PLANS.starter.scheduling).toBe(false);
+  });
+
+  it('falls back to Starter for unknown or legacy tiers', () => {
+    expect(planFor('free').id).toBe('starter');
+    expect(planFor(null).id).toBe('starter');
+    expect(planFor('pro').id).toBe('pro');
+    expect(isPlanId('enterprise')).toBe(false);
+  });
+
+  it('prices legacy yearly subscriptions and derives yearly when none exists', () => {
+    expect(planPricePaise('creator', 'yearly')).toBe(418_800);
+    expect(planPricePaise('pro', 'yearly')).toBe(99_900 * 12);
+    expect(planPricePaise('pro', 'monthly')).toBe(99_900);
+  });
+
+  it('formats prices and durations', () => {
+    expect(formatInr(0)).toBe('Free');
+    expect(formatInr(59_900)).toBe('₹599.00');
+    expect(formatInr(199_900)).toBe('₹1,999.00');
+    expect(formatMinutes(900)).toBe('15 minutes');
+  });
+});

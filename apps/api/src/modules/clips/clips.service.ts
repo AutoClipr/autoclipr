@@ -1,3 +1,4 @@
+import { planFor } from '../../common/plans';
 import {
   BadRequestException,
   Injectable,
@@ -92,6 +93,12 @@ export class ClipsService {
     return { ...clip, download_url, thumbnail_url };
   }
 
+  /** Plan limits for the worker, from the profile tier — never the request. */
+  private async planPayload(userId: string) {
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    return { plan_id: plan.id, max_video_seconds: plan.maxVideoSeconds, watermark: plan.watermark };
+  }
+
   async generate(userId: string, dto: GenerateClipsDto) {
     const video = await this.videosRepo.getById(dto.video_id, userId);
     if (!video) throw new NotFoundException('Video not found');
@@ -134,6 +141,8 @@ export class ClipsService {
           caption_language: dto.caption_language ?? 'en',
           platforms: dto.platforms ?? ['tiktok', 'instagram', 'youtube'],
           export_quality: dto.export_quality ?? 'hd',
+          credit_cost: totalCost,
+          ...(await this.planPayload(userId)),
         },
       });
     } catch (err) {

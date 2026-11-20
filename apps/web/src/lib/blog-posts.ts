@@ -26,7 +26,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "schedule-youtube-shorts-and-instagram-reels",
     title: "Schedule YouTube Shorts and Instagram Reels with AutoClipr's Content Scheduler",
     description:
-      "Plan a week of Shorts and Reels in one sitting. AutoClipr's Content Scheduler puts your clips on a calendar and publishes them automatically — included in the Creator and Business plans.",
+      "Plan a week of Shorts and Reels in one sitting. AutoClipr's Content Scheduler puts your clips on a calendar and publishes them automatically — included in the Creator, Pro and Business plans.",
     keywords: [
       "schedule YouTube Shorts",
       "schedule Instagram Reels",
@@ -41,7 +41,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         paragraphs: [
           "Making clips is only half the job. The other half is posting them — every day, at a good time, on more than one platform. That's the part most creators quietly give up on: the clips pile up in a folder, and posting turns into a scramble whenever you remember.",
-          "AutoClipr's Content Scheduler fixes that. You line up your Shorts and Reels on a calendar once, and AutoClipr publishes each one at the time you picked — even when your laptop is closed. It's included in the Creator and Business plans.",
+          "AutoClipr's Content Scheduler fixes that. You line up your Shorts and Reels on a calendar once, and AutoClipr publishes each one at the time you picked — even when your laptop is closed. It's included in the Creator, Pro and Business plans.",
         ],
       },
       {
@@ -90,7 +90,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         heading: "Which plans include the Content Scheduler",
         paragraphs: [
-          "The Content Scheduler is part of the Creator and Business plans. On the free Starter plan you can still create clips and download or publish them yourself — scheduling is the upgrade that takes posting off your plate.",
+          "The Content Scheduler is part of the Creator, Pro and Business plans. On the free Starter plan you can still create clips and download or publish them yourself — scheduling is the upgrade that takes posting off your plate.",
           "If you move from a paid plan back to Starter, posts you've already scheduled won't publish: they're marked as failed with a note to upgrade, so nothing goes out unexpectedly. Upgrade again and you can retry them.",
           "Ready to stop posting by hand? See the plans on the pricing page and start scheduling today.",
         ],

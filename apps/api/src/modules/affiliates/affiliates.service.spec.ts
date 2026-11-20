@@ -215,7 +215,7 @@ describe('AffiliatesService', () => {
 
       await service.awardCommission('u2', 'creator', 'monthly', 'tx1');
 
-      expect(repo.createCommission).toHaveBeenCalledWith('a1', 'r1', 39900, 30, 'creator', 'monthly', 'tx1');
+      expect(repo.createCommission).toHaveBeenCalledWith('a1', 'r1', 59900, 30, 'creator', 'monthly', 'tx1');
       expect(repo.updateCommissionRate).toHaveBeenCalledWith('a1', 6); // total_conversions + 1
     });
 

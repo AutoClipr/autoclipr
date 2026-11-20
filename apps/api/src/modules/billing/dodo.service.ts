@@ -16,6 +16,10 @@ const PRODUCT_IDS: Record<string, { monthly: string; yearly: string }> = {
     monthly: process.env.DODO_PRODUCT_CREATOR_MONTHLY ?? process.env.DODO_PRODUCT_CREATOR ?? '',
     yearly: process.env.DODO_PRODUCT_CREATOR_YEARLY ?? process.env.DODO_PRODUCT_CREATOR ?? '',
   },
+  pro: {
+    monthly: process.env.DODO_PRODUCT_PRO_MONTHLY ?? process.env.DODO_PRODUCT_PRO ?? '',
+    yearly: process.env.DODO_PRODUCT_PRO_YEARLY ?? '',
+  },
   business: {
     monthly: process.env.DODO_PRODUCT_BUSINESS_MONTHLY ?? process.env.DODO_PRODUCT_BUSINESS ?? '',
     yearly: process.env.DODO_PRODUCT_BUSINESS_YEARLY ?? process.env.DODO_PRODUCT_BUSINESS ?? '',
@@ -26,6 +30,11 @@ const PRODUCT_IDS: Record<string, { monthly: string; yearly: string }> = {
 export class DodoService {
   private readonly client: DodoPayments;
   private readonly logger = new Logger(DodoService.name);
+
+  /** Whether a Dodo product is configured for this plan and period. */
+  hasProduct(planId: string, billingPeriod: 'monthly' | 'yearly'): boolean {
+    return !!PRODUCT_IDS[planId]?.[billingPeriod];
+  }
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('DODO_API_KEY') ?? '';
@@ -179,6 +188,33 @@ export class DodoService {
       }
     }
     return null;
+  }
+
+  /**
+   * Move an existing subscription to another plan's monthly product, charging
+   * or crediting the prorated difference now. The metadata is updated first so
+   * the subscription.plan_changed webhook (which reads metadata.plan_id)
+   * grants the new plan's entitlements.
+   */
+  async changePlan(subscriptionId: string, planId: string, existingMetadata: Record<string, string> = {}) {
+    const productId = PRODUCT_IDS[planId]?.monthly;
+    if (!productId) throw new Error(`No product configured for ${planId} monthly`);
+    await this.client.subscriptions.update(subscriptionId, {
+      metadata: { ...existingMetadata, plan_id: planId, billing_period: 'monthly' },
+    });
+    try {
+      await this.client.subscriptions.changePlan(subscriptionId, {
+        product_id: productId,
+        quantity: 1,
+        proration_billing_mode: 'prorated_immediately',
+      });
+    } catch (err) {
+      // Put the metadata back so it still describes what is being billed.
+      await this.client.subscriptions
+        .update(subscriptionId, { metadata: existingMetadata })
+        .catch(() => undefined);
+      throw err;
+    }
   }
 
   /** Undo a scheduled cancellation while the period is still running. */

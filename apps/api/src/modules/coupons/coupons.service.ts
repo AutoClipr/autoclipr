@@ -6,13 +6,12 @@ import {
   MAX_DISCOUNT_PERCENTAGE,
   MIN_DISCOUNT_PERCENTAGE,
 } from './coupon-errors';
+import { PLAN_IDS, planPricePaise } from '../../common/plans';
 
 /** Plan list prices in paise, used to value a percentage discount. */
-const PLAN_PRICE_PAISE: Record<string, { monthly: number; yearly: number }> = {
-  creator: { monthly: 39_900, yearly: 418_800 },
-  business: { monthly: 199_900, yearly: 2_098_800 },
-  starter: { monthly: 0, yearly: 0 },
-};
+const PLAN_PRICE_PAISE: Record<string, { monthly: number; yearly: number }> = Object.fromEntries(
+  PLAN_IDS.map((id) => [id, { monthly: planPricePaise(id, 'monthly'), yearly: planPricePaise(id, 'yearly') }]),
+);
 
 export interface ValidatedCoupon {
   valid: true;

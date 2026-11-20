@@ -18,12 +18,9 @@ import { DodoService, type DodoCancellationFeedback } from './dodo.service';
 import { RetentionService } from '../retention/retention.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { CampaignsService } from '../campaigns/campaigns.service';
+import { PAID_PLAN_IDS, PLANS, PLAN_IDS, type PlanId, formatInr, planPricePaise } from '../../common/plans';
 
-const PLAN_TIER: Record<string, string> = {
-  starter: 'starter',
-  creator: 'creator',
-  business: 'business',
-};
+const PLAN_TIER: Record<string, string> = Object.fromEntries(PLAN_IDS.map((id) => [id, id]));
 
 /** Reasons offered in the "why are you leaving" step, mapped to Dodo's enum. */
 export const CANCELLATION_REASONS: Record<string, DodoCancellationFeedback> = {
@@ -54,11 +51,9 @@ type SubscriptionRow = {
 const SUBSCRIPTION_COLUMNS =
   'user_id, plan_id, status, current_period_end, stripe_subscription_id, cancel_at_period_end, cancellation_requested_at, cancellation_effective_at, cancelled_at, last_webhook_at';
 
-const PLAN_CREDITS: Record<string, number> = {
-  starter: 30,
-  creator: 500,
-  business: 1200,
-};
+const PLAN_CREDITS: Record<string, number> = Object.fromEntries(
+  PLAN_IDS.map((id) => [id, PLANS[id].creditsPerMonth]),
+);
 
 @Injectable()
 export class SubscriptionsService {
@@ -147,6 +142,27 @@ export class SubscriptionsService {
   ): Promise<string> {
     const appUrl = this.config.get<string>('WEB_APP_URL') ?? 'https://autoclipr.com';
 
+    if (!PAID_PLAN_IDS.includes(planId as PlanId)) {
+      throw new BadRequestException('Unknown plan');
+    }
+    // New subscriptions are monthly only; yearly products stay for renewals
+    // of subscriptions that already exist.
+    billingPeriod = 'monthly';
+    if (!this.dodo.hasProduct(planId, billingPeriod)) {
+      throw new BadRequestException(`${PLANS[planId as PlanId].name} checkout isn't available yet. Please try again later.`);
+    }
+
+    // One subscription per user: a second checkout would bill twice. Plan
+    // switches go through changePlan(), which moves the existing one.
+    const current = await this.activePaidSubscription(userId);
+    if (current) {
+      throw new ConflictException(
+        current.plan_id === planId
+          ? `You're already on the ${PLANS[planId as PlanId].name} plan.`
+          : 'You already have an active subscription. Use "Switch plan" to change it.',
+      );
+    }
+
     // Re-validated here rather than trusting whatever the client validated
     // earlier: the coupon may have been exhausted or paused in between, and
     // the request body is attacker-controlled either way. An invalid code
@@ -171,6 +187,45 @@ export class SubscriptionsService {
       successUrl: `${appUrl}/dashboard?payment=success&plan=${planId}&billing=${billingPeriod}`,
       cancelUrl: `${appUrl}/pricing?payment=cancelled`,
     });
+  }
+
+  /** The user's active paid subscription row, if any. */
+  private async activePaidSubscription(userId: string): Promise<SubscriptionRow | null> {
+    const { data } = await this.supabase
+      .getClient()
+      .from('user_subscriptions')
+      .select(SUBSCRIPTION_COLUMNS)
+      .eq('user_id', userId)
+      .maybeSingle();
+    const row = data as SubscriptionRow | null;
+    if (!row || row.status !== 'active' || !PAID_PLAN_IDS.includes(row.plan_id as PlanId)) return null;
+    return row;
+  }
+
+  /**
+   * Switch an active subscription to another paid plan in place (prorated by
+   * Dodo). Entitlements change when the plan_changed webhook arrives.
+   */
+  async changePlan(userId: string, planId: string): Promise<{ plan_id: string; status: 'pending' }> {
+    if (!PAID_PLAN_IDS.includes(planId as PlanId)) throw new BadRequestException('Unknown plan');
+    const current = await this.activePaidSubscription(userId);
+    if (!current?.stripe_subscription_id) {
+      throw new BadRequestException('No active subscription to change. Choose a plan to subscribe.');
+    }
+    if (current.plan_id === planId) {
+      throw new ConflictException(`You're already on the ${PLANS[planId as PlanId].name} plan.`);
+    }
+    if (!this.dodo.hasProduct(planId, 'monthly')) {
+      throw new BadRequestException(`${PLANS[planId as PlanId].name} isn't available yet. Please try again later.`);
+    }
+
+    const sub = await this.dodo.getSubscription(current.stripe_subscription_id);
+    const metadata = (sub?.metadata ?? {}) as Record<string, string>;
+    if (metadata.user_id !== userId) throw new ForbiddenException('This subscription does not belong to your account.');
+
+    await this.dodo.changePlan(current.stripe_subscription_id, planId, metadata);
+    this.logger.log(`changePlan: user=${userId} ${current.plan_id} → ${planId}`);
+    return { plan_id: planId, status: 'pending' };
   }
 
   /**
@@ -247,12 +302,7 @@ export class SubscriptionsService {
     }
 
     // Compute amount based on plan + billing period
-    const PLAN_AMOUNTS: Record<string, { monthly: string; yearly: string }> = {
-      creator:  { monthly: '₹399.00',   yearly: '₹4,188.00' },
-      business: { monthly: '₹1,999.00', yearly: '₹20,988.00' },
-      starter:  { monthly: 'Free',      yearly: 'Free' },
-    };
-    const amountPaid = PLAN_AMOUNTS[planId]?.[billingPeriod as 'monthly' | 'yearly'] ?? 'Free';
+    const amountPaid = formatInr(planPricePaise(planId, billingPeriod === 'yearly' ? 'yearly' : 'monthly'));
 
     // Record transaction
     const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
@@ -854,13 +904,8 @@ export class SubscriptionsService {
       ? new Date(data.next_billing_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
       : 'N/A';
     const paymentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    const PLAN_AMOUNTS: Record<string, { monthly: string; yearly: string }> = {
-      creator:  { monthly: '₹399.00',   yearly: '₹4,188.00' },
-      business: { monthly: '₹1,999.00', yearly: '₹20,988.00' },
-      starter:  { monthly: 'Free',      yearly: 'Free' },
-    };
     const amountPaid = data.amount_override
-      ?? (data.amount ? `₹${(data.amount / 100).toFixed(2)}` : (PLAN_AMOUNTS[planId]?.[billingPeriod as 'monthly' | 'yearly'] ?? 'Free'));
+      ?? (data.amount ? `₹${(data.amount / 100).toFixed(2)}` : formatInr(planPricePaise(planId, billingPeriod === 'yearly' ? 'yearly' : 'monthly')));
     const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
     const transactionId = `TRN${Date.now().toString().slice(-9).padStart(9, '0')}`;
 

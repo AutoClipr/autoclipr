@@ -127,6 +127,21 @@ describe('ClipsService', () => {
       );
     });
 
+    it('sends plan limits and the credit cost with the job', async () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'ready' } as never);
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      config.get.mockReturnValue(2);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await service.generate('u1', { video_id: 'v1', clip_count: 3 } as never);
+
+      expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ credit_cost: 6, plan_id: 'starter', max_video_seconds: 300, watermark: true }),
+        }),
+      );
+    });
+
     it('deducts credits using the configured cost per clip and default clip_count', async () => {
       videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'ready' } as never);
       config.get.mockReturnValue(5);

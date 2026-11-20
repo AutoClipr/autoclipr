@@ -12,12 +12,12 @@ export const MARKETING_FAQS = [
   {
     category: "Credits & billing",
     q: "What are credits and how are they used?",
-    a: "Credits are consumed when generating clips — 5 credits per clip by default. Your plan includes a monthly credit allowance that resets on your billing date. You can purchase top-up credits from the dashboard at any time without upgrading your plan.",
+    a: "Credits are consumed when generating clips, deducted when you submit a video. Your plan includes a monthly credit allowance that resets on your billing date. If a job fails, its credits are returned automatically.",
   },
   {
     category: "Credits & billing",
     q: "Do unused credits roll over?",
-    a: "Yes — unused credits roll over for up to 3 months. After that, they expire. Top-up credits never expire once purchased.",
+    a: "No. On each renewal your balance is reset to your plan's monthly allowance, so unused credits don't carry over.",
   },
   {
     category: "Credits & billing",
@@ -27,12 +27,12 @@ export const MARKETING_FAQS = [
   {
     category: "Credits & billing",
     q: "Which plans include content scheduling?",
-    a: "The Content Scheduler is included in the Creator and Business plans. Plan your clips on a calendar and AutoClipr publishes them to YouTube Shorts and Instagram Reels at the time you pick. On the free Starter plan you can still create and download clips; upgrade any time to unlock scheduling.",
+    a: "The Content Scheduler is included in the Creator, Pro and Business plans. Plan your clips on a calendar and AutoClipr publishes them to YouTube Shorts and Instagram Reels at the time you pick. On the free Starter plan you can still create and download clips; upgrade any time to unlock scheduling.",
   },
   {
     category: "Platform & formats",
     q: "Which video formats are supported?",
-    a: "You can upload MP4, MOV, and WebM files, or paste a YouTube URL directly. Exports default to 9:16 for Shorts/Reels/TikTok, with 16:9 and 1:1 also available on Creator and Business plans.",
+    a: "You can upload MP4, MOV, and WebM files, or paste a link from YouTube, Vimeo, Loom or Google Drive. Clips are exported in vertical 9:16 for Shorts, Reels and TikTok.",
   },
   {
     category: "Platform & formats",

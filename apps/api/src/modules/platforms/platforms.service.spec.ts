@@ -145,6 +145,22 @@ describe('PlatformsService', () => {
   });
 
   describe('connect', () => {
+    // The plan check reads the profile first; default to a paid plan so these
+    // tests exercise the rest of connect().
+    beforeEach(() => {
+      usersRepo.getById.mockResolvedValueOnce({ subscription_tier: 'creator' } as never);
+    });
+
+    it('refuses a platform the plan does not include', async () => {
+      usersRepo.getById.mockReset();
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      const service = makeService();
+      await expect(service.connect('u1', { platform: 'facebook' } as never, 'a@b.com')).rejects.toThrow(
+        "Facebook publishing isn't included in the Starter plan",
+      );
+      expect(repo.upsert).not.toHaveBeenCalled();
+    });
+
     it('rejects tiktok', async () => {
       const service = makeService();
       await expect(
@@ -358,7 +374,8 @@ describe('PlatformsService', () => {
       await service.connect('u1', { platform: 'youtube' } as never, 'a@b.com');
       await Promise.resolve();
 
-      expect(usersRepo.getById).not.toHaveBeenCalled();
+      // Only the plan check reads the profile; no email lookup for youtube.
+      expect(usersRepo.getById).toHaveBeenCalledTimes(1);
       expect(email.sendPlatformConnected).not.toHaveBeenCalled();
     });
 

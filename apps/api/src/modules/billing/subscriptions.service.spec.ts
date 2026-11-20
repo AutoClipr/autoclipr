@@ -43,6 +43,7 @@ describe('SubscriptionsService', () => {
 
   beforeEach(async () => {
     dodo = {
+      hasProduct: jest.fn().mockReturnValue(true),
       createCheckoutUrl: jest.fn(),
       getSubscription: jest.fn().mockResolvedValue(paidSubscription('creator')),
     } as unknown as jest.Mocked<DodoService>;
@@ -104,7 +105,71 @@ describe('SubscriptionsService', () => {
     jest.spyOn((service as any).logger, 'log').mockImplementation(() => undefined);
   });
 
+  describe('one subscription per user', () => {
+    const activeRow = (plan_id: string, extra: Record<string, unknown> = {}) =>
+      createQueryBuilderMock({ data: { user_id: 'user-1', plan_id, status: 'active', stripe_subscription_id: 'sub_1', ...extra }, error: null });
+
+    beforeEach(() => {
+      dodo.changePlan = jest.fn().mockResolvedValue(undefined) as never;
+    });
+
+    it('blocks a second checkout while a paid subscription is active', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('creator'));
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'creator')).rejects.toThrow("You're already on the Creator plan.");
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'pro')).rejects.toThrow('Use "Switch plan"');
+      expect(dodo.createCheckoutUrl).not.toHaveBeenCalled();
+    });
+
+    it('allows checkout when the old subscription has ended', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('creator', { status: 'cancelled' }));
+      dodo.createCheckoutUrl.mockResolvedValue('https://pay');
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'pro')).resolves.toBe('https://pay');
+    });
+
+    it('switches an active subscription to another plan', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('creator'));
+      dodo.getSubscription.mockResolvedValue({ metadata: { user_id: 'user-1', plan_id: 'creator' } } as never);
+
+      await expect(service.changePlan('user-1', 'pro')).resolves.toEqual({ plan_id: 'pro', status: 'pending' });
+      expect(dodo.changePlan).toHaveBeenCalledWith('sub_1', 'pro', { user_id: 'user-1', plan_id: 'creator' });
+    });
+
+    it('rejects switching to the same plan, a free/unknown plan, or with no subscription', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('pro'));
+      await expect(service.changePlan('user-1', 'pro')).rejects.toThrow("You're already on the Pro plan.");
+      await expect(service.changePlan('user-1', 'starter')).rejects.toThrow('Unknown plan');
+
+      supabaseMock.__client.from.mockImplementation(() => createQueryBuilderMock({ data: null, error: null }));
+      await expect(service.changePlan('user-1', 'business')).rejects.toThrow('No active subscription');
+      expect(dodo.changePlan).not.toHaveBeenCalled();
+    });
+
+    it('refuses a plan with no product, or a subscription owned by someone else', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('creator'));
+      dodo.hasProduct.mockReturnValueOnce(false);
+      await expect(service.changePlan('user-1', 'pro')).rejects.toThrow("Pro isn't available yet");
+
+      dodo.getSubscription.mockResolvedValue({ metadata: { user_id: 'someone-else' } } as never);
+      await expect(service.changePlan('user-1', 'pro')).rejects.toThrow('does not belong to your account');
+      dodo.getSubscription.mockResolvedValue(null as never);
+      await expect(service.changePlan('user-1', 'pro')).rejects.toThrow('does not belong to your account');
+      expect(dodo.changePlan).not.toHaveBeenCalled();
+    });
+  });
+
   describe('createCheckoutUrl', () => {
+    it('rejects a free or unknown plan', async () => {
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'starter')).rejects.toThrow('Unknown plan');
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'enterprise')).rejects.toThrow('Unknown plan');
+      expect(dodo.createCheckoutUrl).not.toHaveBeenCalled();
+    });
+
+    it('refuses checkout when no Dodo product is configured for the plan', async () => {
+      dodo.hasProduct.mockReturnValue(false);
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'pro')).rejects.toThrow("Pro checkout isn't available yet");
+      expect(dodo.hasProduct).toHaveBeenCalledWith('pro', 'monthly');
+    });
+
     it('builds success/cancel URLs from the configured web app URL and delegates to DodoService', async () => {
       config.get.mockReturnValue('https://app.autoclipr.com');
       dodo.createCheckoutUrl.mockResolvedValue('https://pay.dodo/session');
@@ -113,10 +178,10 @@ describe('SubscriptionsService', () => {
 
       expect(dodo.createCheckoutUrl).toHaveBeenCalledWith({
         planId: 'creator',
-        billingPeriod: 'yearly',
+        billingPeriod: 'monthly',
         userId: 'user-1',
         email: 'jane@example.com',
-        successUrl: 'https://app.autoclipr.com/dashboard?payment=success&plan=creator&billing=yearly',
+        successUrl: 'https://app.autoclipr.com/dashboard?payment=success&plan=creator&billing=monthly',
         cancelUrl: 'https://app.autoclipr.com/pricing?payment=cancelled',
         discountCode: null,
         trialPeriodDays: null,
@@ -191,8 +256,8 @@ describe('SubscriptionsService', () => {
 
       expect(dodo.createCheckoutUrl).toHaveBeenCalledWith(
         expect.objectContaining({
-          billingPeriod: 'yearly',
-          successUrl: 'https://autoclipr.com/dashboard?payment=success&plan=creator&billing=yearly',
+          billingPeriod: 'monthly',
+          successUrl: 'https://autoclipr.com/dashboard?payment=success&plan=creator&billing=monthly',
         }),
       );
     });
@@ -210,7 +275,8 @@ describe('SubscriptionsService', () => {
 
     it.each([
       ['starter', 30],
-      ['creator', 500],
+      ['creator', 200],
+      ['pro', 500],
       ['business', 1200],
     ])('activates the %s plan with %d credits and sends confirmation emails', async (planId, credits) => {
       const profileBuilder = createQueryBuilderMock({
@@ -522,7 +588,7 @@ describe('SubscriptionsService', () => {
 
         const update = profileBuilder.update.mock.calls.find((c: any[]) => 'credits' in c[0]);
         expect(update[0].subscription_tier).toBe('creator');
-        expect(update[0].credits).toBe(500);
+        expect(update[0].credits).toBe(200);
       });
 
       it('looks the subscription up by the id the caller supplied', async () => {
@@ -633,7 +699,7 @@ describe('SubscriptionsService', () => {
         );
         const profileUpdateArg = profileBuilder.update.mock.calls[0][0];
         expect(profileUpdateArg).toEqual(
-          expect.objectContaining({ subscription_tier: 'creator', credits: 500 }),
+          expect.objectContaining({ subscription_tier: 'creator', credits: 200 }),
         );
         expect(affiliates.awardCommission).toHaveBeenCalledWith('user-1', 'creator', 'monthly', 'sub_123');
         expect(email.sendSubscriptionConfirmed).toHaveBeenCalled();

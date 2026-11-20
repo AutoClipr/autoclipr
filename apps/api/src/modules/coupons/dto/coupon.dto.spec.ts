@@ -27,12 +27,12 @@ describe('coupon DTO applicable_plans', () => {
     expect(errors).toHaveLength(0);
   });
 
-  it.each([['buisness'], ['starter'], ['pro']])('rejects the unknown plan %s', async (plan) => {
+  it.each([['buisness'], ['starter'], ['enterprise']])('rejects the unknown plan %s', async (plan) => {
     const { errors } = await check(CreateCouponDto, { ...base, applicable_plans: ['creator', plan] });
 
     expect(errors).toHaveLength(1);
     expect(Object.values(errors[0].constraints ?? {})).toContain(
-      'applicable_plans must only contain: creator, business',
+      'applicable_plans must only contain: creator, pro, business',
     );
   });
 

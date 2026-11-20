@@ -35,7 +35,16 @@ export type Transaction = {
   billing_period: string | null;
 };
 
-type Plan = { id: string; name: string; price_cents: number; credits_per_month: number };
+type Plan = {
+  id: string;
+  name: string;
+  price_cents: number;
+  credits_per_month: number;
+  max_video_seconds?: number;
+  watermark?: boolean;
+  scheduling?: boolean;
+  analytics?: boolean;
+};
 
 
 /** Subscription status from the payment provider, with our labels and colours. */
@@ -159,7 +168,7 @@ export default async function BillingPage() {
               credits={credits}
               className="inline-flex h-10 items-center rounded-lg bg-[#54D045] px-4 text-sm font-semibold text-[#070B12] shadow-[0_10px_30px_-12px_rgba(84,208,69,0.7)] hover:bg-[#62dc53]"
             >
-              {tier === "business" ? "Change plan" : "Upgrade plan"}
+              {isPaid ? "Change plan" : "Upgrade plan"}
             </UpgradeButton>
             <Link
               href="/pricing"
@@ -209,6 +218,12 @@ export default async function BillingPage() {
               {!isPaid ? "—" : scheduled ? "None — plan ends" : planCredits != null ? planCredits.toLocaleString() : "—"}
             </Row>
             <Row label="Credits expire">{isPaid && periodEnd ? fmt(periodEnd) : "Never"}</Row>
+            {plan?.max_video_seconds != null && (
+              <Row label="Max video length">{Math.round(plan.max_video_seconds / 60)} minutes</Row>
+            )}
+            {plan?.watermark != null && <Row label="Watermark">{plan.watermark ? "On (Starter)" : "None"}</Row>}
+            {plan?.scheduling != null && <Row label="Scheduling">{plan.scheduling ? "Included" : "Upgrade to unlock"}</Row>}
+            {plan?.analytics != null && <Row label="Analytics">{plan.analytics ? "Included" : "Upgrade to unlock"}</Row>}
           </dl>
           <div className="mt-auto pt-5">
             <UpgradeButton

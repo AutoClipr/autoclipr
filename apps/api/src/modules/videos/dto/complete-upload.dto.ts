@@ -33,4 +33,10 @@ export class CompleteUploadDto {
   @IsString()
   @IsIn(['hd', 'full_hd', '4k'])
   export_quality?: string;
+
+  /** Length the browser measured, for an early limit check (worker re-verifies). */
+  @IsOptional()
+  @Min(0)
+  @Max(86400)
+  source_duration_seconds?: number;
 }

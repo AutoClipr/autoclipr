@@ -38,25 +38,33 @@ the job is queued rather than when it finishes, because the processing costs
 money the moment it starts. If a job fails to queue, the credits are returned
 automatically.
 
-Plans grant credits on activation:
-- Starter (free): 30 credits
-- Creator: 500 credits
-- Business: 1200 credits
+Plans grant credits on activation and reset the balance to that amount on
+each renewal (unused credits do not roll over):
+- Starter (free): 30 credits, source videos up to 5 minutes, watermark on clips
+- Creator: 200 credits, videos up to 10 minutes, no watermark
+- Pro: 500 credits, videos up to 15 minutes, no watermark
+- Business: 1200 credits, videos up to 30 minutes, no watermark
+
+A video longer than the plan allows is rejected before AI processing and its
+credits are refunded.
 
 A user's current balance is on the dashboard and in Settings.
 
 ## Plans and billing
-Three plans: Starter (free), Creator, and Business. Both paid plans bill
-monthly or yearly, and yearly is cheaper per month. Prices differ by country
-and currency, so always send the user to the pricing page for exact figures
-rather than quoting a number.
+Four plans: Starter (free), Creator (₹599/month), Pro (₹999/month) and
+Business (₹1,999/month). New subscriptions are billed monthly. Send the user
+to the pricing page for full details. A paid subscriber can switch plans from
+the pricing page ("Switch to …"); the difference is prorated.
 
-The Content Scheduler (calendar at /scheduler that auto-publishes clips to
-YouTube Shorts and Instagram Reels at a chosen time) is a paid feature: it is
-included in Creator and Business, not in the free Starter plan. Starter users
-see an upgrade prompt on the scheduler page. If someone downgrades, posts
-already on their calendar stay visible but will not publish until they
-upgrade again.
+Paid plans (Creator, Pro, Business) include the Content Scheduler (calendar at
+/scheduler that auto-publishes clips to YouTube Shorts and Instagram Reels at
+a chosen time) and the Analytics page. Starter users see an upgrade prompt on
+those pages. If someone downgrades, posts already on their calendar stay
+visible but will not publish until they upgrade again.
+
+Publishing works for YouTube Shorts and Instagram Reels today. TikTok,
+Facebook, LinkedIn, X and Threads are not available yet — do not tell users
+they can publish there.
 
 Payments are handled by Dodo Payments. Invoices are available under Billing.
 

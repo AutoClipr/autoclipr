@@ -205,7 +205,7 @@ export function WorkflowAutomation() {
                 title="Auto scheduling"
               >
                 Publishes your clips across platforms on a schedule, so you stay consistent and show up
-                everywhere without lifting a finger. Included in the Creator and Business plans.
+                everywhere without lifting a finger. Included in the Creator, Pro and Business plans.
               </Step>
             </div>
           </div>

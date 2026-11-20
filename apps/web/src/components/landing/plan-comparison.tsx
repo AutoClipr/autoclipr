@@ -1,53 +1,65 @@
-import { Check, Minus } from "lucide-react";
+import { Check, Clock, Minus } from "lucide-react";
+import { FALLBACK_PLANS, LIVE_PUBLISH_PLATFORMS, formatMinutes, type PlanNumbers } from "@/lib/plans";
 
-type Cell = boolean | string;
+type Cell = boolean | string | "soon";
+type Row = { feature: string; hint?: string; cell: (p: PlanNumbers) => Cell };
 
 /**
- * Plan comparison. Only lists what the app actually enforces or ships today:
- * credits match the subscription_plans table, scheduling is
- * gated to paid plans (lib/scheduler hasSchedulerAccess), and captions / 9:16
- * export / AI moment detection run for every plan.
+ * Plan comparison. Every row is derived from the plan data the API serves
+ * (credits, limits, watermark, scheduling, analytics), so the table can't
+ * drift from what the backend enforces. Unbuilt items show "Soon".
  */
-const ROWS: { feature: string; cells: [Cell, Cell, Cell] }[] = [
-  { feature: "Credits per month", cells: ["30", "500", "1,200"] },
-  { feature: "AI viral moment detection", cells: [true, true, true] },
-  { feature: "Animated caption styles", cells: [true, true, true] },
-  { feature: "Vertical 9:16 export", cells: [true, true, true] },
-  { feature: "Import from YouTube, Vimeo, Loom, Drive or upload", cells: [true, true, true] },
-  { feature: "Post to YouTube Shorts & Instagram Reels", cells: [true, true, true] },
-  { feature: "Content scheduling", cells: [false, true, true] },
-  { feature: "Priority support", cells: [false, true, true] },
+const ROWS: Row[] = [
+  { feature: "Monthly credits", cell: (p) => p.credits_per_month.toLocaleString("en-IN") },
+  { feature: "Estimated clips per month", hint: "Depends on video length and settings", cell: (p) => `${p.estimated_clips[0]}–${p.estimated_clips[1]}` },
+  { feature: "Maximum source video length", cell: (p) => formatMinutes(p.max_video_seconds) },
+  { feature: "AI viral moment detection", cell: () => true },
+  { feature: "AI clip scoring", cell: (p) => p.price_cents > 0 },
+  { feature: "Auto captions & subtitles (15 styles)", cell: () => true },
+  { feature: "Vertical 9:16 export", cell: () => true },
+  { feature: "Publish to YouTube Shorts & Instagram Reels", cell: (p) => LIVE_PUBLISH_PLATFORMS.every((x) => p.platforms.includes(x)) },
+  { feature: "TikTok, Facebook, LinkedIn, X & Threads", cell: (p) => p.platforms.length > LIVE_PUBLISH_PLATFORMS.length },
+  { feature: "Content scheduling for all social media platforms", cell: (p) => p.scheduling },
+  { feature: "Analytics & performance tracking", cell: (p) => p.analytics },
+  { feature: "Watermark-free exports", cell: (p) => !p.watermark },
+  { feature: "Support", cell: (p) => (p.price_cents === 0 ? false : p.id === "creator" ? "Email & chat" : "Email + 24/7 live chat") },
 ];
 
-const PLANS = ["Starter", "Creator", "Business"] as const;
+const HIGHLIGHT = "pro";
 
 function Value({ v }: { v: Cell }) {
   if (v === true) return <Check className="mx-auto h-4 w-4 text-[#54D045]" aria-label="Included" />;
   if (v === false) return <Minus className="mx-auto h-4 w-4 text-[#475569]" aria-label="Not included" />;
+  if (v === "soon")
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-[#94A3B8]">
+        <Clock className="h-3.5 w-3.5" aria-hidden /> Soon
+      </span>
+    );
   return <span className="font-semibold tabular-nums text-[#F8FAFC]">{v}</span>;
 }
 
-export function PlanComparison() {
+export function PlanComparison({ plans = FALLBACK_PLANS }: { plans?: PlanNumbers[] }) {
   return (
-    <section className="relative mx-auto max-w-4xl px-4 pb-16 sm:px-6" aria-labelledby="compare-title">
+    <section className="relative mx-auto max-w-5xl px-4 pb-16 sm:px-6" aria-labelledby="compare-title">
       <div className="mb-6 text-center">
         <h2 id="compare-title" className="text-2xl font-bold tracking-tight text-[#F8FAFC] sm:text-3xl">
-          Compare plans
+          Compare all plans
         </h2>
-        <p className="mt-2 text-sm text-[#94A3B8]">Every plan includes the core AI clipping tools. Paid plans add more credits and scheduling.</p>
+        <p className="mt-2 text-sm text-[#94A3B8]">Everything you need to create, publish, and grow your content.</p>
       </div>
       <div className="overflow-x-auto rounded-2xl border border-[#253244] bg-[#101824]">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead>
+        <table className="w-full min-w-[680px] text-sm">
+          <thead className="sticky top-0 bg-[#101824]">
             <tr className="border-b border-[#253244]">
               <th scope="col" className="px-5 py-3.5 text-left font-medium text-[#94A3B8]">Feature</th>
-              {PLANS.map((p) => (
+              {plans.map((p) => (
                 <th
-                  key={p}
+                  key={p.id}
                   scope="col"
-                  className={`px-4 py-3.5 text-center font-semibold ${p === "Creator" ? "bg-[#54D045]/[0.06] text-[#a6ec9c]" : "text-[#F8FAFC]"}`}
+                  className={`px-4 py-3.5 text-center font-semibold ${p.id === HIGHLIGHT ? "bg-[#54D045]/[0.07] text-[#a6ec9c]" : "text-[#F8FAFC]"}`}
                 >
-                  {p}
+                  {p.name}
                 </th>
               ))}
             </tr>
@@ -57,10 +69,11 @@ export function PlanComparison() {
               <tr key={r.feature}>
                 <th scope="row" className="px-5 py-3 text-left font-normal text-[#cbd5e1]">
                   {r.feature}
+                  {r.hint && <span className="block text-[11px] text-[#64748B]">{r.hint}</span>}
                 </th>
-                {r.cells.map((c, i) => (
-                  <td key={i} className={`px-4 py-3 text-center ${i === 1 ? "bg-[#54D045]/[0.04]" : ""}`}>
-                    <Value v={c} />
+                {plans.map((p) => (
+                  <td key={p.id} className={`px-4 py-3 text-center ${p.id === HIGHLIGHT ? "bg-[#54D045]/[0.04]" : ""}`}>
+                    <Value v={r.cell(p)} />
                   </td>
                 ))}
               </tr>

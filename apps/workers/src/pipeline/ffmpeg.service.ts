@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { escapeFfmpegPath, runCommand } from './exec.util';
 import { resolveBinary } from './resolve-binary.util';
 
@@ -12,6 +13,31 @@ const QUALITY_PRESETS: Record<string, { crf: string; scale: string }> = {
 
 /** Font directories libass should search (Alpine installs fonts under /usr/share/fonts). */
 const SUBTITLE_FONT_DIRS = ['/usr/share/fonts'];
+
+/**
+ * Starter-plan watermark as a one-line ASS script: "Made with AutoClipr",
+ * top-right, semi-transparent, shown for the whole clip.
+ */
+export function watermarkAss(width: number, height: number): string {
+  const size = Math.round(height * 0.024);
+  const margin = Math.round(height * 0.03);
+  return [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${width}`,
+    `PlayResY: ${height}`,
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    // &H4D = ~70% opaque white; soft dark shadow for legibility on bright frames.
+    `Style: Mark,DejaVu Sans,${size},&H4DFFFFFF,&H4DFFFFFF,&H80000000,&H80000000,1,0,0,0,100,100,0,0,1,1,1,9,${margin},${margin},${margin},1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    'Dialogue: 0,0:00:00.00,9:59:59.00,Mark,,0,0,0,,Made with AutoClipr',
+    '',
+  ].join('\n');
+}
 
 @Injectable()
 export class FfmpegService {
@@ -88,13 +114,24 @@ export class FfmpegService {
     startMs: number,
     endMs: number,
     exportQuality = 'hd',
+    watermark = false,
   ): Promise<void> {
     const preset = QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd;
     const startSec = (startMs / 1000).toFixed(3);
     const durationSec = ((endMs - startMs) / 1000).toFixed(3);
     const [w, h] = preset.scale.split(':');
 
-    const vf = `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
+    // Starter-plan watermark is burned in here, so every export of the clip
+    // carries it. If drawtext fails the whole render fails — never silently
+    // fall back to a clean file.
+    // Drawn with the `ass` filter (libass), the same renderer the captions
+    // use, so it works wherever captions do.
+    let vf = `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
+    if (watermark) {
+      const assPath = path.join(path.dirname(outputPath), `${path.basename(outputPath)}.watermark.ass`);
+      await fs.writeFile(assPath, watermarkAss(Number(w), Number(h)), 'utf8');
+      vf += `,ass=${escapeFfmpegPath(assPath)}`;
+    }
 
     this.logger.log(`Cutting clip ${startSec}s +${durationSec}s → ${outputPath}`);
 

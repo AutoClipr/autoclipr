@@ -27,8 +27,8 @@ export const FEATURE_LINKS: MegaMenuItem[] = [
   { label: "Auto-publish", desc: "Post to YouTube Shorts and Instagram Reels in 1 click", href: "/#feature-publish", icon: Send },
   { label: "Social scheduler", desc: "Schedule your clips to post across platforms at the best times", href: "/#feature-publish", icon: CalendarDays, badge: "Soon" },
   { label: "Viral score", desc: "See how likely a clip is to take off before you post", href: "/#feature-clipping", icon: Flame },
-  { label: "AI Shorts creator", desc: "Create Shorts with AI — included on the Business plan", href: "/pricing", icon: Sparkles },
-  { label: "Analytics", desc: "Performance tracking for your clips on the Business plan", href: "/pricing", icon: BarChart3 },
+  { label: "AI Shorts creator", desc: "Turn long videos into ready-to-post Shorts with AI", href: "/#feature-clipping", icon: Sparkles },
+  { label: "Analytics", desc: "Views, likes and comments for your clips on paid plans", href: "/pricing", icon: BarChart3 },
   { label: "HD & 4K export", desc: "Export 1080×1920 up to 4K, ready for any platform", href: "/pricing", icon: MonitorPlay },
 ];
 

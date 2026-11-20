@@ -21,7 +21,7 @@ const LOST_QUEUED_MS = 15 * 60 * 1000;
 const CLAIM_BATCH = 25;
 
 /** Plans that include the Content Scheduler (kept in sync with the API). */
-export const SCHEDULER_PLANS = ['creator', 'business'];
+export const SCHEDULER_PLANS = ['creator', 'pro', 'business'];
 export const SCHEDULER_PLAN_ERROR =
   'Content scheduling needs a Creator or Business plan. Upgrade, then retry this post.';
 

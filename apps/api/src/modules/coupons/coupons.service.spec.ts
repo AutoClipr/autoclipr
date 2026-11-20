@@ -96,7 +96,7 @@ describe('CouponsService', () => {
     it('values a monthly discount against the monthly price', async () => {
       const result = await service.validate('CREATOR25', 'creator', 'monthly', 'u1');
 
-      expect(result.discountPaise).toBe(9_975); // 25% of ₹399
+      expect(result.discountPaise).toBe(14_975); // 25% of ₹599
     });
 
     it('rejects an unknown code', async () => {
@@ -431,13 +431,13 @@ describe('CouponsService', () => {
 
       const result = await service.validate('X', 'creator', 'monthly', 'u1');
 
-      // Creator monthly is 39900 paise; 25% off leaves 29925.
+      // Creator monthly is 59900 paise; 25% off leaves 44925.
       expect(result).toMatchObject({
         valid: true,
         discountPercentage: 25,
-        originalPaise: 39900,
-        discountPaise: 9975,
-        finalPaise: 29925,
+        originalPaise: 59900,
+        discountPaise: 14975,
+        finalPaise: 44925,
         currency: 'INR',
       });
     });

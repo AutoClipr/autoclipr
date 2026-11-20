@@ -9,13 +9,12 @@ import {
 import { EmailService } from '@autoclipr/emails';
 import { UsersRepository } from '../users/users.repository';
 import { AffiliatesRepository } from './affiliates.repository';
+import { PLAN_IDS, planPricePaise } from '../../common/plans';
 
 // Plan prices in paise (INR)
-const PLAN_PRICES_PAISE: Record<string, { monthly: number; yearly: number }> = {
-  creator:  { monthly: 39900,   yearly: 418800  },
-  business: { monthly: 199900,  yearly: 2098800 },
-  starter:  { monthly: 0,       yearly: 0       },
-};
+const PLAN_PRICES_PAISE: Record<string, { monthly: number; yearly: number }> = Object.fromEntries(
+  PLAN_IDS.map((id) => [id, { monthly: planPricePaise(id, 'monthly'), yearly: planPricePaise(id, 'yearly') }]),
+);
 
 function generateRefCode(userId: string): string {
   // Take first 8 chars of UUID (without dashes) as a deterministic-ish code

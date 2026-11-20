@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PlatformsModule } from '../platforms/platforms.module';
+import { UsersModule } from '../users/users.module';
 import { PublicationsRepository } from '../clips/publications.repository';
 import { StorageService } from '../storage/storage.service';
 import { AnalyticsController } from './analytics.controller';
@@ -9,7 +10,7 @@ import { YoutubeStatsService } from './youtube-stats.service';
 import { InstagramStatsService } from './instagram-stats.service';
 
 @Module({
-  imports: [PlatformsModule],
+  imports: [PlatformsModule, UsersModule],
   providers: [
     JwtAuthGuard,
     AnalyticsService,

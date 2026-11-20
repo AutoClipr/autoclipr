@@ -149,7 +149,7 @@ export function dayKey(d: Date): string {
 }
 
 /** Plans that include the Content Scheduler (matches the API and worker). */
-export const SCHEDULER_PLANS = ["creator", "business"];
+export const SCHEDULER_PLANS = ["creator", "pro", "business"];
 
 export function hasSchedulerAccess(tier?: string | null): boolean {
   return SCHEDULER_PLANS.includes(tier ?? "");

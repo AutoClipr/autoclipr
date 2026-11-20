@@ -35,7 +35,7 @@ function SchedulerUpgrade({ credits }: { credits: number }) {
           <CalendarClock className="h-7 w-7 text-emerald-300" />
         </span>
         <p className="mb-2 inline-block rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300">
-          Creator &amp; Business plans
+          Creator, Pro &amp; Business plans
         </p>
         <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Content Scheduler</h1>
         <p className="mt-2 text-sm text-white/55">

@@ -53,6 +53,10 @@ export type UrlPipelinePayload = {
   platforms?: string[];
   export_quality?: string;
   auto_publish?: boolean;
+  /** Plan limits set by the API from the user's tier — never client input. */
+  plan_id?: string;
+  max_video_seconds?: number;
+  watermark?: boolean;
 };
 
 export type ClipRenderResult = {

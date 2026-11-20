@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   Injectable,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { planFor } from '../../common/plans';
 import { fetchWithTimeout } from '../../common/utils/fetch-with-timeout.util';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
@@ -46,6 +48,13 @@ export class PlatformsService {
   async connect(userId: string, dto: ConnectPlatformDto, userEmail?: string) {
     if (dto.platform === 'tiktok') {
       throw new BadRequestException('TikTok posting is not available yet');
+    }
+
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    if (!(plan.platforms as string[]).includes(dto.platform)) {
+      throw new ForbiddenException(
+        `${PLATFORM_LABELS[dto.platform]} publishing isn't included in the ${plan.name} plan. Upgrade to connect it.`,
+      );
     }
 
     // Ensure profile exists (Google OAuth users may not have been synced yet)

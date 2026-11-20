@@ -12,9 +12,20 @@ describe('AnalyticsController', () => {
   let service: jest.Mocked<AnalyticsService>;
   let controller: AnalyticsController;
 
+  let usersRepo: { getById: jest.Mock };
+
   beforeEach(() => {
     service = makeService();
-    controller = new AnalyticsController(service);
+    usersRepo = { getById: jest.fn().mockResolvedValue({ subscription_tier: 'pro' }) };
+    controller = new AnalyticsController(service, usersRepo as never);
+  });
+
+  it.each([['starter'], ['free'], [null]])('refuses analytics on the %s tier', async (tier) => {
+    usersRepo.getById.mockResolvedValue(tier ? { subscription_tier: tier } : null);
+    await expect(controller.overview({ sub: 'u1' } as never)).rejects.toThrow('Analytics is available on the Creator');
+    await expect(controller.refresh({ sub: 'u1' } as never)).rejects.toThrow('Analytics is available on the Creator');
+    expect(service.getOverview).not.toHaveBeenCalled();
+    expect(service.refreshMetrics).not.toHaveBeenCalled();
   });
 
   describe('overview', () => {

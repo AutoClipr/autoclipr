@@ -13,6 +13,7 @@ import { InitUploadDto } from './dto/init-upload.dto';
 import { ImportUrlDto } from './dto/import-url.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
 import { getSourceLabel, parseVideoUrl } from './utils/video-url.util';
+import { formatMinutes, planFor } from '../../common/plans';
 
 @Injectable()
 export class VideosService {
@@ -88,6 +89,7 @@ export class VideosService {
       );
     }
 
+    const limits = await this.planLimits(userId);
     const clipCount = dto.clip_count ?? 10;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
     const totalCost = costPerClip * clipCount;
@@ -145,6 +147,7 @@ export class VideosService {
           export_quality: dto.export_quality ?? 'hd',
           auto_publish: dto.auto_publish ?? false,
           credit_cost: totalCost,
+          ...limits.payload,
         },
       });
     } catch (err) {
@@ -162,6 +165,24 @@ export class VideosService {
       source_label: parsed.displayName,
       title: video.title,
       status: 'importing',
+    };
+  }
+
+  /**
+   * Plan limits for a job, resolved from the user's profile tier — never from
+   * the request. They travel in the job payload so the worker enforces them.
+   */
+  private async planLimits(userId: string) {
+    const profile = await this.usersRepo.getById(userId);
+    const plan = planFor(profile?.subscription_tier);
+    return {
+      maxVideoSeconds: plan.maxVideoSeconds,
+      tooLongMessage: `Your ${plan.name} plan supports videos up to ${formatMinutes(plan.maxVideoSeconds)}. Trim the video or upgrade your plan.`,
+      payload: {
+        plan_id: plan.id,
+        max_video_seconds: plan.maxVideoSeconds,
+        watermark: plan.watermark,
+      },
     };
   }
 
@@ -262,6 +283,13 @@ export class VideosService {
       throw new BadRequestException('This video is already being processed.');
     }
 
+    const limits = await this.planLimits(userId);
+    // Early, friendly rejection when the browser already measured the file.
+    // Not trusted: the worker re-checks the real duration before any AI work.
+    if (dto.source_duration_seconds != null && dto.source_duration_seconds > limits.maxVideoSeconds + 5) {
+      throw new BadRequestException(limits.tooLongMessage);
+    }
+
     const clipCount = dto.clip_count ?? 5;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
     const totalCost = costPerClip * clipCount;
@@ -295,6 +323,7 @@ export class VideosService {
           platforms: dto.platforms ?? ['tiktok', 'instagram', 'youtube', 'linkedin'],
           export_quality: dto.export_quality ?? 'hd',
           credit_cost: totalCost,
+          ...limits.payload,
         },
       });
     } catch (err) {

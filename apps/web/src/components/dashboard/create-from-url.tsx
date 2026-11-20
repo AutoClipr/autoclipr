@@ -15,6 +15,7 @@ import {
   SummaryPanel,
   VideoThumb,
   useClipOptions,
+  PlanLimitHint,
   useCredits,
 } from "./create-shared";
 
@@ -53,7 +54,7 @@ function sourceLabel(raw: string): string | null {
 
 export function CreateFromUrl() {
   const opts = useClipOptions();
-  const { credits, costPerClip } = useCredits();
+  const { credits, costPerClip, tier } = useCredits();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [url, setUrl] = useState("");
@@ -129,6 +130,7 @@ export function CreateFromUrl() {
         {/* Step 1: link + preview */}
         <section className={cn(PANEL, "p-5 sm:p-6")}>
           <StepHeader step="01" title="Video source" description="Paste a link to a public video." />
+          <div className="-mt-2 mb-4"><PlanLimitHint tier={tier} /></div>
           <div className="grid gap-5 sm:grid-cols-[240px_1fr]">
             <VideoThumb src={thumbnail} className="aspect-video">
               {!thumbnail && (

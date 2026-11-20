@@ -572,6 +572,54 @@ describe('VideosService', () => {
     });
   });
 
+  describe('plan limits', () => {
+    it('puts the plan limits from the profile tier into the job payload', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await service.completeUpload('u1', 'v1', {});
+
+      expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ plan_id: 'starter', max_video_seconds: 300, watermark: true }),
+        }),
+      );
+    });
+
+    it('gives paid tiers longer videos and no watermark', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'business' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await service.completeUpload('u1', 'v1', {});
+
+      expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ plan_id: 'business', max_video_seconds: 1800, watermark: false }),
+        }),
+      );
+    });
+
+    it('rejects an upload the browser measured as too long, before charging', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+
+      await expect(service.completeUpload('u1', 'v1', { source_duration_seconds: 700 })).rejects.toThrow(
+        'Your Creator plan supports videos up to 10 minutes',
+      );
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+    });
+
+    it('allows a measured length within the limit', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await expect(service.completeUpload('u1', 'v1', { source_duration_seconds: 600 })).resolves.toBeDefined();
+    });
+  });
+
   describe('completeUpload', () => {
     it('throws NotFoundException when the video does not exist', async () => {
       videosRepo.getById.mockResolvedValue(null);

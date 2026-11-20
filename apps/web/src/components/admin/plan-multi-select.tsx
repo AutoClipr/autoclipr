@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 /** Plans a coupon can be limited to — must match COUPON_PLANS in the API. */
 export const COUPON_PLAN_OPTIONS = [
   { id: "creator", label: "Creator" },
+  { id: "pro", label: "Pro" },
   { id: "business", label: "Business" },
 ] as const;
 

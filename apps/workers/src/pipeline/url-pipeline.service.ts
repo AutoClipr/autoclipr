@@ -1,4 +1,4 @@
-import { toUserMessage } from './user-error.util';
+import { toUserMessage, withUserMessage } from './user-error.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService, NR_EVENTS } from '@autoclipr/monitoring';
@@ -49,6 +49,8 @@ export class UrlPipelineService {
     const captionLanguage = data.caption_language ?? 'en';
     const platforms = data.platforms ?? ['tiktok', 'instagram', 'youtube', 'linkedin'];
     const exportQuality = data.export_quality ?? 'hd';
+    const maxVideoSeconds = typeof data.max_video_seconds === 'number' ? data.max_video_seconds : 0;
+    const watermark = data.watermark === true;
 
     const userRes = await this.db.client.query(
       `SELECT user_id, title, storage_path, source_url FROM videos WHERE id = $1`,
@@ -130,6 +132,16 @@ export class UrlPipelineService {
       }
 
       const durationSeconds = await this.ffmpeg.getDurationSeconds(sourceVideoPath);
+
+      // Plan limit, checked before any AI work. Throwing here fails the job
+      // and the catch below refunds the credits charged at submission.
+      if (maxVideoSeconds > 0 && durationSeconds > maxVideoSeconds + 5) {
+        const mins = Math.round(maxVideoSeconds / 60);
+        throw withUserMessage(
+          new Error(`Source is ${Math.round(durationSeconds)}s; plan limit ${maxVideoSeconds}s`),
+          `This video is longer than your plan allows (up to ${mins} minutes). Your credits were refunded — trim the video or upgrade your plan.`,
+        );
+      }
 
       await this.ffmpeg.extractThumbnail(sourceVideoPath, thumbPath, 2);
       let thumbUrl: string | null = null;
@@ -250,6 +262,7 @@ export class UrlPipelineService {
           captionLanguage,
           platforms,
           exportQuality,
+          watermark,
         });
         clipIds.push(clipId);
 
@@ -370,6 +383,7 @@ export class UrlPipelineService {
     captionLanguage: string;
     platforms: string[];
     exportQuality: string;
+    watermark: boolean;
   }): Promise<string> {
     const {
       workDir,
@@ -397,6 +411,7 @@ export class UrlPipelineService {
       moment.start_ms,
       moment.end_ms,
       exportQuality,
+      opts.watermark,
     );
 
     // Plain SRT is uploaded as the clip's downloadable subtitle file.

@@ -2,26 +2,54 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { PricingSkeleton } from "@/components/landing/pricing-skeleton";
-import { FAQ } from "@/components/landing/faq";
+import { CreditsExplainer, PricingFAQ } from "@/components/landing/pricing-extras";
+import { mergeLivePlans, type PlanNumbers } from "@/lib/plans";
 import { PlanComparison } from "@/components/landing/plan-comparison";
 import { pageMetadata } from "@/lib/seo";
-import { Check, Zap, Shield, HeadphonesIcon } from "lucide-react";
+import { Check, Zap, Shield, Lock } from "lucide-react";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Pricing",
+  title: "Pricing – Starter, Creator, Pro & Business Plans",
   description:
-    "AutoClipr plans for solo creators, agencies, and teams. Credits for AI clip generation and captions, plus content scheduling for YouTube Shorts and Instagram Reels on Creator and Business.",
+    "AutoClipr pricing: start free, or choose Creator (₹599/mo), Pro (₹999/mo) or Business (₹1,999/mo) for more credits, longer videos, no watermark, scheduling and analytics.",
   path: "/pricing",
 });
 
 const TRUST_ITEMS = [
-  { icon: Check, label: "No credit card required to start" },
-  { icon: Zap, label: "Instant access after signup" },
-  { icon: Shield, label: "Cancel anytime, no lock-in" },
-  { icon: HeadphonesIcon, label: "Priority support on paid plans" },
+  { icon: Zap, label: "Start for free" },
+  { icon: Check, label: "No credit card required for Starter" },
+  { icon: Shield, label: "Cancel paid plans anytime" },
+  { icon: Lock, label: "Secure payments via Dodo Payments" },
 ];
 
-export default function PricingPage() {
+/** Plans from the API (the authority); falls back to built-in values if it's down. */
+async function loadPlans(): Promise<PlanNumbers[]> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/v1/plans`, {
+      next: { revalidate: 300 },
+    });
+    const body = await res.json();
+    return mergeLivePlans(Array.isArray(body?.data) ? body.data : null);
+  } catch {
+    return mergeLivePlans(null);
+  }
+}
+
+export default async function PricingPage() {
+  const plans = await loadPlans();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "AutoClipr",
+    description: "AI video clipping and short-form publishing.",
+    offers: plans.map((p) => ({
+      "@type": "Offer",
+      name: p.name,
+      price: (p.price_cents / 100).toFixed(2),
+      priceCurrency: "INR",
+      ...(p.price_cents > 0 ? { priceSpecification: { "@type": "UnitPriceSpecification", price: (p.price_cents / 100).toFixed(2), priceCurrency: "INR", billingDuration: "P1M" } } : {}),
+    })),
+  };
   return (
     <div className="relative overflow-hidden pt-4">
       {/* Background glow blobs */}
@@ -54,14 +82,14 @@ export default function PricingPage() {
         </p>
 
         <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
-          Pay for what you{" "}
-          <span className="bg-gradient-to-r from-[#54D045] to-[#35D6E8] bg-clip-text text-transparent">
-            actually use
-          </span>
+          Create more.{" "}
+          <span className="bg-gradient-to-r from-[#54D045] to-[#35D6E8] bg-clip-text text-transparent">Edit less.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/55">
-          Start free. Upgrade when you grow. No contracts, no hidden fees —
-          just powerful AI video tools at a fair price.
+          Choose the perfect plan to turn your long videos into engaging short-form content.
+        </p>
+        <p className="mx-auto mt-3 max-w-xl text-sm text-white/40">
+          AI clipping, automatic captions, publishing and performance analytics — all in one platform.
         </p>
 
         {/* Trust strip */}
@@ -80,12 +108,16 @@ export default function PricingPage() {
 
       {/* Pricing cards */}
       <Suspense fallback={<PricingSkeleton showHeader={false} />}>
-        <PricingSection showHeader={false} />
+        <PricingSection showHeader={false} plans={plans} />
       </Suspense>
 
-      <PlanComparison />
+      <CreditsExplainer plans={plans} />
 
-      <FAQ />
+      <PlanComparison plans={plans} />
+
+      <PricingFAQ />
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>
   );
 }

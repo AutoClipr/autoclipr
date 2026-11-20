@@ -6,6 +6,7 @@
  * with credits and processing time, and the processing card.
  */
 
+import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -109,6 +110,7 @@ export function useClipOptions() {
 export function useCredits() {
   const [credits, setCredits] = useState<number | null>(null);
   const [costPerClip, setCostPerClip] = useState(1);
+  const [tier, setTier] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
       const token = await getAccessToken();
@@ -117,10 +119,30 @@ export function useCredits() {
       if (res.success && res.data) {
         setCredits(res.data.credits);
         setCostPerClip(res.data.clip_credit_cost ?? 1);
+        setTier(res.data.subscription_tier ?? "starter");
       }
     })();
   }, []);
-  return { credits, costPerClip };
+  return { credits, costPerClip, tier, maxVideoSeconds: maxVideoSecondsFor(tier) };
+}
+
+/** "Your Starter plan supports videos up to 5 min · Upgrade" under the source picker. */
+export function PlanLimitHint({ tier }: { tier: string | null }) {
+  if (!tier) return null;
+  const max = maxVideoSecondsFor(tier);
+  return (
+    <p className="mt-3 text-xs text-[#94A3B8]">
+      Your plan supports source videos up to <span className="font-medium text-[#F8FAFC]">{formatMinutes(max)}</span>
+      {max < 30 * 60 && (
+        <>
+          {" · "}
+          <Link href="/pricing" className="text-[#54D045] hover:underline">
+            Upgrade for longer videos
+          </Link>
+        </>
+      )}
+    </p>
+  );
 }
 
 /** Which social accounts are connected for posting. null while loading or unavailable. */

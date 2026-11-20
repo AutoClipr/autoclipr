@@ -252,7 +252,7 @@ export const LANDING_PAGES: LandingPage[] = [
     faq: [
       {
         q: "Which plans include the Content Scheduler?",
-        a: "The Content Scheduler is included in the Creator and Business plans. On the free Starter plan you can still create clips and post them yourself.",
+        a: "The Content Scheduler is included in the Creator, Pro and Business plans. On the free Starter plan you can still create clips and post them yourself.",
       },
       {
         q: "Which platforms can I schedule to?",
