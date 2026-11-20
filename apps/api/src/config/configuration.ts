@@ -41,6 +41,10 @@ export default () => ({
     // simply stops delivering. One wave therefore spreads across Fri-Mon.
     dailyCap: parseInt(process.env.CAMPAIGN_DAILY_CAP ?? '100', 10),
   },
+  youtube: {
+    // YouTube Data API v3 key used by the daily Top Creators refresh.
+    apiKey: process.env.YOUTUBE_API_KEY ?? '',
+  },
   retention: {
     // Off by default. The sweep emails real customers and permanently deletes
     // their files, so arming it is a deliberate act, not a side effect of a

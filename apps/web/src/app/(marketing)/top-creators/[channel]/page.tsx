@@ -3,12 +3,12 @@ import { SITE_URL, OG_IMAGE_PATH } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Video, Calendar, BadgeCheck, TrendingUp, Eye, Users, DollarSign } from "lucide-react";
-import { searchChannel, getTopVideos, formatCount, estimateMonthlyEarnings } from "@/lib/youtube-api";
+import { searchChannel, getChannelById, getTopVideos, formatCount, estimateMonthlyEarnings } from "@/lib/youtube-api";
 import { ChannelCharts } from "./channel-charts";
 import { CREATOR_RANKS } from "@/lib/top-creators";
 
 
-type Props = { params: Promise<{ channel: string }> };
+type Props = { params: Promise<{ channel: string }>; searchParams: Promise<{ id?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { channel } = await params;
@@ -41,14 +41,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ChannelPage({ params }: Props) {
+export default async function ChannelPage({ params, searchParams }: Props) {
   const { channel } = await params;
+  const { id } = await searchParams;
   const name = decodeURIComponent(channel).replace(/-/g, " ");
 
-  const [channelData, topVideos] = await Promise.all([
-    searchChannel(name),
-    searchChannel(name).then((ch) => ch ? getTopVideos(ch.id) : []),
-  ]);
+  // Leaderboard links carry the channel ID: an exact, 1-unit lookup instead of
+  // a 100-unit name search that can match the wrong channel.
+  const channelData = id && /^UC[\w-]{22}$/.test(id) ? await getChannelById(id) : await searchChannel(name);
+  const topVideos = channelData ? await getTopVideos(channelData.id) : [];
 
   const hasKey = !!process.env.YOUTUBE_API_KEY;
 
