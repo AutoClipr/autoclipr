@@ -3,12 +3,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AnalyticsController } from '../src/modules/analytics/analytics.controller';
 import { AnalyticsService } from '../src/modules/analytics/analytics.service';
+import { UsersRepository } from '../src/modules/users/users.repository';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { FakeJwtAuthGuard, E2E_TEST_USER, E2E_VALID_TOKEN } from './utils/fake-jwt-auth.guard';
 
 describe('AnalyticsController (e2e)', () => {
   let app: INestApplication;
   let service: jest.Mocked<AnalyticsService>;
+  // Analytics is a paid-plan feature; default to a paid tier.
+  const usersRepo = { getById: jest.fn().mockResolvedValue({ subscription_tier: 'pro' }) };
 
   const AUTH_HEADER = `Bearer ${E2E_VALID_TOKEN}`;
 
@@ -20,7 +23,10 @@ describe('AnalyticsController (e2e)', () => {
 
     const moduleRef: TestingModule = await Test.createTestingModule({
       controllers: [AnalyticsController],
-      providers: [{ provide: AnalyticsService, useValue: mockService }],
+      providers: [
+        { provide: AnalyticsService, useValue: mockService },
+        { provide: UsersRepository, useValue: usersRepo },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useClass(FakeJwtAuthGuard)
@@ -34,7 +40,7 @@ describe('AnalyticsController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   afterEach(() => {

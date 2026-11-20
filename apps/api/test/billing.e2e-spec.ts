@@ -42,7 +42,7 @@ describe('BillingController (e2e)', () => {
       getMe: jest.fn(),
     } as unknown as jest.Mocked<UsersService>;
 
-    dodo = { verifyWebhook: jest.fn() } as unknown as jest.Mocked<DodoService>;
+    dodo = { verifyWebhook: jest.fn(), hasProduct: jest.fn().mockReturnValue(true) } as unknown as jest.Mocked<DodoService>;
 
     subscriptions = {
       createCheckoutUrl: jest.fn(),
@@ -102,11 +102,15 @@ describe('BillingController (e2e)', () => {
 
   describe('GET /api/v1/plans', () => {
     it('is public — returns 200 with no Authorization header', async () => {
-      usersService.listPlans.mockResolvedValue([{ id: 'starter' }] as any);
+      usersService.listPlans.mockResolvedValue([{ id: 'starter', features: ['30 credits'] }] as any);
 
       const response = await request(app.getHttpServer()).get('/api/v1/plans').expect(200);
 
-      expect(response.body).toEqual({ success: true, data: [{ id: 'starter' }] });
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.map((p: { id: string }) => p.id)).toEqual(['starter', 'creator', 'pro', 'business']);
+      expect(response.body.data[0]).toEqual(
+        expect.objectContaining({ id: 'starter', price_cents: 0, credits_per_month: 30, watermark: true, features: ['30 credits'] }),
+      );
     });
   });
 
