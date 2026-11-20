@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Scissors, FileVideo, Maximize2, FileArchive, Image, Music, Film, Info, Captions, Type, Mic } from "lucide-react";
 import { NavMegaMenu } from "./nav-mega-menu";
 
-const TOOLS = [
+export const TOOLS = [
   {
     category: "Video Editing",
     items: [

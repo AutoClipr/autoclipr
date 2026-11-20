@@ -7,28 +7,15 @@ import { ChevronDown, X, Menu } from "lucide-react";
 import { LogoIcon } from "@/components/ui/logo-icon";
 import { FEATURE_LINKS } from "./features-dropdown";
 
-const FREE_TOOLS = [
-  { href: "/tools/video-trimmer", label: "Video Trimmer" },
-  { href: "/tools/clip-extractor", label: "Clip Extractor" },
-  { href: "/tools/video-compressor", label: "Video Compressor" },
-  { href: "/tools/gif-generator", label: "GIF Generator" },
-  { href: "/tools/subtitle-generator", label: "Subtitle Generator" },
-  { href: "/tools/transcript-extractor", label: "Transcript Extractor" },
-  { href: "/tools/aspect-ratio-converter", label: "Aspect Ratio Converter" },
-  { href: "/tools/thumbnail-downloader", label: "Thumbnail Downloader" },
-  { href: "/tools/channel-analyzer", label: "Channel Analyzer" },
-  { href: "/tools/viral-score-checker", label: "Viral Score Checker" },
-];
+import { TOOLS } from "./free-tools-dropdown";
+import { RESOURCES as RESOURCE_LINKS } from "./resources-dropdown";
 
-const RESOURCES = [
-  { href: "/blog", label: "Blog" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/tutorials", label: "Tutorials" },
-  { href: "/success-stories", label: "Success Stories" },
-  { href: "/#how-it-works", label: "How it Works" },
-  { href: "/changelog", label: "Changelog" },
-  { href: "/affiliate", label: "Affiliate" },
+// Same config as the desktop mega-menus, so mobile never drifts out of sync.
+const FREE_TOOLS = [
+  ...TOOLS.flatMap((g) => g.items.map((t) => ({ href: t.href, label: t.label }))),
+  { href: "/tools", label: "View all free tools" },
 ];
+const RESOURCES = RESOURCE_LINKS.map((r) => ({ href: r.href, label: r.label }));
 
 export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false);
@@ -96,7 +83,7 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
                 onClick={() => setToolsOpen((p) => !p)}
                 className="flex w-full items-center justify-between px-5 py-4 text-base font-medium text-white hover:bg-white/[0.04] transition-colors"
               >
-                Free YouTube Tools
+                Free Tools
                 <ChevronDown className={`h-5 w-5 text-white/40 transition-transform duration-200 ${toolsOpen ? "rotate-180" : ""}`} />
               </button>
               {toolsOpen && (
@@ -122,7 +109,7 @@ export function MobileMenu({ isLoggedIn }: { isLoggedIn: boolean }) {
 
             {/* Top Creators */}
             <Link href="/top-creators" onClick={close} className="flex items-center justify-between px-5 py-4 text-base font-medium text-white hover:bg-white/[0.04] transition-colors">
-              Top 100 YouTube Channels
+              Top Creators
             </Link>
 
             {/* Resources accordion */}

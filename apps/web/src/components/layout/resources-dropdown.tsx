@@ -3,7 +3,7 @@
 import { BookOpen, HelpCircle, Star, MessageSquare, Lightbulb, Youtube, TrendingUp } from "lucide-react";
 import { NavMegaMenu } from "./nav-mega-menu";
 
-const RESOURCES = [
+export const RESOURCES = [
   {
     icon: BookOpen,
     label: "Blog",
