@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Unplug,
   X,
+  Crown,
 } from "lucide-react";
 import { usePlatformAvailability } from "@/hooks/use-platform-availability";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { apiFetch, type PlatformConnection } from "@/lib/api";
 import { getConnectedPlatforms, setConnectedPlatforms } from "@/lib/platforms-storage";
 import { markOnboardingComplete } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
+import { isPaidTier } from "@/lib/plans";
 
 type Platform = {
   id: string;
@@ -37,7 +39,10 @@ type Platform = {
   oauth: boolean;
 };
 
-type CardState = "loading" | "connected" | "reconnect" | "not_connected" | "connecting" | "failed" | "unavailable" | "coming_soon";
+type CardState = "loading" | "connected" | "reconnect" | "not_connected" | "connecting" | "failed" | "unavailable" | "coming_soon" | "locked";
+
+/** What Starter (free) may connect; everything else needs a paid plan (the API enforces this). */
+const FREE_PLATFORMS = ["youtube", "instagram"];
 
 function YouTubeIcon({ className }: { className?: string }) {
   return (
@@ -186,6 +191,16 @@ export function PlatformConnectionSetup({
   const [loaded, setLoaded] = useState(false);
   const [connected, setConnected] = useState<string[]>([]);
   const [platformRows, setPlatformRows] = useState<PlatformConnection[]>([]);
+  const [tier, setTier] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session) return;
+      const res = await apiFetch<{ subscription_tier: string }>("/api/v1/users/me", { token: session.access_token, skipGlobalLoader: true });
+      setTier(res.data?.subscription_tier ?? "starter");
+    })().catch(() => {});
+  }, []);
+  const freePlan = tier !== null && !isPaidTier(tier);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [pendingPlatform, setPendingPlatform] = useState<Platform | null>(null);
@@ -328,6 +343,8 @@ export function PlatformConnectionSetup({
 
   function stateFor(p: Platform): CardState {
     if (bannedPlatforms.has(p.id)) return "unavailable";
+    // Starter sees every paid-only platform as locked (Pro), including ones still in the works.
+    if (freePlan && !FREE_PLATFORMS.includes(p.id) && !connected.includes(p.id)) return "locked";
     if (!p.available) return "coming_soon";
     if (connecting === p.id) return "connecting";
     if (connected.includes(p.id)) {
@@ -342,7 +359,7 @@ export function PlatformConnectionSetup({
 
   const isTrial = mode === "trial";
   // Regionally unavailable / not-yet-launched platforms don't count against progress.
-  const usable = platforms.filter((p) => p.available && !bannedPlatforms.has(p.id));
+  const usable = platforms.filter((p) => p.available && !bannedPlatforms.has(p.id) && stateFor(p) !== "locked");
   const states = usable.map((p) => stateFor(p));
   const connectedCount = states.filter((s) => s === "connected" || s === "reconnect").length;
   const healthyCount = states.filter((s) => s === "connected").length;
@@ -420,7 +437,8 @@ export function PlatformConnectionSetup({
       <div className="relative mt-10 grid gap-5 lg:grid-cols-[1fr_280px] lg:items-start">
         {/* Cards */}
         <div className="grid gap-4 sm:grid-cols-2">
-          {platforms.map((platform) => (
+          {/* Not-yet-available platforms are hidden for paid plans (nothing to connect yet). */}
+          {platforms.filter((p) => p.available || freePlan).map((platform) => (
             <PlatformCard
               key={platform.id}
               platform={platform}
@@ -652,6 +670,11 @@ const BADGES: Record<CardState, { label: string; className: string; icon?: React
     icon: <Ban className="h-3.5 w-3.5" />,
   },
   coming_soon: { label: "Coming soon", className: "border-[#253244] bg-[#0B1220] text-[#94A3B8]" },
+  locked: {
+    label: "Pro",
+    className: "border-amber-400/25 bg-amber-400/10 uppercase text-amber-300",
+    icon: <Crown className="h-3.5 w-3.5" />,
+  },
 };
 
 function PlatformCard({
@@ -776,6 +799,16 @@ function PlatformCard({
             {state === "failed" ? <RefreshCw className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
             {state === "failed" ? "Try again" : "Connect"}
           </Button>
+        )}
+        {state === "locked" && (
+          <>
+            <p className="mb-2 text-center text-xs text-[#94A3B8]">Available on Creator, Pro and Business plans.</p>
+            <Button asChild className="h-10 w-full rounded-full bg-[#54D045] font-semibold text-[#070B12] hover:bg-[#62dc53]">
+              <Link href="/pricing">
+                <Crown className="h-4 w-4" /> Upgrade to connect
+              </Link>
+            </Button>
+          </>
         )}
         {state === "loading" && <div className="h-10 w-full animate-pulse rounded-full bg-[#0B1220]" />}
         {state === "connecting" && (
