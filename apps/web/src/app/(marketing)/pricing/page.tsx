@@ -75,22 +75,11 @@ export default async function PricingPage() {
 
       {/* Hero header */}
       <div className="relative mx-auto max-w-3xl px-4 pb-4 pt-10 text-center sm:px-6">
-        {/* Label pill */}
-        <p className="section-label-white mb-6">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.6)]" />
-          Pricing
-        </p>
 
-        <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
           Create more.{" "}
           <span className="bg-gradient-to-r from-[#54D045] to-[#35D6E8] bg-clip-text text-transparent">Edit less.</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/55">
-          Choose the perfect plan to turn your long videos into engaging short-form content.
-        </p>
-        <p className="mx-auto mt-3 max-w-xl text-sm text-white/40">
-          AI clipping, automatic captions, publishing and performance analytics — all in one platform.
-        </p>
 
         {/* Trust strip */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
