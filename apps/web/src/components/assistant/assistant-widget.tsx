@@ -260,7 +260,7 @@ export function AssistantWidget() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close AutoClipr assistant" : "Open AutoClipr assistant"}
         aria-expanded={open}
-        className={`fixed bottom-6 right-6 z-[120] h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-900/40 transition-all duration-200 hover:scale-105 hover:shadow-emerald-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030014] ${
+        className={`fixed bottom-6 right-6 z-[120] h-14 w-14 items-center justify-center rounded-full bg-[#54D045] text-[#070B12] shadow-lg shadow-[#54D045]/25 transition-all duration-200 hover:scale-105 hover:bg-[#62dc53] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#54D045] focus-visible:ring-offset-2 focus-visible:ring-offset-[#030014] ${
           // On mobile the panel is near full-screen, so the launcher would sit
           // on top of the composer's send button. The header's own close
           // button covers dismissal there; on desktop the panel clears it.
@@ -281,7 +281,7 @@ export function AssistantWidget() {
           ${open ? "pointer-events-auto translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-[0.98] opacity-0"}`}
       >
         {/* Header */}
-        <div className="relative shrink-0 border-b border-white/10 bg-gradient-to-br from-emerald-600 to-teal-700 px-5 py-4">
+        <div className="relative shrink-0 border-b border-white/10 bg-gradient-to-br from-[#54D045] via-[#3fae3a] to-[#1f7a35] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2">
               {hasConversation && !showingWelcome && (

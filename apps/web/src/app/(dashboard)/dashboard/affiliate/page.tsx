@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, type Profile, type YoutubeChannel } from "@/lib/api";
 import { AffiliateDashboard, AffiliateApply, AffiliateLoadError } from "./client";
 
 export const metadata: Metadata = { title: "Refer & earn" };
@@ -80,7 +80,19 @@ export default async function AffiliatePage() {
   }
   // Only a missing account means "not an affiliate yet"; anything else is a load failure.
   if (res.error?.code === "NOT_FOUND") {
-    return <AffiliateApply token={token} program={program} />;
+    // Prefill from the account: email, plus the first connected channel's URL.
+    const [me, channels] = await Promise.all([
+      apiFetch<Profile>("/api/v1/users/me", { token }),
+      apiFetch<YoutubeChannel[]>("/api/v1/channels", { token }),
+    ]);
+    return (
+      <AffiliateApply
+        token={token}
+        program={program}
+        defaultEmail={me.data?.email ?? session?.user?.email ?? ""}
+        defaultChannelUrl={channels.data?.[0]?.channel_url ?? ""}
+      />
+    );
   }
   return <AffiliateLoadError />;
 }

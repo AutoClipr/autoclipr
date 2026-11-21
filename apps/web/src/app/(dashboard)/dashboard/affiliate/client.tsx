@@ -939,9 +939,19 @@ export function AffiliateLoadError() {
   );
 }
 
-export function AffiliateApply({ token, program }: { token: string; program: AffiliateProgram | null }) {
-  const [email, setEmail] = useState("");
-  const [channelUrl, setChannelUrl] = useState("");
+export function AffiliateApply({
+  token,
+  program,
+  defaultEmail = "",
+  defaultChannelUrl = "",
+}: {
+  token: string;
+  program: AffiliateProgram | null;
+  defaultEmail?: string;
+  defaultChannelUrl?: string;
+}) {
+  const [email, setEmail] = useState(defaultEmail);
+  const [channelUrl, setChannelUrl] = useState(defaultChannelUrl);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -1032,7 +1042,7 @@ export function AffiliateApply({ token, program }: { token: string; program: Aff
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+                      className="rounded-lg bg-[#54D045] px-5 py-2.5 text-sm font-bold text-[#070B12] transition-colors hover:bg-[#62dc53] disabled:opacity-50"
                     >
                       {submitting ? "Joining…" : "Join the program"}
                     </button>
