@@ -84,6 +84,12 @@ export class CouponsService {
       throw new CouponRejectedError('COUPON_EXHAUSTED');
     }
 
+    // Yearly already carries its own discount; coupons are monthly-only.
+    // Enforced here, so checkout and activation refuse it whatever the client sends.
+    if (billingPeriod === 'yearly') {
+      throw new CouponRejectedError('COUPON_MONTHLY_ONLY');
+    }
+
     if (
       planId !== undefined &&
       coupon.applicable_plans.length > 0 &&

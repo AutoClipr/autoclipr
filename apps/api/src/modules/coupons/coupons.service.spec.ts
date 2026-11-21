@@ -80,15 +80,15 @@ describe('CouponsService', () => {
 
   describe('validate', () => {
     it('accepts a live coupon and values the discount against the plan price', async () => {
-      const result = await service.validate('CREATOR25', 'creator', 'yearly', 'u1');
+      const result = await service.validate('CREATOR25', 'creator', 'monthly', 'u1');
 
-      // Creator yearly is ₹6,252 = 625200 paise; 25% = 156300.
+      // Creator monthly is ₹599 = 59900 paise; 25% = 14975.
       expect(result).toMatchObject({
         id: 'c1',
         code: 'CREATOR25',
         type: 'percentage',
         value: 25,
-        discountPaise: 156_300,
+        discountPaise: 14_975,
         description: '25% off',
       });
     });
@@ -102,7 +102,7 @@ describe('CouponsService', () => {
     it('rejects an unknown code', async () => {
       repo.findByCode.mockResolvedValue(null);
 
-      await expect(service.validate('NOPE', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('NOPE', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'That coupon code is not valid.',
       );
     });
@@ -114,7 +114,7 @@ describe('CouponsService', () => {
 
         // Same message as an unknown code on purpose: a distinct error would
         // confirm to someone guessing codes that they found a real one.
-        await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+        await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
           'That coupon code is not valid.',
         );
       },
@@ -125,7 +125,7 @@ describe('CouponsService', () => {
         coupon({ starts_at: new Date(NOW.getTime() + DAY).toISOString() }),
       );
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'not active yet',
       );
     });
@@ -135,7 +135,7 @@ describe('CouponsService', () => {
         coupon({ expires_at: new Date(NOW.getTime() - DAY).toISOString() }),
       );
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'has expired',
       );
     });
@@ -143,7 +143,7 @@ describe('CouponsService', () => {
     it('rejects a coupon that has hit its usage cap', async () => {
       repo.findByCode.mockResolvedValue(coupon({ max_uses: 50, used_count: 50 }));
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'fully redeemed',
       );
     });
@@ -151,13 +151,13 @@ describe('CouponsService', () => {
     it('allows an uncapped coupon regardless of use count', async () => {
       repo.findByCode.mockResolvedValue(coupon({ max_uses: null, used_count: 99_999 }));
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).resolves.toBeDefined();
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).resolves.toBeDefined();
     });
 
     it('rejects a coupon that does not cover the chosen plan', async () => {
       repo.findByCode.mockResolvedValue(coupon({ applicable_plans: ['business'] }));
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'does not apply to this plan',
       );
     });
@@ -185,14 +185,14 @@ describe('CouponsService', () => {
       repo.findByCode.mockResolvedValue(coupon({ applicable_plans: [] }));
 
       await expect(
-        service.validate('CREATOR25', 'business', 'yearly', 'u1'),
+        service.validate('CREATOR25', 'business', 'monthly', 'u1'),
       ).resolves.toBeDefined();
     });
 
     it('rejects a user who has hit their per-user limit', async () => {
       repo.countUserRedemptions.mockResolvedValue(1);
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).rejects.toThrow(
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).rejects.toThrow(
         'already used this coupon',
       );
     });
@@ -201,31 +201,31 @@ describe('CouponsService', () => {
       repo.findByCode.mockResolvedValue(coupon({ max_uses_per_user: 3 }));
       repo.countUserRedemptions.mockResolvedValue(1);
 
-      await expect(service.validate('CREATOR25', 'creator', 'yearly', 'u1')).resolves.toBeDefined();
+      await expect(service.validate('CREATOR25', 'creator', 'monthly', 'u1')).resolves.toBeDefined();
     });
 
     it('values non-monetary coupon types at zero', async () => {
       // A trial defers payment and credits add value without touching price,
       // so counting either as revenue given away would misreport campaign cost.
       repo.findByCode.mockResolvedValue(coupon({ type: 'free_trial', value: 30 }));
-      const trial = await service.validate('TRIAL30', 'creator', 'yearly', 'u1');
+      const trial = await service.validate('TRIAL30', 'creator', 'monthly', 'u1');
       expect(trial).toMatchObject({ discountPaise: 0, description: '30 days free' });
 
       repo.findByCode.mockResolvedValue(coupon({ type: 'free_credits', value: 500 }));
-      const credits = await service.validate('BONUS', 'creator', 'yearly', 'u1');
+      const credits = await service.validate('BONUS', 'creator', 'monthly', 'u1');
       expect(credits).toMatchObject({ discountPaise: 0, description: '500 bonus credits' });
     });
 
     it('singularises a one-day trial', async () => {
       repo.findByCode.mockResolvedValue(coupon({ type: 'free_trial', value: 1 }));
 
-      const result = await service.validate('TRIAL1', 'creator', 'yearly', 'u1');
+      const result = await service.validate('TRIAL1', 'creator', 'monthly', 'u1');
 
       expect(result.description).toBe('1 day free');
     });
 
     it('values a discount on an unknown plan at zero rather than throwing', async () => {
-      const result = await service.validate('CREATOR25', 'mystery', 'yearly', 'u1');
+      const result = await service.validate('CREATOR25', 'mystery', 'monthly', 'u1');
 
       expect(result.discountPaise).toBe(0);
     });
@@ -374,6 +374,17 @@ describe('CouponsService', () => {
     });
   });
 
+  describe('monthly only', () => {
+    it('refuses any coupon on a yearly plan', async () => {
+      repo.findByCode.mockResolvedValue(coupon({ type: 'percentage', value: 25 }));
+      repo.countUserRedemptions.mockResolvedValue(0);
+
+      await expect(service.validate('X', 'pro', 'yearly', 'u1')).rejects.toMatchObject({ code: 'COUPON_MONTHLY_ONLY' });
+      await expect(service.validate('X', 'pro', 'yearly', 'u1')).rejects.toThrow('Coupons apply to monthly plans only');
+      await expect(service.validate('X', 'pro', 'monthly', 'u1')).resolves.toMatchObject({ valid: true });
+    });
+  });
+
   describe('rejection codes', () => {
     it.each([
       ['COUPON_INACTIVE', { status: 'paused' as const }],
@@ -383,7 +394,7 @@ describe('CouponsService', () => {
     ])('reports %s', async (code, overrides) => {
       repo.findByCode.mockResolvedValue(coupon(overrides as never));
 
-      await expect(service.validate('X', 'creator', 'yearly', 'u1')).rejects.toMatchObject({
+      await expect(service.validate('X', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
         response: { valid: false, error: code },
       });
     });
@@ -391,7 +402,7 @@ describe('CouponsService', () => {
     it('reports COUPON_NOT_FOUND for an unknown code', async () => {
       repo.findByCode.mockResolvedValue(null);
 
-      await expect(service.validate('NOPE', 'creator', 'yearly', 'u1')).rejects.toMatchObject({
+      await expect(service.validate('NOPE', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
         response: { error: 'COUPON_NOT_FOUND' },
       });
     });
@@ -399,7 +410,7 @@ describe('CouponsService', () => {
     it('reports COUPON_PLAN_NOT_ELIGIBLE for the wrong plan', async () => {
       repo.findByCode.mockResolvedValue(coupon({ applicable_plans: ['business'] }));
 
-      await expect(service.validate('X', 'creator', 'yearly', 'u1')).rejects.toMatchObject({
+      await expect(service.validate('X', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
         response: { error: 'COUPON_PLAN_NOT_ELIGIBLE' },
       });
     });
@@ -408,7 +419,7 @@ describe('CouponsService', () => {
       repo.findByCode.mockResolvedValue(coupon({ max_uses_per_user: 1 }));
       repo.countUserRedemptions.mockResolvedValue(1);
 
-      await expect(service.validate('X', 'creator', 'yearly', 'u1')).rejects.toMatchObject({
+      await expect(service.validate('X', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
         response: { error: 'COUPON_USER_LIMIT_REACHED' },
       });
     });
@@ -418,7 +429,7 @@ describe('CouponsService', () => {
 
       // Different code for our logs, identical prose — confirming a paused
       // code exists tells an enumerator they guessed a real one.
-      await expect(service.validate('X', 'creator', 'yearly', 'u1')).rejects.toMatchObject({
+      await expect(service.validate('X', 'creator', 'monthly', 'u1')).rejects.toMatchObject({
         response: { message: 'That coupon code is not valid.' },
       });
     });

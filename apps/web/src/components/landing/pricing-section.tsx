@@ -125,7 +125,8 @@ function PricingCard({
   const ac = ACCENT[copy.accent];
   const Icon = copy.icon;
   const paid = plan.price_cents > 0;
-  const planCoupon = coupon && paid && couponAppliesTo(coupon, plan.id) ? coupon : null;
+  // Coupons are monthly-only (the API refuses them on yearly).
+  const planCoupon = coupon && paid && period === "monthly" && couponAppliesTo(coupon, plan.id) ? coupon : null;
   const percentOff = planCoupon?.type === "percentage" ? Math.min(planCoupon.value, 100) : 0;
   const yearly = period === "yearly" && paid && plan.yearly_price_cents != null;
   // Yearly shows the per-month equivalent; the total is listed underneath.
@@ -237,7 +238,11 @@ function PricingCard({
           ) : (
             <p className="mt-1 text-xs text-white/40">{paid ? "Billed monthly · Cancel anytime" : "Free forever · No credit card"}</p>
           )}
-          {coupon && paid && !planCoupon && <p className="mt-1 text-xs text-white/35">{coupon.code} doesn&apos;t apply to this plan</p>}
+          {coupon && paid && !planCoupon && (
+            <p className="mt-1 text-xs text-white/35">
+              {period === "yearly" ? "Coupons apply to monthly billing only" : <>{coupon.code} doesn&apos;t apply to this plan</>}
+            </p>
+          )}
         </div>
       </div>
 

@@ -13,7 +13,8 @@ export type CouponErrorCode =
   | 'COUPON_EXPIRED'
   | 'COUPON_EXHAUSTED'
   | 'COUPON_USER_LIMIT_REACHED'
-  | 'COUPON_PLAN_NOT_ELIGIBLE';
+  | 'COUPON_PLAN_NOT_ELIGIBLE'
+  | 'COUPON_MONTHLY_ONLY';
 
 /** The valid range for a percentage discount: no business floor, just 1–100%. */
 export const MIN_DISCOUNT_PERCENTAGE = 1;
@@ -31,6 +32,7 @@ const MESSAGES: Record<CouponErrorCode, string> = {
   COUPON_EXHAUSTED: 'This coupon has been fully redeemed.',
   COUPON_USER_LIMIT_REACHED: 'You have already used this coupon.',
   COUPON_PLAN_NOT_ELIGIBLE: 'That coupon does not apply to this plan.',
+  COUPON_MONTHLY_ONLY: 'Coupons apply to monthly plans only. Yearly plans already include 13% off.',
 };
 
 /**
