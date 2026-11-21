@@ -130,13 +130,22 @@ describe('SubscriptionsService', () => {
       supabaseMock.__client.from.mockImplementation(() => activeRow('creator'));
       dodo.getSubscription.mockResolvedValue({ metadata: { user_id: 'user-1', plan_id: 'creator' } } as never);
 
-      await expect(service.changePlan('user-1', 'pro')).resolves.toEqual({ plan_id: 'pro', status: 'pending' });
-      expect(dodo.changePlan).toHaveBeenCalledWith('sub_1', 'pro', { user_id: 'user-1', plan_id: 'creator' });
+      await expect(service.changePlan('user-1', 'pro')).resolves.toEqual({ plan_id: 'pro', billing_period: 'monthly', status: 'pending' });
+      expect(dodo.changePlan).toHaveBeenCalledWith('sub_1', 'pro', { user_id: 'user-1', plan_id: 'creator' }, 'monthly');
+    });
+
+    it('switches the same plan from monthly to yearly', async () => {
+      supabaseMock.__client.from.mockImplementation(() => activeRow('pro'));
+      dodo.getSubscription.mockResolvedValue({ metadata: { user_id: 'user-1', plan_id: 'pro', billing_period: 'monthly' } } as never);
+
+      await expect(service.changePlan('user-1', 'pro', 'yearly')).resolves.toEqual({ plan_id: 'pro', billing_period: 'yearly', status: 'pending' });
+      expect(dodo.hasProduct).toHaveBeenCalledWith('pro', 'yearly');
     });
 
     it('rejects switching to the same plan, a free/unknown plan, or with no subscription', async () => {
       supabaseMock.__client.from.mockImplementation(() => activeRow('pro'));
-      await expect(service.changePlan('user-1', 'pro')).rejects.toThrow("You're already on the Pro plan.");
+      dodo.getSubscription.mockResolvedValue({ metadata: { user_id: 'user-1', plan_id: 'pro', billing_period: 'yearly' } } as never);
+      await expect(service.changePlan('user-1', 'pro', 'yearly')).rejects.toThrow("You're already on the Pro plan.");
       await expect(service.changePlan('user-1', 'starter')).rejects.toThrow('Unknown plan');
 
       supabaseMock.__client.from.mockImplementation(() => createQueryBuilderMock({ data: null, error: null }));
@@ -166,7 +175,7 @@ describe('SubscriptionsService', () => {
 
     it('refuses checkout when no Dodo product is configured for the plan', async () => {
       dodo.hasProduct.mockReturnValue(false);
-      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'pro')).rejects.toThrow("Pro checkout isn't available yet");
+      await expect(service.createCheckoutUrl('user-1', 'a@b.com', 'pro', 'monthly')).rejects.toThrow("Pro checkout isn't available yet");
       expect(dodo.hasProduct).toHaveBeenCalledWith('pro', 'monthly');
     });
 
@@ -178,10 +187,10 @@ describe('SubscriptionsService', () => {
 
       expect(dodo.createCheckoutUrl).toHaveBeenCalledWith({
         planId: 'creator',
-        billingPeriod: 'monthly',
+        billingPeriod: 'yearly',
         userId: 'user-1',
         email: 'jane@example.com',
-        successUrl: 'https://app.autoclipr.com/dashboard?payment=success&plan=creator&billing=monthly',
+        successUrl: 'https://app.autoclipr.com/dashboard?payment=success&plan=creator&billing=yearly',
         cancelUrl: 'https://app.autoclipr.com/pricing?payment=cancelled',
         discountCode: null,
         trialPeriodDays: null,

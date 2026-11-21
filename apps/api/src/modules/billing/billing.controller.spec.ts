@@ -99,7 +99,7 @@ describe('BillingController', () => {
     it('switches the caller\'s plan', async () => {
       (subscriptions as any).changePlan = jest.fn().mockResolvedValue({ plan_id: 'pro', status: 'pending' });
       const result = await controller.changePlan(user, { planId: 'pro' });
-      expect((subscriptions as any).changePlan).toHaveBeenCalledWith(user.sub, 'pro');
+      expect((subscriptions as any).changePlan).toHaveBeenCalledWith(user.sub, 'pro', 'monthly');
       expect(result).toEqual({ success: true, data: { plan_id: 'pro', status: 'pending' }, meta: undefined });
     });
   });
@@ -115,12 +115,12 @@ describe('BillingController', () => {
       expect(result).toEqual({ success: true, data: { url: 'https://pay.dodo/session' }, meta: undefined });
     });
 
-    it('defaults billingPeriod to yearly when omitted', async () => {
+    it('defaults billingPeriod to monthly when omitted', async () => {
       subscriptions.createCheckoutUrl.mockResolvedValue('https://pay.dodo/session');
 
       await controller.checkout(user, { planId: 'creator' } as any);
 
-      expect(subscriptions.createCheckoutUrl).toHaveBeenCalledWith('user-1', 'jane@example.com', 'creator', 'yearly', undefined, undefined);
+      expect(subscriptions.createCheckoutUrl).toHaveBeenCalledWith('user-1', 'jane@example.com', 'creator', 'monthly', undefined, undefined);
     });
 
     it('falls back to the profile email when the JWT has none', async () => {
@@ -305,7 +305,7 @@ describe('BillingController', () => {
       expect(result).toEqual({ success: true, data: { activated: true }, meta: undefined });
     });
 
-    it('defaults billingPeriod to yearly when omitted', async () => {
+    it('defaults billingPeriod to monthly when omitted', async () => {
       subscriptions.activatePlanForUser.mockResolvedValue(undefined);
 
       await controller.activatePlan(user, { planId: 'creator' } as any);

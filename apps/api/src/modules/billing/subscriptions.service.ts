@@ -136,7 +136,7 @@ export class SubscriptionsService {
     userId: string,
     email: string,
     planId: string,
-    billingPeriod: 'monthly' | 'yearly' = 'yearly',
+    billingPeriod: 'monthly' | 'yearly' = 'monthly',
     couponCode?: string,
     country?: string,
   ): Promise<string> {
@@ -145,9 +145,7 @@ export class SubscriptionsService {
     if (!PAID_PLAN_IDS.includes(planId as PlanId)) {
       throw new BadRequestException('Unknown plan');
     }
-    // New subscriptions are monthly only; yearly products stay for renewals
-    // of subscriptions that already exist.
-    billingPeriod = 'monthly';
+    billingPeriod = billingPeriod === 'yearly' ? 'yearly' : 'monthly';
     if (!this.dodo.hasProduct(planId, billingPeriod)) {
       throw new BadRequestException(`${PLANS[planId as PlanId].name} checkout isn't available yet. Please try again later.`);
     }
@@ -206,26 +204,31 @@ export class SubscriptionsService {
    * Switch an active subscription to another paid plan in place (prorated by
    * Dodo). Entitlements change when the plan_changed webhook arrives.
    */
-  async changePlan(userId: string, planId: string): Promise<{ plan_id: string; status: 'pending' }> {
+  async changePlan(
+    userId: string,
+    planId: string,
+    billingPeriod: 'monthly' | 'yearly' = 'monthly',
+  ): Promise<{ plan_id: string; billing_period: 'monthly' | 'yearly'; status: 'pending' }> {
     if (!PAID_PLAN_IDS.includes(planId as PlanId)) throw new BadRequestException('Unknown plan');
     const current = await this.activePaidSubscription(userId);
     if (!current?.stripe_subscription_id) {
       throw new BadRequestException('No active subscription to change. Choose a plan to subscribe.');
     }
-    if (current.plan_id === planId) {
-      throw new ConflictException(`You're already on the ${PLANS[planId as PlanId].name} plan.`);
-    }
-    if (!this.dodo.hasProduct(planId, 'monthly')) {
-      throw new BadRequestException(`${PLANS[planId as PlanId].name} isn't available yet. Please try again later.`);
-    }
-
     const sub = await this.dodo.getSubscription(current.stripe_subscription_id);
     const metadata = (sub?.metadata ?? {}) as Record<string, string>;
     if (metadata.user_id !== userId) throw new ForbiddenException('This subscription does not belong to your account.');
+    const currentPeriod = metadata.billing_period === 'yearly' ? 'yearly' : 'monthly';
+    if (current.plan_id === planId && currentPeriod === billingPeriod) {
+      throw new ConflictException(`You're already on the ${PLANS[planId as PlanId].name} plan.`);
+    }
+    if (!this.dodo.hasProduct(planId, billingPeriod)) {
+      throw new BadRequestException(`${PLANS[planId as PlanId].name} isn't available yet. Please try again later.`);
+    }
 
-    await this.dodo.changePlan(current.stripe_subscription_id, planId, metadata);
-    this.logger.log(`changePlan: user=${userId} ${current.plan_id} → ${planId}`);
-    return { plan_id: planId, status: 'pending' };
+
+    await this.dodo.changePlan(current.stripe_subscription_id, planId, metadata, billingPeriod);
+    this.logger.log(`changePlan: user=${userId} ${current.plan_id}/${currentPeriod} → ${planId}/${billingPeriod}`);
+    return { plan_id: planId, billing_period: billingPeriod, status: 'pending' };
   }
 
   /**

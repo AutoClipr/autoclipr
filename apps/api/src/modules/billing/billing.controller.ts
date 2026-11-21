@@ -51,6 +51,10 @@ class ChangePlanDto {
   @IsString()
   @Length(2, 20)
   planId!: string;
+
+  @IsOptional()
+  @IsIn(['monthly', 'yearly'])
+  billingPeriod?: 'monthly' | 'yearly';
 }
 
 class ActivatePlanDto {
@@ -111,6 +115,7 @@ export class BillingController {
           currency: p.currency,
           price_cents: p.monthlyPaise,
           billing_interval: 'monthly',
+          yearly_price_cents: p.yearlyPaise,
           credits_per_month: p.creditsPerMonth,
           estimated_clips: p.estimatedClips,
           max_video_seconds: p.maxVideoSeconds,
@@ -119,6 +124,7 @@ export class BillingController {
           scheduling: p.scheduling,
           analytics: p.analytics,
           checkout_available: p.monthlyPaise === 0 || this.dodo.hasProduct(id, 'monthly'),
+          checkout_available_yearly: p.monthlyPaise > 0 && p.yearlyPaise != null && this.dodo.hasProduct(id, 'yearly'),
           features: features.get(id) ?? [],
         };
       }),
@@ -142,7 +148,7 @@ export class BillingController {
         throw new BadRequestException('Could not determine user email for checkout');
       }
     }
-    const url = await this.subscriptions.createCheckoutUrl(user.sub, email, dto.planId, dto.billingPeriod ?? 'yearly', dto.couponCode, dto.country);
+    const url = await this.subscriptions.createCheckoutUrl(user.sub, email, dto.planId, dto.billingPeriod ?? 'monthly', dto.couponCode, dto.country);
     return ApiResponse.ok({ url });
   }
 
@@ -152,7 +158,7 @@ export class BillingController {
   @ApiBearerAuth('JWT')
   @UseGuards(JwtAuthGuard)
   async changePlan(@CurrentUser() user: AuthUser, @Body() dto: ChangePlanDto) {
-    const data = await this.subscriptions.changePlan(user.sub, dto.planId);
+    const data = await this.subscriptions.changePlan(user.sub, dto.planId, dto.billingPeriod ?? 'monthly');
     return ApiResponse.ok(data);
   }
 

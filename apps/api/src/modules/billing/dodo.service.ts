@@ -191,16 +191,21 @@ export class DodoService {
   }
 
   /**
-   * Move an existing subscription to another plan's monthly product, charging
+   * Move an existing subscription to another plan/period product, charging
    * or crediting the prorated difference now. The metadata is updated first so
    * the subscription.plan_changed webhook (which reads metadata.plan_id)
    * grants the new plan's entitlements.
    */
-  async changePlan(subscriptionId: string, planId: string, existingMetadata: Record<string, string> = {}) {
-    const productId = PRODUCT_IDS[planId]?.monthly;
-    if (!productId) throw new Error(`No product configured for ${planId} monthly`);
+  async changePlan(
+    subscriptionId: string,
+    planId: string,
+    existingMetadata: Record<string, string> = {},
+    billingPeriod: 'monthly' | 'yearly' = 'monthly',
+  ) {
+    const productId = PRODUCT_IDS[planId]?.[billingPeriod];
+    if (!productId) throw new Error(`No product configured for ${planId} ${billingPeriod}`);
     await this.client.subscriptions.update(subscriptionId, {
-      metadata: { ...existingMetadata, plan_id: planId, billing_period: 'monthly' },
+      metadata: { ...existingMetadata, plan_id: planId, billing_period: billingPeriod },
     });
     try {
       await this.client.subscriptions.changePlan(subscriptionId, {

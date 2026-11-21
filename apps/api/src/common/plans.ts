@@ -20,11 +20,8 @@ export interface PlanConfig {
   currency: 'INR';
   /** Monthly price in paise. 0 = free. */
   monthlyPaise: number;
-  /**
-   * Yearly price in paise for subscriptions that already exist on a yearly
-   * product. New yearly checkouts are not offered (null = not sold yearly).
-   */
-  legacyYearlyPaise: number | null;
+  /** Yearly price in paise (the Dodo yearly product's price). null = no yearly option. */
+  yearlyPaise: number | null;
   creditsPerMonth: number;
   /** Shown as an estimate only — credits are the real limit. */
   estimatedClips: [number, number];
@@ -45,7 +42,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     name: 'Starter',
     currency: 'INR',
     monthlyPaise: 0,
-    legacyYearlyPaise: null,
+    yearlyPaise: null,
     creditsPerMonth: 30,
     estimatedClips: [6, 10],
     maxVideoSeconds: 5 * 60,
@@ -59,7 +56,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     name: 'Creator',
     currency: 'INR',
     monthlyPaise: 59_900,
-    legacyYearlyPaise: 418_800,
+    yearlyPaise: 718_800,
     creditsPerMonth: 200,
     estimatedClips: [60, 80],
     maxVideoSeconds: 10 * 60,
@@ -73,7 +70,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     name: 'Pro',
     currency: 'INR',
     monthlyPaise: 99_900,
-    legacyYearlyPaise: null,
+    yearlyPaise: 1_198_800,
     creditsPerMonth: 500,
     estimatedClips: [120, 150],
     maxVideoSeconds: 15 * 60,
@@ -87,7 +84,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     name: 'Business',
     currency: 'INR',
     monthlyPaise: 199_900,
-    legacyYearlyPaise: 2_098_800,
+    yearlyPaise: 2_098_800,
     creditsPerMonth: 1200,
     estimatedClips: [240, 300],
     maxVideoSeconds: 30 * 60,
@@ -111,7 +108,7 @@ export function planFor(tier: string | null | undefined): PlanConfig {
 /** Price in paise for a plan and billing period (yearly falls back to 12× monthly). */
 export function planPricePaise(planId: string, period: 'monthly' | 'yearly'): number {
   const p = planFor(planId);
-  if (period === 'yearly') return p.legacyYearlyPaise ?? p.monthlyPaise * 12;
+  if (period === 'yearly') return p.yearlyPaise ?? p.monthlyPaise * 12;
   return p.monthlyPaise;
 }
 

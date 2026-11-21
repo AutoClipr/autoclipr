@@ -14,6 +14,7 @@ import {
   formatMinutes,
   mergeLivePlans,
   isPaidTier,
+  yearlySavingPct,
   type PlanId,
   type PlanNumbers,
 } from "@/lib/plans";
@@ -75,15 +76,17 @@ async function detectCheckoutCountry(): Promise<string | undefined> {
   }
 }
 
-/** Starts a monthly Dodo checkout. Throws with the API's message on failure. */
-async function startCheckout(accessToken: string, planId: string, couponCode?: string) {
+type Period = "monthly" | "yearly";
+
+/** Starts a Dodo checkout. Throws with the API's message on failure. */
+async function startCheckout(accessToken: string, planId: string, period: Period, couponCode?: string) {
   const country = await detectCheckoutCountry();
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/billing/checkout`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({
       planId,
-      billingPeriod: "monthly",
+      billingPeriod: period,
       ...(couponCode ? { couponCode } : {}),
       ...(country ? { country } : {}),
     }),
@@ -95,11 +98,11 @@ async function startCheckout(accessToken: string, planId: string, couponCode?: s
 }
 
 /** Moves an existing subscription to another plan (prorated by Dodo). */
-async function switchPlan(accessToken: string, planId: string) {
+async function switchPlan(accessToken: string, planId: string, period: Period) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/billing/subscription/change-plan`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ planId }),
+    body: JSON.stringify({ planId, billingPeriod: period }),
   });
   const body = await res.json().catch(() => null);
   if (!res.ok || !body?.success) throw new Error(body?.error?.message ?? body?.message ?? "Could not switch plan. Please try again.");
@@ -107,16 +110,31 @@ async function switchPlan(accessToken: string, planId: string) {
 
 /* ─── Card ──────────────────────────────────────────────────────────────── */
 
-function PricingCard({ plan, coupon, currentTier }: { plan: PlanNumbers; coupon: AppliedCoupon | null; currentTier?: string | null }) {
+function PricingCard({
+  plan,
+  coupon,
+  currentTier,
+  period,
+}: {
+  plan: PlanNumbers;
+  coupon: AppliedCoupon | null;
+  currentTier?: string | null;
+  period: Period;
+}) {
   const copy = COPY[plan.id];
   const ac = ACCENT[copy.accent];
   const Icon = copy.icon;
   const paid = plan.price_cents > 0;
   const planCoupon = coupon && paid && couponAppliesTo(coupon, plan.id) ? coupon : null;
   const percentOff = planCoupon?.type === "percentage" ? Math.min(planCoupon.value, 100) : 0;
-  const shownPaise = percentOff ? Math.round(plan.price_cents * (100 - percentOff)) / 100 : plan.price_cents;
+  const yearly = period === "yearly" && paid && plan.yearly_price_cents != null;
+  // Yearly shows the per-month equivalent; the total is listed underneath.
+  const listPaise = yearly ? Math.round(plan.yearly_price_cents! / 12) : plan.price_cents;
+  const shownPaise = percentOff ? Math.round(listPaise * (100 - percentOff)) / 100 : listPaise;
+  const yearlyTotal = yearly ? (percentOff ? Math.round(plan.yearly_price_cents! * (100 - percentOff)) / 100 : plan.yearly_price_cents!) : 0;
+  const saving = yearly ? yearlySavingPct(plan) : 0;
   const isCurrent = currentTier === plan.id || (currentTier === "free" && plan.id === "starter");
-  const unavailable = paid && !plan.checkout_available;
+  const unavailable = paid && !(period === "yearly" ? plan.checkout_available_yearly : plan.checkout_available);
   // A paid subscriber picking another paid plan switches in place.
   const isSwitch = paid && !!currentTier && isPaidTier(currentTier) && !isCurrent;
   const [loading, setLoading] = useState(false);
@@ -133,20 +151,20 @@ function PricingCard({ plan, coupon, currentTier }: { plan: PlanNumbers; coupon:
     try {
       const { data: { session } } = await createClient().auth.getSession();
       if (!session) {
-        const back = `/pricing?checkout=${plan.id}${planCoupon ? `&coupon=${encodeURIComponent(planCoupon.code)}` : ""}`;
+        const back = `/pricing?checkout=${plan.id}&billing=${period}${planCoupon ? `&coupon=${encodeURIComponent(planCoupon.code)}` : ""}`;
         openAuth("login", back);
         return;
       }
       if (isSwitch) {
         const ok = window.confirm(
-          `Switch to ${plan.name} for ${formatInr(plan.price_cents)}/month? The prorated difference is charged or credited now.`,
+          `Switch to ${plan.name} (${period === "yearly" ? `${formatInr(plan.yearly_price_cents ?? 0)}/year` : `${formatInr(plan.price_cents)}/month`})? The prorated difference is charged or credited now.`,
         );
         if (!ok) return;
-        await switchPlan(session.access_token, plan.id);
+        await switchPlan(session.access_token, plan.id, period);
         setSwitched(true);
         return;
       }
-      await startCheckout(session.access_token, plan.id, planCoupon?.code);
+      await startCheckout(session.access_token, plan.id, period, planCoupon?.code);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -197,7 +215,7 @@ function PricingCard({ plan, coupon, currentTier }: { plan: PlanNumbers; coupon:
         <div className="mt-5">
           {percentOff > 0 && (
             <div className="mb-1 flex items-center gap-2">
-              <span className="text-base font-semibold text-white/35 line-through">{formatInr(plan.price_cents)}</span>
+              <span className="text-base font-semibold text-white/35 line-through">{formatInr(listPaise)}</span>
               <span className="rounded-full border border-[#54D045]/30 bg-[#54D045]/15 px-2 py-0.5 text-[10px] font-semibold text-[#a6ec9c]">
                 {planCoupon!.code} · {percentOff}% off
               </span>
@@ -207,7 +225,18 @@ function PricingCard({ plan, coupon, currentTier }: { plan: PlanNumbers; coupon:
             <span className="text-5xl font-extrabold tabular-nums tracking-tight text-white">{formatInr(shownPaise)}</span>
             {paid && <span className="mb-1.5 text-sm text-[#9299A8]">/month</span>}
           </p>
-          <p className="mt-1 text-xs text-white/40">{paid ? "Billed monthly · Cancel anytime" : "Free forever · No credit card"}</p>
+          {yearly ? (
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/40">
+              {formatInr(yearlyTotal)} billed yearly
+              {saving > 0 && (
+                <span className="rounded-full border border-[#54D045]/25 bg-[#54D045]/15 px-2 py-0.5 text-[10px] font-semibold text-[#a6ec9c]">
+                  Save {saving}%
+                </span>
+              )}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-white/40">{paid ? "Billed monthly · Cancel anytime" : "Free forever · No credit card"}</p>
+          )}
           {coupon && paid && !planCoupon && <p className="mt-1 text-xs text-white/35">{coupon.code} doesn&apos;t apply to this plan</p>}
         </div>
       </div>
@@ -294,7 +323,9 @@ export function PricingSection({ showHeader = true, plans: initialPlans, current
   const [currentTier, setCurrentTier] = useState<string | null>(tierProp ?? null);
   const [plans, setPlans] = useState<PlanNumbers[]>(() => (initialPlans ? mergeLivePlans(initialPlans) : FALLBACK_PLANS));
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const [period, setPeriod] = useState<Period>("monthly");
   const searchParams = useSearchParams();
+  const maxSaving = Math.max(0, ...plans.map(yearlySavingPct));
   const autoCheckoutTriggered = useRef(false);
 
   useEffect(() => {
@@ -325,7 +356,8 @@ export function PricingSection({ showHeader = true, plans: initialPlans, current
     (async () => {
       const { data: { session } } = await createClient().auth.getSession();
       if (!session) return;
-      await startCheckout(session.access_token, checkoutPlan, searchParams?.get("coupon") ?? undefined).catch(() => {});
+      const billing: Period = searchParams?.get("billing") === "yearly" ? "yearly" : "monthly";
+      await startCheckout(session.access_token, checkoutPlan, billing, searchParams?.get("coupon") ?? undefined).catch(() => {});
     })();
   }, [searchParams]);
 
@@ -344,11 +376,44 @@ export function PricingSection({ showHeader = true, plans: initialPlans, current
           </Reveal>
         )}
 
-        <CouponField billingPeriod="monthly" applied={coupon} onApply={setCoupon} onClear={() => setCoupon(null)} />
+        {/* Billing period */}
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <div role="radiogroup" aria-label="Billing period" className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+            {(["monthly", "yearly"] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={period === p}
+                onClick={() => setPeriod(p)}
+                className={cn(
+                  "flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#54D045]/60",
+                  period === p ? "bg-white text-[#070B12] shadow" : "text-[#9299A8] hover:text-white",
+                )}
+              >
+                {p === "monthly" ? "Monthly" : "Yearly"}
+                {p === "yearly" && maxSaving > 0 && (
+                  <span className={cn("rounded-full px-1.5 py-px text-[10px] font-bold", period === p ? "bg-[#54D045] text-[#070B12]" : "bg-[#54D045]/20 text-[#a6ec9c]")}>
+                    −{maxSaving}%
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[#9299A8]">
+            {period === "yearly"
+              ? maxSaving > 0
+                ? `Billed yearly · Save up to ${maxSaving}% · Cancel anytime`
+                : "Billed yearly · Cancel anytime"
+              : "Billed monthly · Cancel anytime"}
+          </p>
+        </div>
+
+        <CouponField billingPeriod={period} applied={coupon} onApply={setCoupon} onClear={() => setCoupon(null)} />
 
         <Stagger className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4" amount={0.1}>
           {plans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} coupon={coupon} currentTier={currentTier} />
+            <PricingCard key={plan.id} plan={plan} coupon={coupon} currentTier={currentTier} period={period} />
           ))}
         </Stagger>
 
