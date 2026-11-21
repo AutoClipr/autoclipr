@@ -20,6 +20,7 @@ import {
   X,
   Youtube,
   Zap,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoIcon } from "@/components/ui/logo-icon";
@@ -50,7 +51,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Publish & grow",
     items: [
       { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
-      { href: "/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/analytics", label: "Analytics", icon: BarChart3, paid: true },
     ],
   },
   {
@@ -256,10 +257,11 @@ export function DashboardSidebar({
                           {locked && (
                             <span
                               className={cn(
-                                "ml-auto rounded-md border border-amber-400/25 bg-amber-400/10 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-300",
+                                "ml-auto inline-flex items-center gap-1 rounded-md border border-amber-400/25 bg-amber-400/10 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-300",
                                 collapsed && "lg:hidden",
                               )}
                             >
+                              <Crown className="h-3 w-3" aria-hidden />
                               Pro
                             </span>
                           )}
