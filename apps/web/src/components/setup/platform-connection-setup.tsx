@@ -169,7 +169,17 @@ async function accessToken(): Promise<string | null> {
   return session?.access_token ?? null;
 }
 
-export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial" | "dashboard" }) {
+/** Where the OAuth round-trip should land when it started from the Social accounts page. */
+const OAUTH_RETURN_KEY = "autoclipr_oauth_return";
+
+export function PlatformConnectionSetup({
+  mode = "dashboard",
+  embedded = false,
+}: {
+  mode?: "trial" | "dashboard";
+  /** Inside the dashboard (Social accounts page): no onboarding footer. */
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loading: regionLoading, banned: bannedPlatforms } = usePlatformAvailability();
@@ -205,6 +215,17 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
 
   // Returning from an OAuth redirect.
   useEffect(() => {
+    if (!embedded && searchParams.get("from") === "oauth") {
+      let back: string | null = null;
+      try {
+        back = sessionStorage.getItem(OAUTH_RETURN_KEY);
+        sessionStorage.removeItem(OAUTH_RETURN_KEY);
+      } catch {}
+      if (back) {
+        router.replace(`${back}?${searchParams.toString()}`);
+        return;
+      }
+    }
     const oauthStatus = searchParams.get("status");
     const platform = searchParams.get("platform");
     const name = platforms.find((p) => p.id === platform)?.name ?? "The platform";
@@ -218,7 +239,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
         text: `${name} authorization didn't complete. Please try again — use a business or creator account if it keeps failing.`,
       });
     }
-  }, [searchParams, refresh]);
+  }, [searchParams, refresh, embedded, router]);
 
   async function confirmConnect() {
     if (!pendingPlatform) return;
@@ -241,6 +262,10 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
         setPlatformRows((prev) => [...prev.filter((p) => p.platform !== target.id), res.data!]);
 
         if ((target.id === "youtube" || target.id === "instagram") && res.data.oauth_url) {
+          try {
+            if (embedded) sessionStorage.setItem(OAUTH_RETURN_KEY, "/social-accounts");
+            else sessionStorage.removeItem(OAUTH_RETURN_KEY);
+          } catch {}
           window.location.href = res.data.oauth_url;
           return;
         }
@@ -463,6 +488,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
       </div>
 
       {/* Footer actions */}
+      {!embedded && (<>
       <div className="relative mt-10 flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
         {isTrial ? (
           <Button variant="outline" asChild className="h-11 rounded-full border-[#253244] px-5">
@@ -488,6 +514,7 @@ export function PlatformConnectionSetup({ mode = "dashboard" }: { mode?: "trial"
           Use the <span className="font-medium text-[#F8FAFC]">Post</span> button on any clip to publish it.
         </p>
       )}
+      </>)}
 
       {/* Connect dialog */}
       {pendingPlatform && (

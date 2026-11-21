@@ -22,6 +22,7 @@ import {
   Zap,
   Crown,
   Palette,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoIcon } from "@/components/ui/logo-icon";
@@ -54,6 +55,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/scheduler", label: "Content Scheduler", icon: CalendarDays, paid: true },
       { href: "/analytics", label: "Analytics", icon: BarChart3, paid: true },
+      { href: "/social-accounts", label: "Social accounts", icon: Link2 },
     ],
   },
   {
