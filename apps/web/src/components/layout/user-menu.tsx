@@ -171,7 +171,7 @@ export function UserMenu({ email, phone, fullName, avatarUrl, plan, credits }: U
             </div>
             <DropdownMenuItem asChild className="cursor-pointer rounded-md p-0 focus:bg-transparent data-[highlighted]:bg-transparent">
               <Link
-                href="/subscription"
+                href="/pricing"
                 onClick={() => beginNavigationLoading()}
                 className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[#8fe383] hover:bg-[#54D045]/10 focus-visible:bg-[#54D045]/10"
               >
