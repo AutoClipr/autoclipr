@@ -82,13 +82,13 @@ describe('CouponsService', () => {
     it('accepts a live coupon and values the discount against the plan price', async () => {
       const result = await service.validate('CREATOR25', 'creator', 'yearly', 'u1');
 
-      // Creator yearly is ₹7,188 = 718800 paise; 25% = 179700.
+      // Creator yearly is ₹6,252 = 625200 paise; 25% = 156300.
       expect(result).toMatchObject({
         id: 'c1',
         code: 'CREATOR25',
         type: 'percentage',
         value: 25,
-        discountPaise: 179_700,
+        discountPaise: 156_300,
         description: '25% off',
       });
     });

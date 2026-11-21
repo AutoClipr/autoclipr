@@ -21,8 +21,8 @@ describe('plans config', () => {
   });
 
   it('prices yearly from the configured yearly product', () => {
-    expect(planPricePaise('creator', 'yearly')).toBe(718_800);
-    expect(planPricePaise('pro', 'yearly')).toBe(1_198_800);
+    expect(planPricePaise('creator', 'yearly')).toBe(625_200);
+    expect(planPricePaise('pro', 'yearly')).toBe(1_042_800);
     expect(planPricePaise('business', 'yearly')).toBe(2_098_800);
     expect(planPricePaise('starter', 'yearly')).toBe(0);
     expect(planPricePaise('pro', 'monthly')).toBe(99_900);
