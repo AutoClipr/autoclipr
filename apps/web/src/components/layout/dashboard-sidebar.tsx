@@ -21,6 +21,7 @@ import {
   Youtube,
   Zap,
   Crown,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoIcon } from "@/components/ui/logo-icon";
@@ -45,6 +46,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
       { href: "/create", label: "Create", icon: Sparkles, match: (p) => p === "/create" || p === "/upload" },
       { href: "/channels", label: "Channels", icon: Youtube },
       { href: "/clips", label: "My Clips", icon: Film },
+      { href: "/brand-kit", label: "Brand Kit", icon: Palette, paid: true },
     ],
   },
   {

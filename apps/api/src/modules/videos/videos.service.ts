@@ -14,6 +14,7 @@ import { ImportUrlDto } from './dto/import-url.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
 import { getSourceLabel, parseVideoUrl } from './utils/video-url.util';
 import { formatMinutes, planFor } from '../../common/plans';
+import { BrandKitsService } from '../brand-kits/brand-kits.service';
 
 @Injectable()
 export class VideosService {
@@ -28,6 +29,7 @@ export class VideosService {
     private readonly usersRepo: UsersRepository,
     private readonly monitoring: MonitoringService,
     private readonly config: ConfigService,
+    private readonly brandKits: BrandKitsService,
   ) {}
 
   async initUpload(userId: string, dto: InitUploadDto) {
@@ -90,6 +92,8 @@ export class VideosService {
     }
 
     const limits = await this.planLimits(userId);
+    // Before charging: an unknown/foreign kit or a Starter plan fails here.
+    const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
     const clipCount = dto.clip_count ?? 10;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
     const totalCost = costPerClip * clipCount;
@@ -148,6 +152,7 @@ export class VideosService {
           auto_publish: dto.auto_publish ?? false,
           credit_cost: totalCost,
           ...limits.payload,
+          ...(brand ? { brand } : {}),
         },
       });
     } catch (err) {
@@ -289,6 +294,7 @@ export class VideosService {
     if (dto.source_duration_seconds != null && dto.source_duration_seconds > limits.maxVideoSeconds + 5) {
       throw new BadRequestException(limits.tooLongMessage);
     }
+    const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
 
     const clipCount = dto.clip_count ?? 5;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
@@ -324,6 +330,7 @@ export class VideosService {
           export_quality: dto.export_quality ?? 'hd',
           credit_cost: totalCost,
           ...limits.payload,
+          ...(brand ? { brand } : {}),
         },
       });
     } catch (err) {

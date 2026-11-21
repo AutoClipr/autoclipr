@@ -6,6 +6,7 @@ import {
   IsString,
   IsUrl,
   Max,
+  Matches,
   Min,
 } from 'class-validator';
 import { CAPTION_STYLE_IDS } from './caption-styles';
@@ -51,4 +52,10 @@ export class ImportUrlDto {
 
   @IsOptional()
   auto_publish?: boolean;
+
+  /** A brand kit to apply. Resolved and checked server-side (plan + ownership). */
+  @IsOptional()
+  @IsString()
+  @Matches(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|preset:[a-z0-9-]{1,40})$/i)
+  brand_kit_id?: string;
 }

@@ -9,7 +9,10 @@ import { CaptionService } from './caption.service';
 import { FfmpegService } from './ffmpeg.service';
 import { HookAnalysisService } from './hook-analysis.service';
 import { TempFilesService } from './temp-files.service';
-import type { PipelineStep, UrlPipelinePayload, ViralMoment } from './types';
+import type { BrandRenderConfig, PipelineStep, UrlPipelinePayload, ViralMoment } from './types';
+import { exportSize, type LogoOverlay } from './ffmpeg.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { WorkersStorageService } from './storage.service';
 import { WhisperService } from './whisper.service';
 import { YtdlpService } from './ytdlp.service';
@@ -51,6 +54,7 @@ export class UrlPipelineService {
     const exportQuality = data.export_quality ?? 'hd';
     const maxVideoSeconds = typeof data.max_video_seconds === 'number' ? data.max_video_seconds : 0;
     const watermark = data.watermark === true;
+    const brand = data.brand ?? null;
 
     const userRes = await this.db.client.query(
       `SELECT user_id, title, storage_path, source_url FROM videos WHERE id = $1`,
@@ -247,6 +251,8 @@ export class UrlPipelineService {
       steps[2].status = 'active';
       await this.updateProgress(jobId, 50, 3, steps, analysis);
 
+      const brandAssets = brand ? await this.loadBrandAssets(brand, workDir, plog) : null;
+
       const clipIds: string[] = [];
       for (let i = 0; i < moments.length; i++) {
         const moment = moments[i];
@@ -263,6 +269,7 @@ export class UrlPipelineService {
           platforms,
           exportQuality,
           watermark,
+          brand: brandAssets,
         });
         clipIds.push(clipId);
 
@@ -371,6 +378,38 @@ export class UrlPipelineService {
     );
   }
 
+  /**
+   * Download a brand kit's logo / intro / outro once per job. A missing or
+   * broken asset is skipped (logged), never fatal: the clips still render.
+   */
+  private async loadBrandAssets(brand: BrandRenderConfig, workDir: string, plog: PipelineLogger): Promise<BrandAssets> {
+    const fetch = async (p: string | null, name: string) => {
+      if (!p) return null;
+      const dest = this.temp.jobPath(workDir, `brand_${name}${path.extname(p) || ''}`);
+      try {
+        await this.storage.downloadToFile(this.storage.bucketVideos(), p, dest);
+        return dest;
+      } catch (err) {
+        this.logger.warn(`Brand ${name} unavailable (${p}): ${(err as Error).message}`);
+        return null;
+      }
+    };
+    const [logoFile, intro, outro] = await Promise.all([
+      fetch(brand.logo_path, 'logo'),
+      fetch(brand.intro_path, 'intro'),
+      fetch(brand.outro_path, 'outro'),
+    ]);
+    plog.stepStart('brand_kit', { kit: brand.kit_id, logo: !!logoFile, intro: !!intro, outro: !!outro });
+    return {
+      logo: logoFile ? { path: logoFile, ...brand.logo } : null,
+      intro,
+      outro,
+      maxBumperSeconds: brand.max_bumper_seconds || 15,
+      captionStyle: brand.caption_style,
+      captionOverrides: brand.captions,
+    };
+  }
+
   private async renderAndUploadClip(opts: {
     workDir: string;
     userId: string;
@@ -384,6 +423,7 @@ export class UrlPipelineService {
     platforms: string[];
     exportQuality: string;
     watermark: boolean;
+    brand?: BrandAssets | null;
   }): Promise<string> {
     const {
       workDir,
@@ -412,6 +452,7 @@ export class UrlPipelineService {
       moment.end_ms,
       exportQuality,
       opts.watermark,
+      opts.brand?.logo ?? null,
     );
 
     // Plain SRT is uploaded as the clip's downloadable subtitle file.
@@ -427,10 +468,31 @@ export class UrlPipelineService {
       moment.start_ms,
       moment.end_ms,
       captionsPath,
-      captionStyle,
+      opts.brand?.captionStyle ?? captionStyle,
+      opts.brand?.captionOverrides,
     );
 
-    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, captionStyle);
+    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle);
+
+    // Brand intro/outro. Best effort: a bad bumper file must not cost the user
+    // the clip, so on failure the clip ships without it.
+    if (opts.brand && (opts.brand.intro || opts.brand.outro)) {
+      const bumpered = this.temp.jobPath(workDir, `clip_${index}_branded.mp4`);
+      try {
+        const [bw, bh] = exportSize(exportQuality);
+        await this.ffmpeg.addBumpers(captionedClip, bumpered, {
+          intro: opts.brand.intro,
+          outro: opts.brand.outro,
+          width: bw,
+          height: bh,
+          maxBumperSeconds: opts.brand.maxBumperSeconds,
+          workDir,
+        });
+        await fs.rename(bumpered, captionedClip);
+      } catch (err) {
+        this.logger.warn(`Intro/outro skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
 
     const durationSec = Math.round((moment.end_ms - moment.start_ms) / 1000);
 
@@ -609,3 +671,12 @@ export class UrlPipelineService {
     );
   }
 }
+
+type BrandAssets = {
+  logo: LogoOverlay | null;
+  intro: string | null;
+  outro: string | null;
+  maxBumperSeconds: number;
+  captionStyle: string | null;
+  captionOverrides: import('./caption-styles').CaptionOverrides;
+};

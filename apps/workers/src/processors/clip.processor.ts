@@ -303,6 +303,7 @@ export class ClipProcessor extends WorkerHost {
         ...(typeof data.credit_cost === 'number' ? { credit_cost: data.credit_cost } : {}),
         ...(typeof data.max_video_seconds === 'number' ? { max_video_seconds: data.max_video_seconds } : {}),
         ...(typeof data.plan_id === 'string' ? { plan_id: data.plan_id } : {}),
+        ...(data.brand && typeof data.brand === 'object' ? { brand: data.brand } : {}),
         // Missing flag (jobs queued before plans existed) → no watermark.
         watermark: data.watermark === true,
       } as UrlPipelinePayload,

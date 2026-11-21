@@ -299,6 +299,71 @@ export const CAPTION_STYLES: Record<string, CaptionStyleDef> = {
 
 export const CAPTION_STYLE_IDS = Object.keys(CAPTION_STYLES);
 
+/** Brand kit caption overrides, layered on top of a base style. All optional. */
+export type CaptionOverrides = {
+  font?: string;
+  size?: number;
+  /** #RRGGBB */
+  color?: string;
+  highlight_color?: string;
+  background_color?: string;
+  /** Opaque box behind the text. */
+  background?: boolean;
+  outline?: number;
+  shadow?: number;
+  position?: 'top' | 'middle' | 'bottom';
+  alignment?: 'left' | 'center' | 'right';
+  max_words?: number;
+};
+
+/** "#RRGGBB" → ASS "&HAABBGGRR" (alpha 00 = opaque). Null for anything else. */
+export function hexToAss(hex: string | undefined, alpha = '00'): string | null {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex ?? '');
+  if (!m) return null;
+  return `&H${alpha}${m[3]}${m[2]}${m[1]}`.toUpperCase();
+}
+
+/** ASS numpad alignment from vertical position + horizontal alignment. */
+function assAlignment(position?: string, align?: string): number {
+  const col = align === 'left' ? 1 : align === 'right' ? 3 : 2;
+  const row = position === 'top' ? 6 : position === 'middle' ? 3 : 0;
+  return col + row;
+}
+
+/**
+ * Apply brand overrides to a style. Colour overrides recolour the active-word
+ * tags too, so highlight styles follow the brand's highlight colour.
+ */
+export function applyOverrides(base: CaptionStyleDef, o?: CaptionOverrides): CaptionStyleDef & { alignment?: number } {
+  if (!o) return base;
+  const s: CaptionStyleDef & { alignment?: number } = { ...base };
+  if (o.font) s.font = o.font;
+  if (typeof o.size === 'number') s.size = o.size;
+  const primary = hexToAss(o.color);
+  if (primary) {
+    s.primary = primary;
+    if (s.mode !== 'karaoke') s.secondary = primary;
+  }
+  const highlight = hexToAss(o.highlight_color);
+  if (highlight) {
+    if (s.mode === 'karaoke') s.primary = highlight;
+    if (s.activeTags) s.activeTags = s.activeTags.replace(/\\1?c&H[0-9A-Fa-f]{6,8}&?/g, `\\c${highlight}&`);
+    else if (s.mode === 'highlight') s.activeTags = `\\c${highlight}&`;
+  }
+  if (typeof o.background === 'boolean') s.box = o.background;
+  const back = hexToAss(o.background_color, s.box ? '30' : '96');
+  if (back) s.back = back;
+  if (typeof o.outline === 'number') s.outlineWidth = o.outline;
+  if (typeof o.shadow === 'number') s.shadow = o.shadow;
+  if (typeof o.max_words === 'number' && o.max_words > 0) s.wordsPerChunk = Math.round(o.max_words);
+  if (o.position || o.alignment) {
+    s.alignment = assAlignment(o.position, o.alignment);
+    if (o.position === 'top') s.marginV = 260;
+    if (o.position === 'middle') s.marginV = 0;
+  }
+  return s;
+}
+
 export function getCaptionStyle(id: string | undefined): CaptionStyleDef {
   return (id && CAPTION_STYLES[id]) || CAPTION_STYLES.viral;
 }
@@ -405,7 +470,7 @@ export function emojiFor(text: string, style?: CaptionStyleDef): string {
   return `{\\fnDejaVu Sans\\c&H0000E1FF&}✦${restore}`;
 }
 
-function styleLine(s: CaptionStyleDef): string {
+function styleLine(s: CaptionStyleDef & { alignment?: number }): string {
   const bool = (b?: boolean) => (b ? -1 : 0);
   return [
     'Default',
@@ -426,7 +491,7 @@ function styleLine(s: CaptionStyleDef): string {
     s.box ? 3 : 1,
     s.outlineWidth,
     s.shadow,
-    2,
+    s.alignment ?? 2,
     80,
     80,
     s.marginV ?? 420,
@@ -457,8 +522,13 @@ function dialogue(start: number, end: number, text: string): string {
 }
 
 /** Build the full ASS document for one clip. */
-export function buildAss(words: TranscriptWord[], styleId: string, clipDuration: number): string {
-  const style = getCaptionStyle(styleId);
+export function buildAss(
+  words: TranscriptWord[],
+  styleId: string,
+  clipDuration: number,
+  overrides?: CaptionOverrides,
+): string {
+  const style = applyOverrides(getCaptionStyle(styleId), overrides);
   const lines: string[] = [];
   const lead = style.lineTags ? `{${style.lineTags}}` : '';
   const chunks = chunkWords(words, style.wordsPerChunk);

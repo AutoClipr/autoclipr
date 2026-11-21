@@ -32,6 +32,10 @@ export interface PlanConfig {
   platforms: PublishPlatform[];
   scheduling: boolean;
   analytics: boolean;
+  /** Brand kits (logo, colours, captions, intro/outro). */
+  brandKits: boolean;
+  /** How many brand kits the plan may keep. 0 when brandKits is false. */
+  maxBrandKits: number;
 }
 
 const ALL_PLATFORMS: PublishPlatform[] = ['youtube', 'instagram', 'tiktok', 'facebook', 'linkedin', 'x', 'threads'];
@@ -50,6 +54,8 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     platforms: ['youtube', 'instagram'],
     scheduling: false,
     analytics: false,
+    brandKits: false,
+    maxBrandKits: 0,
   },
   creator: {
     id: 'creator',
@@ -64,6 +70,8 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     platforms: ALL_PLATFORMS,
     scheduling: true,
     analytics: true,
+    brandKits: true,
+    maxBrandKits: 3,
   },
   pro: {
     id: 'pro',
@@ -78,6 +86,8 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     platforms: ALL_PLATFORMS,
     scheduling: true,
     analytics: true,
+    brandKits: true,
+    maxBrandKits: 10,
   },
   business: {
     id: 'business',
@@ -92,6 +102,8 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     platforms: ALL_PLATFORMS,
     scheduling: true,
     analytics: true,
+    brandKits: true,
+    maxBrandKits: 25,
   },
 };
 

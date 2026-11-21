@@ -9,6 +9,7 @@ import { InsufficientCreditsError, UsersRepository } from '../users/users.reposi
 import { JobType } from '../jobs/jobs.constants';
 
 describe('VideosService', () => {
+  let brandKits: { renderConfig: jest.Mock };
   let service: VideosService;
   let videosRepo: jest.Mocked<VideosRepository>;
   let clipsRepo: jest.Mocked<ClipsRepository>;
@@ -62,6 +63,7 @@ describe('VideosService', () => {
     } as unknown as jest.Mocked<UsersRepository>;
 
     monitoring = { recordEvent: jest.fn(), noticeError: jest.fn() };
+    brandKits = { renderConfig: jest.fn().mockResolvedValue({ kit_id: 'bk1', name: 'My brand' }) };
     config = { get: jest.fn() };
 
     service = new VideosService(
@@ -74,6 +76,7 @@ describe('VideosService', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       monitoring as any,
       config as any,
+      brandKits as any,
     );
   });
 
@@ -617,6 +620,39 @@ describe('VideosService', () => {
       jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
 
       await expect(service.completeUpload('u1', 'v1', { source_duration_seconds: 600 })).resolves.toBeDefined();
+    });
+  });
+
+  describe('brand kits', () => {
+    it('resolves the chosen kit server-side and sends it with the upload job', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+
+      await service.completeUpload('u1', 'v1', { brand_kit_id: 'bk1' });
+
+      expect(brandKits.renderConfig).toHaveBeenCalledWith('u1', 'bk1');
+      expect(jobsService.enqueueAndDispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ payload: expect.objectContaining({ brand: { kit_id: 'bk1', name: 'My brand' } }) }),
+      );
+    });
+
+    it('refuses before charging when the kit is not allowed', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      brandKits.renderConfig.mockRejectedValue(new Error('Brand Kit is available on the Creator'));
+
+      await expect(service.completeUpload('u1', 'v1', { brand_kit_id: 'bk1' })).rejects.toThrow('Brand Kit');
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+    });
+
+    it('sends no brand when none is chosen', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+      await service.completeUpload('u1', 'v1', {});
+      expect(brandKits.renderConfig).not.toHaveBeenCalled();
+      expect(jobsService.enqueueAndDispatch.mock.calls[0][0].payload).not.toHaveProperty('brand');
     });
   });
 

@@ -6,6 +6,8 @@
  * with credits and processing time, and the processing card.
  */
 
+import { BrandKitPicker } from "@/components/brand-kit/brand-kit-picker";
+import { CAPTION_PRESETS, type BrandKit } from "@/lib/brand-kits";
 import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -81,7 +83,11 @@ export function useClipOptions() {
   const [language, setLanguage] = useState("en");
   const [exportQuality, setExportQuality] = useState("hd");
   const [platforms, setPlatforms] = useState<string[]>(DEFAULT_PLATFORMS);
+  // Kept here (not in the picker) so it survives re-renders and step changes.
+  const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
   return {
+    brandKit,
+    setBrandKit,
     clipCount,
     setClipCount,
     durations,
@@ -103,6 +109,7 @@ export function useClipOptions() {
       caption_language: language,
       export_quality: exportQuality,
       platforms: platforms.length ? platforms : DEFAULT_PLATFORMS,
+      ...(brandKit ? { brand_kit_id: brandKit.id } : {}),
     }),
   };
 }
@@ -580,6 +587,8 @@ export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; child
       <StepHeader step="02" title="AI clip configuration" description="Tell the AI what kind of clips you want." />
 
       <div className="space-y-6">
+        <BrandKitPicker value={opts.brandKit} onChange={opts.setBrandKit} />
+
         {/* Clip count */}
         <div>
           <p className="mb-2.5 text-sm font-medium text-[#F8FAFC]">How many clips do you want?</p>
@@ -786,7 +795,17 @@ export function SummaryPanel({
           label="Clip length"
           value={opts.durations.length ? opts.durations.map(formatClipLength).join(", ") : "Auto"}
         />
-        <Row label="Captions" value={CAPTION_STYLES.find((s) => s.id === opts.captionStyle)?.label ?? "–"} />
+        <Row label="Brand kit" value={opts.brandKit?.name ?? "No brand kit"} />
+        {opts.brandKit ? (
+          <>
+            <Row label="Logo" value={opts.brandKit.logo_path ? "Applied" : "None"} />
+            <Row label="Captions" value={CAPTION_PRESETS.find((p) => p.id === opts.brandKit!.captions?.preset)?.label ?? "Brand style"} />
+            <Row label="Intro" value={opts.brandKit.intro_enabled ? "Enabled" : "Off"} />
+            <Row label="Outro" value={opts.brandKit.outro_enabled ? "Enabled" : "Off"} />
+          </>
+        ) : (
+          <Row label="Captions" value={CAPTION_STYLES.find((s) => s.id === opts.captionStyle)?.label ?? "–"} />
+        )}
         <Row label="Quality" value={quality} />
         <Row
           label="Processing time"

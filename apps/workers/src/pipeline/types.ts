@@ -57,6 +57,20 @@ export type UrlPipelinePayload = {
   plan_id?: string;
   max_video_seconds?: number;
   watermark?: boolean;
+  /** Resolved brand kit (API-side, after plan + ownership checks). */
+  brand?: BrandRenderConfig;
+};
+
+export type BrandRenderConfig = {
+  kit_id: string;
+  name: string;
+  logo_path: string | null;
+  logo: { position: string; size: number; opacity: number };
+  intro_path: string | null;
+  outro_path: string | null;
+  max_bumper_seconds: number;
+  caption_style: string | null;
+  captions: import('./caption-styles').CaptionOverrides;
 };
 
 export type ClipRenderResult = {

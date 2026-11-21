@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JobsModule } from '../jobs/jobs.module';
 import { UsersModule } from '../users/users.module';
+import { BrandKitsModule } from '../brand-kits/brand-kits.module';
 import { ClipsRepository } from '../clips/clips.repository';
 import { StorageService } from '../storage/storage.service';
 import { VideosRepository } from './videos.repository';
@@ -8,7 +9,7 @@ import { VideosService } from './videos.service';
 import { VideosController } from './videos.controller';
 
 @Module({
-  imports: [JobsModule, UsersModule],
+  imports: [JobsModule, UsersModule, BrandKitsModule],
   providers: [VideosRepository, VideosService, StorageService, ClipsRepository],
   controllers: [VideosController],
   // Exported for the retention sweep, which reuses the same delete path so

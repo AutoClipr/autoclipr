@@ -28,6 +28,7 @@ import { RetentionModule } from './modules/retention/retention.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { CreatorsModule } from './modules/creators/creators.module';
+import { BrandKitsModule } from './modules/brand-kits/brand-kits.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { EmailModule } from '@autoclipr/emails';
@@ -71,6 +72,7 @@ import { ActionLoggingInterceptor } from './common/interceptors/action-logging.i
     RetentionModule,
     CouponsModule,
     CreatorsModule,
+    BrandKitsModule,
     CampaignsModule,
     AssistantModule,
   ],

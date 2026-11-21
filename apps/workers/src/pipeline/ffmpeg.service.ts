@@ -39,6 +39,48 @@ export function watermarkAss(width: number, height: number): string {
   ].join('\n');
 }
 
+/** A brand logo burned into the clip. */
+export type LogoOverlay = {
+  path: string;
+  position: string;
+  /** Width as % of the frame width. */
+  size: number;
+  /** 0–1 */
+  opacity: number;
+};
+
+/** Scale the logo to size% of the frame width (aspect preserved) and apply opacity. */
+export function logoScaleFilter(frameWidth: number, logo: Pick<LogoOverlay, 'size' | 'opacity'>): string {
+  const width = Math.max(16, Math.round((frameWidth * Math.min(40, Math.max(5, logo.size))) / 100));
+  const opacity = Math.min(1, Math.max(0.1, logo.opacity));
+  return `scale=${width}:-1,format=rgba,colorchannelmixer=aa=${opacity.toFixed(2)}`;
+}
+
+/** overlay x:y for a corner, with a margin of 4% of the frame width. */
+export function logoPosition(frameWidth: number, frameHeight: number, position: string): string {
+  const m = Math.round(frameWidth * 0.04);
+  // Keep top logos clear of the platform UI strip at the very top.
+  const top = Math.round(frameHeight * 0.05);
+  const bottom = Math.round(frameHeight * 0.12);
+  switch (position) {
+    case 'top-left':
+      return `x=${m}:y=${top}:shortest=1`;
+    case 'bottom-left':
+      return `x=${m}:y=H-h-${bottom}:shortest=1`;
+    case 'bottom-right':
+      return `x=W-w-${m}:y=H-h-${bottom}:shortest=1`;
+    case 'top-right':
+    default:
+      return `x=W-w-${m}:y=${top}:shortest=1`;
+  }
+}
+
+/** Output frame size for an export quality, as [width, height]. */
+export function exportSize(exportQuality: string): [number, number] {
+  const [w, h] = (QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd).scale.split(':').map(Number);
+  return [w, h];
+}
+
 @Injectable()
 export class FfmpegService {
   private readonly logger = new Logger(FfmpegService.name);
@@ -115,25 +157,35 @@ export class FfmpegService {
     endMs: number,
     exportQuality = 'hd',
     watermark = false,
+    logo?: LogoOverlay | null,
   ): Promise<void> {
     const preset = QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd;
     const startSec = (startMs / 1000).toFixed(3);
     const durationSec = ((endMs - startMs) / 1000).toFixed(3);
     const [w, h] = preset.scale.split(':');
+    const W = Number(w);
+    const H = Number(h);
 
-    // Starter-plan watermark is burned in here, so every export of the clip
-    // carries it. If drawtext fails the whole render fails — never silently
-    // fall back to a clean file.
-    // Drawn with the `ass` filter (libass), the same renderer the captions
-    // use, so it works wherever captions do.
-    let vf = `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
+    // Base frame, then an optional brand logo, then the Starter watermark on
+    // top. The watermark is drawn with the `ass` filter (libass), the same
+    // renderer the captions use; if it fails the render fails — never a
+    // silently clean file.
+    const graph: string[] = [
+      `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1[base]`,
+    ];
+    let last = 'base';
+    if (logo) {
+      graph.push(`[1:v]${logoScaleFilter(W, logo)}[lg]`, `[${last}][lg]overlay=${logoPosition(W, H, logo.position)}[withlogo]`);
+      last = 'withlogo';
+    }
     if (watermark) {
       const assPath = path.join(path.dirname(outputPath), `${path.basename(outputPath)}.watermark.ass`);
-      await fs.writeFile(assPath, watermarkAss(Number(w), Number(h)), 'utf8');
-      vf += `,ass=${escapeFfmpegPath(assPath)}`;
+      await fs.writeFile(assPath, watermarkAss(W, H), 'utf8');
+      graph.push(`[${last}]ass=${escapeFfmpegPath(assPath)}[marked]`);
+      last = 'marked';
     }
 
-    this.logger.log(`Cutting clip ${startSec}s +${durationSec}s → ${outputPath}`);
+    this.logger.log(`Cutting clip ${startSec}s +${durationSec}s → ${outputPath}${logo ? ' (+logo)' : ''}`);
 
     await runCommand(this.ffmpeg, [
       '-hide_banner',
@@ -144,20 +196,21 @@ export class FfmpegService {
       startSec,
       '-i',
       videoPath,
+      ...(logo ? ['-loop', '1', '-i', logo.path] : []),
       '-t',
       durationSec,
-      '-vf',
-      vf,
+      '-filter_complex',
+      graph.join(';'),
+      '-map',
+      `[${last}]`,
+      '-map',
+      '0:a?',
       '-c:v',
       'libx264',
       '-preset',
       'fast',
       '-crf',
       preset.crf,
-      '-map',
-      '0:v:0',
-      '-map',
-      '0:a?',
       '-c:a',
       'aac',
       '-b:a',
@@ -166,6 +219,75 @@ export class FfmpegService {
       '+faststart',
       '-threads',
       '2',
+      outputPath,
+    ]);
+  }
+
+  /** Whether a media file has an audio stream. */
+  async hasAudio(filePath: string): Promise<boolean> {
+    try {
+      const { stdout } = await runCommand(this.ffprobe, [
+        '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', filePath,
+      ]);
+      return stdout.trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Re-encode a file to a fixed format (W×H, 30 fps, h264/aac 44.1 kHz
+   * stereo) so pieces can be joined with the concat demuxer. Letterboxes to
+   * keep aspect ratio; adds silence when the file has no audio; trims to
+   * maxSeconds when given.
+   */
+  async normalizeForConcat(input: string, output: string, W: number, H: number, maxSeconds?: number): Promise<void> {
+    const audio = await this.hasAudio(input);
+    const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,format=yuv420p`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', input,
+      ...(audio ? [] : ['-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo']),
+      ...(maxSeconds ? ['-t', String(maxSeconds)] : []),
+      '-map', '0:v:0',
+      '-map', audio ? '0:a:0' : '1:a:0',
+      '-vf', vf,
+      '-af', 'aresample=44100,aformat=channel_layouts=stereo',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '20',
+      '-c:a', 'aac', '-b:a', '128k',
+      '-shortest',
+      '-movflags', '+faststart',
+      output,
+    ]);
+  }
+
+  /**
+   * Put an intro and/or outro around a finished clip. Every piece is first
+   * normalised to the clip's frame size so the join is a plain stream copy.
+   */
+  async addBumpers(
+    clipPath: string,
+    outputPath: string,
+    opts: { intro?: string | null; outro?: string | null; width: number; height: number; maxBumperSeconds: number; workDir: string },
+  ): Promise<void> {
+    const base = path.join(opts.workDir, `${path.basename(clipPath, '.mp4')}`);
+    const parts: string[] = [];
+    if (opts.intro) {
+      parts.push(`${base}.intro.mp4`);
+      await this.normalizeForConcat(opts.intro, `${base}.intro.mp4`, opts.width, opts.height, opts.maxBumperSeconds);
+    }
+    parts.push(`${base}.body.mp4`);
+    await this.normalizeForConcat(clipPath, `${base}.body.mp4`, opts.width, opts.height);
+    if (opts.outro) {
+      parts.push(`${base}.outro.mp4`);
+      await this.normalizeForConcat(opts.outro, `${base}.outro.mp4`, opts.width, opts.height, opts.maxBumperSeconds);
+    }
+    const list = `${base}.concat.txt`;
+    await fs.writeFile(list, parts.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-f', 'concat', '-safe', '0', '-i', list,
+      '-c', 'copy', '-movflags', '+faststart',
       outputPath,
     ]);
   }
