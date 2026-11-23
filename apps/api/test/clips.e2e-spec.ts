@@ -93,7 +93,8 @@ describe('ClipsController (e2e)', () => {
         .set('Authorization', auth())
         .expect(200);
 
-      expect(service.list).toHaveBeenCalledWith(TEST_USER.sub, 1, 20);
+      // No video_id filter on the plain list.
+      expect(service.list).toHaveBeenCalledWith(TEST_USER.sub, 1, 20, undefined);
       expect(res.body.data).toEqual([{ id: 'c1' }]);
     });
   });
