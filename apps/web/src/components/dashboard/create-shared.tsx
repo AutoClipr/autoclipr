@@ -238,6 +238,44 @@ function FieldSelect({
 }
 
 /** Thumbnail tile with a dimmed overlay; children render on top. */
+/** Short ETA like "4m" / "45s". */
+function etaLabel(seconds: number | null): string | null {
+  if (seconds == null) return null;
+  if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
+  return `${Math.ceil(seconds / 60)}m`;
+}
+
+/**
+ * Progress pill over the thumbnail: "🕑 58% (ETA 1m)". The background fills
+ * left-to-right with the progress, so it reads at a glance.
+ */
+export function EtaBadge({ percent, remainingSeconds, queued }: { percent: number; remainingSeconds: number | null; queued?: boolean }) {
+  const pct = Math.max(0, Math.min(100, Math.round(percent)));
+  const eta = etaLabel(remainingSeconds);
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={queued ? "Queued" : `${pct}% done${eta ? `, about ${eta} left` : ""}`}
+        className="relative overflow-hidden rounded-xl border border-[#54D045]/40 bg-black/75 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.9)] backdrop-blur-sm"
+      >
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#54D045]/45 to-[#35D6E8]/45 transition-[width] duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+        <span className="relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold tabular-nums text-[#bdf5b4]">
+          <Clock className="h-4 w-4" aria-hidden />
+          {queued ? "Queued" : `${pct}%${eta ? ` (ETA ${eta})` : ""}`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function VideoThumb({
   src,
   className,
@@ -953,7 +991,9 @@ export function ProcessingCard({
   return (
     <div className={cn(PANEL, "grid gap-6 p-5 sm:p-6 md:grid-cols-[260px_1fr]")}>
       <div>
-        <VideoThumb src={thumbnail} className="aspect-video" />
+        <VideoThumb src={thumbnail} className="aspect-video">
+          {!failed && <EtaBadge percent={progress} remainingSeconds={remaining} queued={queued} />}
+        </VideoThumb>
         <h2 className="mt-3 line-clamp-2 text-sm font-semibold text-[#F8FAFC]">{pipeline?.title || title}</h2>
       </div>
 

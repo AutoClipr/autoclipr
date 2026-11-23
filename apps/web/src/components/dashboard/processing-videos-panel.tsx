@@ -1,5 +1,6 @@
 "use client";
 
+import { EtaBadge, VideoThumb } from "@/components/dashboard/create-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -177,6 +178,19 @@ export function ProcessingVideosPanel({ videos: initialVideos }: ProcessingVideo
             return (
               <div key={video.id} className="space-y-3 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
+                  {!error && (
+                    <VideoThumb src={video.thumbnail_url ?? null} className="aspect-video w-36 shrink-0 sm:w-44">
+                      <EtaBadge
+                        percent={progress}
+                        queued={pipeline?.job?.status === "queued"}
+                        remainingSeconds={
+                          pipeline?.estimated_completion_at
+                            ? Math.max(0, Math.round((new Date(pipeline.estimated_completion_at).getTime() - Date.now()) / 1000))
+                            : null
+                        }
+                      />
+                    </VideoThumb>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-white">{video.title}</p>
                     <p className="mt-0.5 text-xs text-white/45">
