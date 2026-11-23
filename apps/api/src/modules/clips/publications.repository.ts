@@ -22,6 +22,8 @@ export interface ClipPublication {
 }
 
 export interface PostedPublicationRow extends ClipPublication {
+  /** Where the post came from: a clip's Post button, or the Content Scheduler. */
+  source?: 'clip' | 'scheduler';
   clip_title: string;
   clip_thumbnail_url: string | null;
   clip_storage_path: string | null;
@@ -132,6 +134,81 @@ export class PublicationsRepository {
     });
   }
 
+  /**
+   * Posts the Content Scheduler published, shaped like clip publications so
+   * analytics can treat both the same. ids are scheduled_post_targets ids.
+   */
+  async listScheduledPostedByUser(userId: string, limit = 100): Promise<PostedPublicationRow[]> {
+    const { data, error } = await this.supabase
+      .getClient()
+      .from('scheduled_post_targets')
+      .select(
+        'id, user_id, platform, status, platform_post_id, platform_post_url, error_message, published_at, view_count, like_count, comment_count, metrics_updated_at, created_at, updated_at, scheduled_posts!inner(clip_id, title, caption, media_storage_path, media_thumbnail_url)',
+      )
+      .eq('user_id', userId)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(error.message);
+
+    type Row = {
+      id: string; user_id: string; platform: string; status: string;
+      platform_post_id: string | null; platform_post_url: string | null; error_message: string | null;
+      published_at: string | null; view_count: number | null; like_count: number | null; comment_count: number | null;
+      metrics_updated_at: string | null; created_at: string; updated_at: string;
+      scheduled_posts: { clip_id: string | null; title: string | null; caption: string | null; media_storage_path: string | null; media_thumbnail_url: string | null } | null;
+    };
+    return ((data ?? []) as unknown as Row[]).map((r) => {
+      const post = r.scheduled_posts;
+      const title = post?.title?.trim() || post?.caption?.split('\n')[0]?.trim() || 'Scheduled post';
+      return {
+        id: r.id,
+        user_id: r.user_id,
+        clip_id: post?.clip_id ?? '',
+        platform: r.platform,
+        status: 'posted',
+        platform_post_id: r.platform_post_id,
+        platform_post_url: r.platform_post_url,
+        error_message: r.error_message,
+        job_id: null,
+        posted_at: r.published_at,
+        view_count: Number(r.view_count ?? 0),
+        like_count: Number(r.like_count ?? 0),
+        comment_count: Number(r.comment_count ?? 0),
+        metrics_updated_at: r.metrics_updated_at,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+        source: 'scheduler',
+        clip_title: title.slice(0, 200),
+        clip_thumbnail_url: post?.media_thumbnail_url ?? null,
+        clip_storage_path: post?.media_storage_path ?? null,
+        clip_viral_score: null,
+      } as PostedPublicationRow;
+    });
+  }
+
+  /** Scheduler targets by outcome, for the analytics summary counts. */
+  async countScheduledByUser(userId: string): Promise<{ posted: number; failed: number; pending: number }> {
+    const groups: Record<'posted' | 'failed' | 'pending', string[]> = {
+      posted: ['published'],
+      failed: ['failed'],
+      pending: ['queued', 'publishing', 'retrying'],
+    };
+    const entries = await Promise.all(
+      (Object.keys(groups) as (keyof typeof groups)[]).map(async (k) => {
+        const { count, error } = await this.supabase
+          .getClient()
+          .from('scheduled_post_targets')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .in('status', groups[k]);
+        if (error) throw new Error(error.message);
+        return [k, count ?? 0] as const;
+      }),
+    );
+    return Object.fromEntries(entries) as { posted: number; failed: number; pending: number };
+  }
+
   async countByUser(userId: string): Promise<{
     posted: number;
     failed: number;
@@ -161,10 +238,11 @@ export class PublicationsRepository {
       like_count: number;
       comment_count: number;
     },
+    source: 'clip' | 'scheduler' = 'clip',
   ): Promise<void> {
     const { error } = await this.supabase
       .getClient()
-      .from('clip_publications')
+      .from(source === 'scheduler' ? 'scheduled_post_targets' : 'clip_publications')
       .update({
         view_count: metrics.view_count,
         like_count: metrics.like_count,

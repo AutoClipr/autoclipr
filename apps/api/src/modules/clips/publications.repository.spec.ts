@@ -208,4 +208,47 @@ describe('PublicationsRepository', () => {
       ).rejects.toThrow('boom');
     });
   });
+
+  describe('scheduler posts', () => {
+    const row = (o: Record<string, unknown> = {}) => ({
+      id: 't1', user_id: 'u1', platform: 'youtube', status: 'published', platform_post_id: 'v1', platform_post_url: 'u',
+      error_message: null, published_at: '2026-11-22T00:00:00Z', view_count: null, like_count: 2, comment_count: 1,
+      metrics_updated_at: null, created_at: 'c', updated_at: 'u',
+      scheduled_posts: { clip_id: null, title: '', caption: 'First line\nmore', media_storage_path: 'm.mp4', media_thumbnail_url: 'thumb' },
+      ...o,
+    });
+
+    it('maps published targets to posted publications', async () => {
+      chain.__setResult({ data: [row(), row({ id: 't2', scheduled_posts: null })], error: null });
+      const [a, b] = await repo.listScheduledPostedByUser('u1', 10);
+      expect(chain.from).toHaveBeenCalledWith('scheduled_post_targets');
+      expect(a).toMatchObject({
+        id: 't1', source: 'scheduler', status: 'posted', clip_id: '', clip_title: 'First line',
+        posted_at: '2026-11-22T00:00:00Z', view_count: 0, like_count: 2, clip_thumbnail_url: 'thumb', clip_storage_path: 'm.mp4',
+      });
+      expect(b).toMatchObject({ clip_title: 'Scheduled post', clip_thumbnail_url: null });
+    });
+
+    it('handles no rows and errors', async () => {
+      chain.__setResult({ data: null, error: null });
+      await expect(repo.listScheduledPostedByUser('u1')).resolves.toEqual([]);
+      chain.__setResult({ data: null, error: { message: 'boom' } });
+      await expect(repo.listScheduledPostedByUser('u1')).rejects.toThrow('boom');
+    });
+
+    it('counts targets by outcome', async () => {
+      chain.__setResult({ data: null, error: null, count: 3 } as never);
+      await expect(repo.countScheduledByUser('u1')).resolves.toEqual({ posted: 3, failed: 3, pending: 3 });
+      chain.__setResult({ data: null, error: null, count: null } as never);
+      await expect(repo.countScheduledByUser('u1')).resolves.toEqual({ posted: 0, failed: 0, pending: 0 });
+      chain.__setResult({ data: null, error: { message: 'boom' } });
+      await expect(repo.countScheduledByUser('u1')).rejects.toThrow('boom');
+    });
+
+    it('writes scheduler metrics to the target table', async () => {
+      chain.__setResult({ data: null, error: null });
+      await repo.updateMetrics('t1', { view_count: 1, like_count: 2, comment_count: 3 }, 'scheduler');
+      expect(chain.from).toHaveBeenCalledWith('scheduled_post_targets');
+    });
+  });
 });

@@ -29,8 +29,8 @@ export class AnalyticsService {
 
     const [platforms, publications, counts] = await Promise.all([
       this.platformsRepo.listByUser(userId),
-      this.publicationsRepo.listPostedByUser(userId, 100),
-      this.publicationsRepo.countByUser(userId),
+      this.listAllPosted(userId, 100),
+      this.countAll(userId),
     ]);
 
     const enrichedPublications = await Promise.all(
@@ -79,8 +79,35 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * Clip-section posts and Content Scheduler posts together, newest first.
+   * A post that appears in both (same platform post id) is counted once.
+   */
+  private async listAllPosted(userId: string, limit: number): Promise<PostedPublicationRow[]> {
+    const [direct, scheduled] = await Promise.all([
+      this.publicationsRepo.listPostedByUser(userId, limit),
+      this.publicationsRepo.listScheduledPostedByUser(userId, limit),
+    ]);
+    const seen = new Set(direct.map((p) => `${p.platform}:${p.platform_post_id}`).filter((k) => !k.endsWith(':null')));
+    const merged = [
+      ...direct.map((p) => ({ ...p, source: 'clip' as const })),
+      ...scheduled.filter((p) => !p.platform_post_id || !seen.has(`${p.platform}:${p.platform_post_id}`)),
+    ];
+    return merged
+      .sort((a, b) => Date.parse(b.posted_at ?? '') - Date.parse(a.posted_at ?? '') || 0)
+      .slice(0, limit);
+  }
+
+  private async countAll(userId: string) {
+    const [a, b] = await Promise.all([
+      this.publicationsRepo.countByUser(userId),
+      this.publicationsRepo.countScheduledByUser(userId),
+    ]);
+    return { posted: a.posted + b.posted, failed: a.failed + b.failed, pending: a.pending + b.pending };
+  }
+
   async refreshMetrics(userId: string) {
-    const publications = await this.publicationsRepo.listPostedByUser(userId, 200);
+    const publications = await this.listAllPosted(userId, 200);
 
     const [youtubeRefreshed, instagramRefreshed] = await Promise.all([
       this.refreshYoutubeMetrics(userId, publications),
@@ -128,11 +155,15 @@ export class AnalyticsService {
 
     await Promise.all(
       updates.map(({ pub, stat }) =>
-        this.publicationsRepo.updateMetrics(pub.id, {
-          view_count: stat!.viewCount,
-          like_count: stat!.likeCount,
-          comment_count: stat!.commentCount,
-        }),
+        this.publicationsRepo.updateMetrics(
+          pub.id,
+          {
+            view_count: stat!.viewCount,
+            like_count: stat!.likeCount,
+            comment_count: stat!.commentCount,
+          },
+          pub.source === 'scheduler' ? 'scheduler' : 'clip',
+        ),
       ),
     );
 
@@ -161,11 +192,15 @@ export class AnalyticsService {
 
     await Promise.all(
       updates.map(({ pub, stat }) =>
-        this.publicationsRepo.updateMetrics(pub.id, {
-          view_count: stat!.viewCount,
-          like_count: stat!.likeCount,
-          comment_count: stat!.commentCount,
-        }),
+        this.publicationsRepo.updateMetrics(
+          pub.id,
+          {
+            view_count: stat!.viewCount,
+            like_count: stat!.likeCount,
+            comment_count: stat!.commentCount,
+          },
+          pub.source === 'scheduler' ? 'scheduler' : 'clip',
+        ),
       ),
     );
 
@@ -174,9 +209,9 @@ export class AnalyticsService {
 
   private async enrichPublication(pub: PostedPublicationRow) {
     const bucket = this.storage.clipsBucket();
-    let thumbnail_url: string | null = null;
+    let thumbnail_url: string | null = pub.source === 'scheduler' ? pub.clip_thumbnail_url : null;
 
-    if (pub.clip_storage_path) {
+    if (!thumbnail_url && pub.clip_storage_path) {
       const thumbPath = this.storage.clipThumbPath(pub.clip_storage_path);
       if (await this.storage.objectExists(bucket, thumbPath)) {
         thumbnail_url = await this.storage.createSignedDownloadUrl(bucket, thumbPath);
@@ -185,7 +220,8 @@ export class AnalyticsService {
 
     return {
       id: pub.id,
-      clip_id: pub.clip_id,
+      clip_id: pub.clip_id || null,
+      source: pub.source ?? 'clip',
       clip_title: pub.clip_title,
       platform: pub.platform,
       platform_label: PLATFORM_LABELS[pub.platform] ?? pub.platform,

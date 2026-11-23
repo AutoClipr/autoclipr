@@ -10,6 +10,8 @@ function makePublicationsRepo() {
     listPostedByUser: jest.fn(),
     countByUser: jest.fn(),
     updateMetrics: jest.fn(),
+    listScheduledPostedByUser: jest.fn().mockResolvedValue([]),
+    countScheduledByUser: jest.fn().mockResolvedValue({ posted: 0, failed: 0, pending: 0 }),
   } as unknown as jest.Mocked<PublicationsRepository>;
 }
 
@@ -267,12 +269,33 @@ describe('AnalyticsService', () => {
         view_count: 10,
         like_count: 2,
         comment_count: 1,
-      });
+      }, 'clip');
       expect(publicationsRepo.updateMetrics).toHaveBeenCalledWith('ig1', {
         view_count: 20,
         like_count: 4,
         comment_count: 2,
-      });
+      }, 'clip');
+    });
+
+    it('includes Content Scheduler posts, stores their stats on the target, and skips duplicates', async () => {
+      publicationsRepo.listPostedByUser.mockResolvedValue([
+        { id: 'p1', platform: 'youtube', platform_post_id: 'vidA', posted_at: '2026-11-20T00:00:00Z', clip_title: 'A' },
+      ] as never);
+      (publicationsRepo as any).listScheduledPostedByUser.mockResolvedValue([
+        { id: 't1', platform: 'youtube', platform_post_id: 'vidB', posted_at: '2026-11-22T00:00:00Z', clip_title: 'B', source: 'scheduler' },
+        { id: 't2', platform: 'youtube', platform_post_id: 'vidA', posted_at: '2026-11-21T00:00:00Z', clip_title: 'dup', source: 'scheduler' },
+      ]);
+      platformsRepo.getByPlatform.mockImplementation(async (_u: string, p: string) => (p === 'youtube' ? { access_token: 'tok' } : null) as never);
+      youtubeStats.fetchVideoStats.mockResolvedValue([
+        { videoId: 'vidA', viewCount: 1, likeCount: 0, commentCount: 0 },
+        { videoId: 'vidB', viewCount: 46, likeCount: 3, commentCount: 1 },
+      ] as never);
+
+      await service.refreshMetrics('u1');
+
+      expect(publicationsRepo.updateMetrics).toHaveBeenCalledWith('t1', { view_count: 46, like_count: 3, comment_count: 1 }, 'scheduler');
+      expect(publicationsRepo.updateMetrics).toHaveBeenCalledWith('p1', { view_count: 1, like_count: 0, comment_count: 0 }, 'clip');
+      expect(publicationsRepo.updateMetrics).not.toHaveBeenCalledWith('t2', expect.anything(), expect.anything());
     });
 
     it('returns 0 for youtube when there is no connected access token', async () => {
