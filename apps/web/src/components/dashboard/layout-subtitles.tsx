@@ -93,12 +93,15 @@ export function LayoutBar({
   onLayoutChange,
   subtitle,
   onSubtitleChange,
+  thumbnail,
 }: {
   tier: string | null;
   layout: LayoutConfig;
   onLayoutChange: (l: LayoutConfig) => void;
   subtitle: SubtitleInfo | null;
   onSubtitleChange: (s: SubtitleInfo | null) => void;
+  /** The source video's thumbnail, shown in the layout tiles. */
+  thumbnail?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -133,7 +136,7 @@ export function LayoutBar({
             {layout.aspect_ratio}, {layout.layout === "fill" ? "Fill" : "Fit"}
             <ChevronDown className={cn("h-3.5 w-3.5 text-[#94A3B8] transition-transform", open && "rotate-180")} />
           </button>
-          {open && <LayoutPopover tier={tier} layout={layout} onChange={onLayoutChange} />}
+          {open && <LayoutPopover tier={tier} layout={layout} onChange={onLayoutChange} thumb={thumbnail ?? null} />}
         </div>
 
         <input ref={srt.input} type="file" accept=".srt,application/x-subrip" className="hidden"
@@ -177,8 +180,8 @@ function RatioGlyph({ w, h, size = 14 }: { w: number; h: number; size?: number }
   return <span className="inline-block rounded-[2px] border-[1.5px] border-current" style={{ width: (w / m) * size, height: (h / m) * size }} />;
 }
 
-const TILE_ON = "border-white ring-1 ring-white/70";
-const TILE_OFF = "border-transparent hover:border-white/30";
+const TILE_ON = "border-white";
+const TILE_OFF = "border-white/[0.06] hover:border-white/40";
 
 function Tick() {
   return (
@@ -188,11 +191,11 @@ function Tick() {
   );
 }
 
-function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout: LayoutConfig; onChange: (l: LayoutConfig) => void }) {
+function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null; layout: LayoutConfig; onChange: (l: LayoutConfig) => void; thumb: string | null }) {
   const set = (p: Partial<LayoutConfig>) => onChange({ ...layout, ...p });
   return (
     <div role="dialog" aria-label="Layout settings"
-      className="absolute left-0 top-full z-50 mt-2 w-[min(470px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#1F2330]/95 p-4 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+      className="absolute left-0 top-full z-50 mt-2 w-[min(468px,calc(100vw-2rem))] rounded-[24px] border border-white/[0.08] bg-[#2A2B30]/[0.97] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
       <PopTitle>Select ratio</PopTitle>
       <div className="flex items-end gap-2.5">
         {RATIOS.map((r) => {
@@ -205,11 +208,11 @@ function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout
               title={allowed ? r.hint : "Available on Creator, Pro and Business plans"}
               onClick={() => set({ aspect_ratio: r.id })}
               className="group flex flex-col items-center gap-1.5 disabled:cursor-not-allowed">
-              <span className={cn("relative block rounded-lg border-2 bg-[#2C3140]", on ? TILE_ON : TILE_OFF, !allowed && "opacity-60")}
+              <span className={cn("relative block rounded-lg border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF, !allowed && "opacity-60")}
                 style={{ width: Math.max(wd, 48), height: r.w >= r.h ? (Math.max(wd, 48) * r.h) / r.w : hgt }}>
                 {on && <Tick />}
               </span>
-              <span className="flex items-center gap-0.5 text-[11px] text-[#CBD5E1]">
+              <span className="flex items-center gap-0.5 text-[11px] text-[#A1A1AA]">
                 {r.label} {!allowed && <Crown className="h-3 w-3 fill-amber-400 text-amber-400" />}
               </span>
             </button>
@@ -223,7 +226,7 @@ function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout
         </p>
       )}
 
-      <PopTitle className="mt-4" info="Fill crops to the frame. Fit keeps the whole picture with a background.">Layout</PopTitle>
+      <PopTitle className="mt-5" info="Fill crops to the frame. Fit keeps the whole picture with a background. Others are coming soon.">Layouts</PopTitle>
       <div className="grid grid-cols-7 gap-1.5">
         {LAYOUTS.map((l) => {
           const on = layout.layout === l.id;
@@ -232,14 +235,14 @@ function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout
               title={l.enabled ? l.hint : LAYOUT_SOON}
               onClick={() => set({ layout: l.id as LayoutMode })}
               className="flex min-w-0 flex-col items-center gap-1 disabled:cursor-not-allowed">
-              <span className={cn("relative block aspect-[9/16] w-full overflow-hidden rounded-lg border-2", on ? TILE_ON : TILE_OFF, !l.enabled && "opacity-40")}>
-                <LayoutArt id={l.id} />
+              <span className={cn("relative block aspect-[9/16] w-full overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF, !l.enabled && "saturate-[0.6]")}>
+                {thumb ? <ThumbArt id={l.id} src={thumb} /> : <LayoutArt id={l.id} />}
                 {on && <Tick />}
                 {!l.enabled && (
-                  <span className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 text-center text-[8px] font-semibold uppercase tracking-wide text-white">Soon</span>
+                  <span className="absolute left-1 top-1 rounded bg-black/70 px-1 py-px text-[7px] font-bold uppercase tracking-wide text-white">Soon</span>
                 )}
               </span>
-              <span className="w-full truncate text-center text-[10px] text-[#CBD5E1]">{l.label}</span>
+              <span className="w-full truncate text-center text-[11px] text-[#A1A1AA]">{l.label}</span>
             </button>
           );
         })}
@@ -247,18 +250,20 @@ function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout
 
       {layout.layout === "fit" ? (
         <>
-          <PopTitle className="mt-4" info="Crop the source before fitting it into the frame.">Fit layout: crop ratio</PopTitle>
+          <PopTitle className="mt-5" info="Crop the source before fitting it into the frame.">Fit Layout: Crop Ratio</PopTitle>
           <div className="flex gap-2.5">
             {(["original", "4:3", "1:1"] as const).map((c) => {
               const on = layout.crop_ratio === c;
               const band = c === "original" ? 0.32 : c === "4:3" ? 0.42 : 0.56;
               return (
                 <button key={c} type="button" aria-pressed={on} onClick={() => set({ crop_ratio: c })} className="flex flex-col items-center gap-1.5">
-                  <span className={cn("relative block h-[80px] w-[46px] rounded-lg border-2 bg-[#2C3140]", on ? TILE_ON : TILE_OFF)}>
-                    <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 bg-[#6B7280]" style={{ height: `${band * 100}%` }} />
+                  <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
+                    <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden bg-[#6B6C72]" style={{ height: `${band * 100}%` }}>
+                      {thumb && <Img src={thumb} />}
+                    </span>
                     {on && <Tick />}
                   </span>
-                  <span className="text-[11px] text-[#CBD5E1]">{c === "original" ? "Original" : c}</span>
+                  <span className="text-[11px] text-[#A1A1AA]">{c === "original" ? "Original" : c}</span>
                 </button>
               );
             })}
@@ -285,7 +290,7 @@ function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout
         </>
       ) : (
         <>
-          <PopTitle className="mt-4" info="Which part of the picture stays in frame when cropping.">Fill layout: keep in frame</PopTitle>
+          <PopTitle className="mt-5" info="Which part of the picture stays in frame when cropping.">Fill Layout: Keep in Frame</PopTitle>
           <div className="flex gap-1.5">
             {(["top", "center", "bottom"] as const).map((p) => (
               <button key={p} type="button" aria-pressed={layout.position === p} onClick={() => set({ position: p })}
@@ -309,7 +314,52 @@ function PopTitle({ children, info, className }: { children: React.ReactNode; in
   );
 }
 
-/** Schematic speaker thumbnails for each layout tile. */
+/* eslint-disable @next/next/no-img-element -- remote/blob thumbnails, sized by the tile */
+function Img({ src, pos = "center", className }: { src: string; pos?: string; className?: string }) {
+  return <img src={src} alt="" draggable={false} className={cn("absolute inset-0 h-full w-full object-cover", className)} style={{ objectPosition: pos }} />;
+}
+/* eslint-enable @next/next/no-img-element */
+
+/** Layout tiles built from the user's own video thumbnail. */
+function ThumbArt({ id, src }: { id: string; src: string }) {
+  const cell = (style: React.CSSProperties, pos: string, k: string) => (
+    <span key={k} className="absolute overflow-hidden" style={style}><Img src={src} pos={pos} /></span>
+  );
+  const half = { left: 0, right: 0, height: "50%" } as const;
+  switch (id) {
+    case "fill":
+      return <Img src={src} />;
+    case "fit":
+      return (
+        <>
+          <Img src={src} className="scale-125 blur-[6px] brightness-75" />
+          <span className="absolute inset-x-0 top-1/2 aspect-video -translate-y-1/2 overflow-hidden"><Img src={src} /></span>
+        </>
+      );
+    case "split":
+      return <>{cell({ ...half, top: 0 }, "30% center", "a")}{cell({ ...half, bottom: 0 }, "70% center", "b")}</>;
+    case "three":
+      return <>{cell({ ...half, top: 0 }, "center", "a")}{cell({ left: 0, width: "50%", bottom: 0, height: "50%" }, "20% center", "b")}{cell({ right: 0, width: "50%", bottom: 0, height: "50%" }, "80% center", "c")}</>;
+    case "four":
+      return <>{[["0", "0", "15%"], ["50%", "0", "40%"], ["0", "50%", "65%"], ["50%", "50%", "90%"]].map(([l, t, p], i) => cell({ left: l, top: t, width: "50%", height: "50%" }, `${p} center`, String(i)))}</>;
+    case "screen":
+      return (
+        <>
+          {cell({ ...half, top: 0, height: "45%" }, "30% center", "a")}
+          <span className="absolute inset-x-0 bottom-0 h-[55%] bg-[#F4F5F7] p-[8%]">
+            <span className="block h-[10%] w-3/4 rounded-sm bg-[#3B82F6]/70" />
+            <span className="mt-[8%] grid grid-cols-3 gap-[6%]">
+              {["#FCA5A5", "#A7F3D0", "#FDE68A", "#C4B5FD", "#93C5FD", "#FBCFE8"].map((c) => <span key={c} className="block aspect-square rounded-sm" style={{ background: c }} />)}
+            </span>
+          </span>
+        </>
+      );
+    default:
+      return <>{cell({ ...half, top: 0, height: "42%" }, "30% center", "a")}{cell({ left: 0, right: 0, bottom: 0, height: "58%" }, "75% center", "b")}</>;
+  }
+}
+
+/** Schematic speaker thumbnails for each layout tile (used until a video is picked). */
 function LayoutArt({ id }: { id: string }) {
   const person = (x: number, y: number, s: number, c: string, k: string) => (
     <g key={k}>

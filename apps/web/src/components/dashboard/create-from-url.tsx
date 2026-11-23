@@ -195,7 +195,7 @@ export function CreateFromUrl() {
                         .map((s) => s.label)
                         .join(" · ")}`}
               </p>
-              <div className="mt-4"><SourceLayoutBar opts={opts} tier={tier} /></div>
+              <div className="mt-4"><SourceLayoutBar opts={opts} tier={tier} thumbnail={thumbnail} /></div>
             </div>
           </div>
         </section>

@@ -421,7 +421,7 @@ export function UploadForm() {
                 </div>
               )}
             </div>
-            <SourceLayoutBar opts={opts} tier={tier} />
+            <SourceLayoutBar opts={opts} tier={tier} thumbnail={thumbnail} />
           </div>
           </div>
         </section>

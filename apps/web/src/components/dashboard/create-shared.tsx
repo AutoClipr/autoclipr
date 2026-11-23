@@ -728,9 +728,9 @@ export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; child
 }
 
 /** Layout + SRT bar shown under the video in Step 1. */
-export function SourceLayoutBar({ opts, tier }: { opts: ClipOptions; tier: string | null }) {
+export function SourceLayoutBar({ opts, tier, thumbnail }: { opts: ClipOptions; tier: string | null; thumbnail?: string | null }) {
   return (
-    <LayoutBar tier={tier} layout={opts.layout} onLayoutChange={opts.setLayout} subtitle={opts.subtitle} onSubtitleChange={opts.setSubtitle} />
+    <LayoutBar tier={tier} layout={opts.layout} onLayoutChange={opts.setLayout} subtitle={opts.subtitle} onSubtitleChange={opts.setSubtitle} thumbnail={thumbnail} />
   );
 }
 
