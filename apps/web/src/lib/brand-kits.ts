@@ -126,7 +126,7 @@ export const DEFAULT_COLORS: BrandColors = {
 export const ASSET_RULES = {
   logo: { accept: "image/png,image/jpeg", mimes: ["image/png", "image/jpeg"], maxMb: 5, label: "PNG or JPG, up to 5 MB" },
   intro: { accept: "video/mp4,video/quicktime,video/webm", mimes: ["video/mp4", "video/quicktime", "video/webm"], maxMb: 100, label: "MP4, MOV or WebM, up to 100 MB · first 15 s used" },
-  outro: { accept: "video/mp4,video/quicktime,video/webm", mimes: ["video/mp4", "video/quicktime", "video/webm"], maxMb: 100, label: "MP4, MOV or WebM, up to 100 MB · first 15 s used" },
+  outro: { accept: "video/mp4,video/quicktime,video/webm", mimes: ["video/mp4", "video/quicktime", "video/webm"], maxMb: 100, label: "MP4, MOV or WebM, up to 100 MB · last 15 s used" },
 } as const;
 export type AssetKind = keyof typeof ASSET_RULES;
 

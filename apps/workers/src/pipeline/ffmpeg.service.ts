@@ -241,11 +241,22 @@ export class FfmpegService {
    * keep aspect ratio; adds silence when the file has no audio; trims to
    * maxSeconds when given.
    */
-  async normalizeForConcat(input: string, output: string, W: number, H: number, maxSeconds?: number): Promise<void> {
+  async normalizeForConcat(
+    input: string,
+    output: string,
+    W: number,
+    H: number,
+    maxSeconds?: number,
+    /** Keep the last maxSeconds instead of the first (outros). */
+    fromEnd = false,
+  ): Promise<void> {
     const audio = await this.hasAudio(input);
+    // -sseof seeks relative to the end; a file shorter than that just plays whole.
+    const tail = fromEnd && maxSeconds ? ['-sseof', `-${maxSeconds}`] : [];
     const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,format=yuv420p`;
     await runCommand(this.ffmpeg, [
       '-hide_banner', '-loglevel', 'error', '-y',
+      ...tail,
       '-i', input,
       ...(audio ? [] : ['-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo']),
       ...(maxSeconds ? ['-t', String(maxSeconds)] : []),
@@ -280,7 +291,7 @@ export class FfmpegService {
     await this.normalizeForConcat(clipPath, `${base}.body.mp4`, opts.width, opts.height);
     if (opts.outro) {
       parts.push(`${base}.outro.mp4`);
-      await this.normalizeForConcat(opts.outro, `${base}.outro.mp4`, opts.width, opts.height, opts.maxBumperSeconds);
+      await this.normalizeForConcat(opts.outro, `${base}.outro.mp4`, opts.width, opts.height, opts.maxBumperSeconds, true);
     }
     const list = `${base}.concat.txt`;
     await fs.writeFile(list, parts.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');

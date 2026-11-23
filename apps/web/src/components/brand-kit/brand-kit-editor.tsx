@@ -588,22 +588,23 @@ function DropZone({ kind, label, icon: Icon, asset, progress, error, onPick, onR
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); onPick(e.dataTransfer.files?.[0]); }}
-        className={cn("flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed p-5 text-center transition-colors sm:flex-row sm:text-left",
+        className={cn("flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed p-5 text-center transition-colors",
+          !compact && "sm:flex-row sm:text-left",
           over ? "border-[#54D045] bg-[#54D045]/[0.06]" : "border-[#263244] bg-[#0A111B]")}
       >
-        <div className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#151F2E]", image ? "h-20 w-20" : "aspect-video w-32")}>
+        <div className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#151F2E]", image ? "h-20 w-20" : compact ? "aspect-video w-full" : "aspect-video w-32")}>
           {asset.url ? (
             image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={asset.url} alt="" className="h-full w-full object-contain p-1.5" />
             ) : (
-              <video src={asset.url} muted controls={!compact} className="h-full w-full object-cover" />
+              <video src={asset.url} muted controls playsInline preload="metadata" className="h-full w-full bg-black object-contain" />
             )
           ) : (
             <Icon className="h-7 w-7 text-[#64748B]" aria-hidden />
           )}
         </div>
-        <div className="min-w-0 flex-1">
+        <div className={cn("min-w-0", compact ? "w-full" : "flex-1")}>
           <p className="text-sm font-medium text-white">{asset.path ? "Uploaded" : "Drag & drop, or browse"}</p>
           <p className="mt-0.5 text-xs text-[#9299A8]">{rule.label}</p>
           {progress != null && (
@@ -613,7 +614,7 @@ function DropZone({ kind, label, icon: Icon, asset, progress, error, onPick, onR
           )}
           {error && <p className="mt-2 text-xs text-red-300" role="alert">{error}</p>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2", compact && "w-full justify-center")}>
           <input id={id} type="file" accept={rule.accept} className="sr-only" onChange={(e) => { onPick(e.target.files?.[0]); e.target.value = ""; }} />
           <label htmlFor={id} className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-[#263244] bg-[#151F2E] px-3.5 text-xs font-semibold text-white hover:border-[#3a475c]">
             {progress != null ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {asset.path ? "Replace" : "Upload"}
