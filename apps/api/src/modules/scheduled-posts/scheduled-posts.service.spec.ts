@@ -356,4 +356,47 @@ describe('ScheduledPostsService', () => {
       await expect(service.retry(USER, 'p1', {})).rejects.toThrow(/nothing to retry/);
     });
   });
+
+  describe('media links', () => {
+    beforeEach(() => {
+      Object.assign(storage, {
+        parseObjectPathFromUrl: jest.fn((url: string | null) => (url?.startsWith('https://sb/') ? url.slice(11) : null)),
+        clipThumbPath: jest.fn((p: string) => p.replace(/\.mp4$/, '_thumb.jpg')),
+        objectExists: jest.fn().mockResolvedValue(true),
+        createSignedDownloadUrl: jest.fn(async (_b: string, p: string) => `https://signed/${p}`),
+      });
+    });
+
+    it('signs the clip thumbnail instead of returning the private URL', async () => {
+      posts.__setResult({ data: post({ clip_id: 'c1', media_storage_path: 'u/c1.mp4', media_thumbnail_url: 'https://sb/u/c1_thumb.jpg' }), error: null });
+      const res = (await service.get(USER, 'p1')) as Record<string, unknown>;
+      expect(res.media_thumbnail_url).toBe('https://signed/u/c1_thumb.jpg');
+      expect(res.media_preview_url).toBeNull();
+    });
+
+    it('derives the thumbnail from a stored mp4 path and from the clip media', async () => {
+      posts.__setResult({ data: post({ clip_id: 'c1', media_storage_path: 'u/c1.mp4', media_thumbnail_url: 'https://sb/u/x.mp4' }), error: null });
+      (storage as any).objectExists.mockImplementation(async (_b: string, p: string) => p === 'u/c1_thumb.jpg');
+      const res = (await service.get(USER, 'p1')) as Record<string, unknown>;
+      expect(res.media_thumbnail_url).toBe('https://signed/u/c1_thumb.jpg');
+    });
+
+    it('falls back to a signed video link for uploads, and passes external thumbnails through', async () => {
+      posts.__setResult({ data: post({ clip_id: null, media_storage_path: 'u/scheduled/a.mp4', media_thumbnail_url: null }), error: null });
+      let res = (await service.get(USER, 'p1')) as Record<string, unknown>;
+      expect(res.media_thumbnail_url).toBeNull();
+      expect(res.media_preview_url).toBe('https://signed/u/scheduled/a.mp4');
+
+      posts.__setResult({ data: post({ clip_id: null, media_storage_path: 'u/a.mp4', media_thumbnail_url: 'https://cdn.example/t.jpg' }), error: null });
+      res = (await service.get(USER, 'p1')) as Record<string, unknown>;
+      expect(res.media_thumbnail_url).toBe('https://cdn.example/t.jpg');
+    });
+
+    it('never fails the request when signing fails', async () => {
+      (storage as any).objectExists.mockRejectedValue(new Error('storage down'));
+      posts.__setResult({ data: post({ clip_id: 'c1', media_storage_path: 'u/c1.mp4', media_thumbnail_url: 'https://sb/u/t.jpg' }), error: null });
+      const res = (await service.get(USER, 'p1')) as Record<string, unknown>;
+      expect(res).toMatchObject({ media_thumbnail_url: null, media_preview_url: null });
+    });
+  });
 });

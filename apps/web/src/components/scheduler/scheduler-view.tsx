@@ -536,10 +536,29 @@ function UpcomingPanel({
 }
 
 function Thumb({ post, className }: { post: ScheduledPost; className?: string }) {
-  return post.media_thumbnail_url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={post.media_thumbnail_url} alt="" className={cn("rounded-md bg-black object-cover", className)} />
-  ) : (
+  // Signed links from the API; if an image still fails (e.g. expired), fall back.
+  const [imgFailed, setImgFailed] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  if (post.media_thumbnail_url && !imgFailed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={post.media_thumbnail_url} alt="" loading="lazy" onError={() => setImgFailed(true)} className={cn("rounded-md bg-black object-cover", className)} />
+    );
+  }
+  if (post.media_preview_url && !videoFailed) {
+    return (
+      <video
+        src={`${post.media_preview_url}#t=0.5`}
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden
+        onError={() => setVideoFailed(true)}
+        className={cn("pointer-events-none rounded-md bg-black object-cover", className)}
+      />
+    );
+  }
+  return (
     <span className={cn("flex items-center justify-center rounded-md bg-black/60", className)}>
       <Film className="h-3 w-3 text-white/40" />
     </span>

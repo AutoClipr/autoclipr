@@ -76,9 +76,44 @@ export class ScheduledPostsService {
     const { data, error } = await query.order('scheduled_at', { ascending: true });
     if (error) throw new Error(error.message);
     const posts = (data ?? []) as Post[];
-    return q.platform
+    const filtered = q.platform
       ? posts.filter((p) => p.scheduled_post_targets?.some((t) => t.platform === q.platform))
       : posts;
+    return Promise.all(filtered.map((p) => this.withMedia(p)));
+  }
+
+  /**
+   * Media lives in the private clips bucket, so stored URLs don't load in the
+   * browser. Swap in short-lived signed links: the clip's thumbnail when one
+   * exists, else a signed video link the UI can take a first frame from.
+   */
+  private async withMedia(post: Post): Promise<Post & { media_preview_url: string | null }> {
+    const bucket = this.storage.clipsBucket();
+    const storedThumb = typeof post.media_thumbnail_url === 'string' ? post.media_thumbnail_url : null;
+    const mediaPath = typeof post.media_storage_path === 'string' ? post.media_storage_path : null;
+    let thumb: string | null = null;
+    try {
+      const candidates = new Set<string>();
+      const fromUrl = this.storage.parseObjectPathFromUrl(storedThumb, bucket);
+      if (fromUrl) candidates.add(/\.mp4$/i.test(fromUrl) ? this.storage.clipThumbPath(fromUrl) : fromUrl);
+      if (post.clip_id && mediaPath) candidates.add(this.storage.clipThumbPath(mediaPath));
+      for (const c of candidates) {
+        if (await this.storage.objectExists(bucket, c)) {
+          thumb = await this.storage.createSignedDownloadUrl(bucket, c);
+          if (thumb) break;
+        }
+      }
+      // An external (non-storage) thumbnail URL is fine to pass through.
+      if (!thumb && storedThumb && !fromUrl && /^https?:\/\//.test(storedThumb)) {
+        thumb = storedThumb;
+      }
+      const preview = !thumb && mediaPath
+        ? await this.storage.createSignedDownloadUrl(bucket, mediaPath)
+        : null;
+      return { ...post, media_thumbnail_url: thumb, media_preview_url: preview };
+    } catch {
+      return { ...post, media_thumbnail_url: null, media_preview_url: null };
+    }
   }
 
   async get(userId: string, id: string): Promise<Post> {
@@ -90,7 +125,7 @@ export class ScheduledPostsService {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) throw new NotFoundException('Scheduled post not found');
-    return data as Post;
+    return this.withMedia(data as Post);
   }
 
   async create(userId: string, dto: CreateScheduledPostDto) {

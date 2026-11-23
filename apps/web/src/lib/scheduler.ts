@@ -19,6 +19,8 @@ export type ScheduledPost = {
   clip_id: string | null;
   media_storage_path: string;
   media_thumbnail_url: string | null;
+  /** Signed video link when there's no thumbnail (uploaded media); the UI shows its first frame. */
+  media_preview_url?: string | null;
   media_duration_seconds: number | null;
   title: string | null;
   caption: string;
