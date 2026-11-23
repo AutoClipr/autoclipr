@@ -23,7 +23,7 @@ export default async function BrandKitPage({ searchParams }: { searchParams: Pro
   }
   const { new: startNew } = await searchParams;
   return (
-    <div className="mx-auto max-w-6xl">
+    <div>
       <BrandKitManager startNew={startNew === "1"} />
     </div>
   );
