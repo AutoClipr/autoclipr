@@ -16,6 +16,8 @@ export function BrandPreview({
   logo,
   logoUrl,
   captionFont,
+  headingFont,
+  name,
   className,
 }: {
   captions: BrandCaptions;
@@ -23,6 +25,9 @@ export function BrandPreview({
   logo: BrandLogo;
   logoUrl: string | null;
   captionFont?: string;
+  /** Brand name shown beside the logo (preview only). */
+  headingFont?: string;
+  name?: string;
   className?: string;
 }) {
   const preset = CAPTION_PRESETS.find((p) => p.id === captions.preset);
@@ -48,18 +53,32 @@ export function BrandPreview({
       <div className="absolute left-1/2 top-[30%] h-[28%] w-[44%] -translate-x-1/2 rounded-full bg-white/10 blur-[1px]" />
       <div className="absolute left-1/2 top-[52%] h-[30%] w-[64%] -translate-x-1/2 rounded-t-[40%] bg-white/10" />
 
-      {logoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={logoUrl}
-          alt="Logo"
+      {(logoUrl || name?.trim()) && (
+        <div
           className={cn(
-            "absolute h-auto object-contain",
+            "absolute flex max-w-[88%] items-center gap-1.5",
             logoPos.startsWith("top") ? "top-[5%]" : "bottom-[12%]",
-            logoPos.endsWith("left") ? "left-[4%]" : "right-[4%]",
+            logoPos.endsWith("left") ? "left-[4%] flex-row" : "right-[4%] flex-row-reverse",
           )}
-          style={{ width: `${logo.size ?? 14}%`, opacity: logo.opacity ?? 0.9 }}
-        />
+        >
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="h-auto shrink-0 object-contain"
+              style={{ width: `${Math.max(14, Math.round(((logo.size ?? 14) / 100) * 216))}px`, opacity: logo.opacity ?? 0.9 }}
+            />
+          )}
+          {name?.trim() && (
+            <span
+              className="truncate text-[11px] leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+              style={{ fontFamily: fontCss(headingFont), fontWeight: fontWeightCss(headingFont), color: colors.text }}
+            >
+              {name.trim()}
+            </span>
+          )}
+        </div>
       )}
 
       <div

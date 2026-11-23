@@ -123,6 +123,8 @@ export function BrandKitEditor({ kit, onDone, onCancel }: { kit?: BrandKit | nul
       logo={d.logo}
       logoUrl={d.assets.logo.url}
       captionFont={d.typography.caption_font}
+      headingFont={d.typography.heading_font}
+      name={d.name}
       className="mx-auto max-w-[240px]"
     />
   );

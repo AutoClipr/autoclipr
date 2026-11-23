@@ -105,7 +105,7 @@ export function BrandKitManager({ startNew = false }: { startNew?: boolean }) {
           {kits.map((k) => (
             <li key={k.id} className={cn("flex flex-col overflow-hidden rounded-2xl border bg-[#101824]", k.is_default ? "border-[#54D045]/50" : "border-[#253244]")}>
               <div className="flex gap-4 p-4">
-                <BrandPreview captions={k.captions} colors={k.colors} logo={k.logo} logoUrl={k.logo_url} captionFont={k.typography?.caption_font} className="w-24 shrink-0 rounded-xl" />
+                <BrandPreview captions={k.captions} colors={k.colors} logo={k.logo} logoUrl={k.logo_url} captionFont={k.typography?.caption_font} headingFont={k.typography?.heading_font} name={k.name} className="w-24 shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {k.logo_url && (
