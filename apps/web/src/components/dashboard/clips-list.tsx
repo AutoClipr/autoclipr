@@ -2,34 +2,37 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Download, Loader2, Minus, SearchX, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Download, LayoutGrid, List, Loader2, Minus, SearchX, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Clip } from "@/lib/api";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
 import { downloadFile, sanitizeFilename, sleep } from "@/lib/download";
 import { ClipCard, clipDuration, clipScore } from "@/components/dashboard/clip-card";
+import { ClipPlayerModal } from "@/components/dashboard/clip-player-modal";
+import { PostClipModal } from "@/components/dashboard/post-clip-modal";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 24;
 
 type SortKey = "score" | "newest" | "oldest" | "longest" | "shortest";
-type FilterKey = "all" | "top" | "posted" | "unposted" | "processing";
+type FilterKey = "all" | "selected" | "top" | "posted" | "unposted" | "processing";
 
 const SORTS: { value: SortKey; label: string }[] = [
-  { value: "score", label: "Viral score" },
+  { value: "score", label: "Viral score: highest first" },
   { value: "newest", label: "Newest first" },
   { value: "oldest", label: "Oldest first" },
-  { value: "longest", label: "Longest" },
-  { value: "shortest", label: "Shortest" },
+  { value: "shortest", label: "Duration: shortest first" },
+  { value: "longest", label: "Duration: longest first" },
 ];
 
 const FILTERS: { value: FilterKey; label: string }[] = [
   { value: "all", label: "All clips" },
-  { value: "top", label: "Top picks (80+)" },
-  { value: "posted", label: "Posted" },
-  { value: "unposted", label: "Not posted" },
+  { value: "selected", label: "Selected clips" },
+  { value: "posted", label: "Published clips" },
+  { value: "unposted", label: "Unpublished clips" },
+  { value: "top", label: "Top picks (75+)" },
   { value: "processing", label: "Processing" },
 ];
 
@@ -53,6 +56,10 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>("score");
   const [filterBy, setFilterBy] = useState<FilterKey>("all");
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [playerId, setPlayerId] = useState<string | null>(null);
+  const [postClip, setPostClip] = useState<Clip | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Sync when the server re-renders with fresh data (e.g. after router.refresh).
   useEffect(() => {
@@ -86,7 +93,8 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
   const visibleClips = useMemo(() => {
     const score = (c: Clip) => clipScore(c) ?? -1;
     let list = clips;
-    if (filterBy === "top") list = list.filter((c) => score(c) >= 80);
+    if (filterBy === "selected") list = list.filter((c) => selected.has(c.id));
+    else if (filterBy === "top") list = list.filter((c) => score(c) >= 75);
     else if (filterBy === "posted") list = list.filter((c) => c.publications?.some((p) => p.status === "posted"));
     else if (filterBy === "unposted") list = list.filter((c) => !c.publications?.some((p) => p.status === "posted"));
     else if (filterBy === "processing") list = list.filter((c) => c.status !== "completed");
@@ -106,7 +114,25 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
           return score(b) - score(a);
       }
     });
-  }, [clips, sortBy, filterBy]);
+  }, [clips, sortBy, filterBy, selected]);
+
+  // The player walks the visible (sorted, filtered) clips that can play.
+  const playable = useMemo(() => visibleClips.filter((c) => c.status === "completed" && c.download_url), [visibleClips]);
+  const playerIndex = playerId ? playable.findIndex((c) => c.id === playerId) : -1;
+  const openPlayer = useCallback((id: string) => setPlayerId(id), []);
+  const openPost = useCallback((clip: Clip) => setPostClip(clip), []);
+
+  async function downloadOne(clip: Clip) {
+    if (!clip.download_url) return;
+    setDownloadingId(clip.id);
+    try {
+      await downloadFile(clip.download_url, `${sanitizeFilename(clip.title)}.mp4`);
+    } catch {
+      toast.error("Download failed. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   const topPickId = useMemo(() => {
     let best: Clip | null = null;
@@ -336,15 +362,23 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
             </span>
           )}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
             <Select label="Sort" value={sortBy} options={SORTS} onChange={setSortBy} />
             <Select label="Filter" value={filterBy} options={FILTERS} onChange={setFilterBy} />
+            <div className="inline-flex h-9 rounded-lg border border-[#253244] bg-[#101824] p-0.5" role="radiogroup" aria-label="View">
+              {([["grid", LayoutGrid], ["list", List]] as const).map(([v, Icon]) => (
+                <button key={v} type="button" role="radio" aria-checked={view === v} aria-label={`${v} view`} onClick={() => setView(v)}
+                  className={cn("flex w-8 items-center justify-center rounded-md transition-colors", view === v ? "bg-[#253244] text-white" : "text-[#94A3B8] hover:text-white")}>
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Grid */}
         {visibleClips.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <div className={cn(view === "grid" ? "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4" : "grid gap-3 lg:grid-cols-2")}>
             {visibleClips.map((clip) => (
               <ClipCard
                 key={clip.id}
@@ -354,6 +388,9 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
                 onSelectChange={toggleOne}
                 onDelete={deleteOne}
                 topPick={clip.id === topPickId}
+                onOpen={openPlayer}
+                onPost={openPost}
+                layout={view}
               />
             ))}
           </div>
@@ -388,6 +425,23 @@ export function ClipsList({ clips: initialClips, total: initialTotal, videoId }:
           </div>
         )}
       </div>
+
+      {playerIndex >= 0 && (
+        <ClipPlayerModal
+          clips={playable}
+          index={playerIndex}
+          onIndexChange={(i) => setPlayerId(playable[i]?.id ?? null)}
+          onClose={() => setPlayerId(null)}
+          onPost={(clip) => {
+            // Hand over to the publish dialog (it sits below the player).
+            setPlayerId(null);
+            setPostClip(clip);
+          }}
+          onDownload={(clip) => void downloadOne(clip)}
+          downloadingId={downloadingId}
+        />
+      )}
+      {postClip && <PostClipModal clip={postClip} open onClose={() => setPostClip(null)} />}
     </>
   );
 }

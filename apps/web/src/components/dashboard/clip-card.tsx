@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import {
   AlertCircle,
   Check,
@@ -13,7 +13,6 @@ import {
   Scissors,
   Share2,
   Trash2,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Clip } from "@/lib/api";
@@ -36,6 +35,11 @@ type ClipCardProps = {
   onDelete?: (clipId: string) => void | Promise<void>;
   /** Highest-scoring clip in the list. */
   topPick?: boolean;
+  /** Open the shared player for this clip. */
+  onOpen?: (clipId: string) => void;
+  /** Open the shared publish dialog for this clip. */
+  onPost?: (clip: Clip) => void;
+  layout?: "grid" | "list";
 };
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -53,7 +57,7 @@ export function clipScore(clip: Clip): number | null {
   return clip.viral_score ?? (clip.ai_score != null ? Math.round(clip.ai_score * 100) : null);
 }
 
-function formatSeconds(total: number): string {
+export function formatSeconds(total: number): string {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
@@ -69,11 +73,22 @@ function relativeDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function scoreTone(score: number) {
-  if (score >= 80) return "border-[#54D045]/40 bg-[#54D045]/15 text-[#a6ec9c]";
-  if (score >= 60) return "border-[#35D6E8]/35 bg-[#35D6E8]/12 text-[#9beef7]";
-  return "border-white/15 bg-black/50 text-white/75";
+/** Viral score bands (the score itself comes from the pipeline, unchanged). */
+export function scoreLabel(score: number): string {
+  if (score >= 90) return "Excellent";
+  if (score >= 75) return "Good";
+  if (score >= 50) return "Average";
+  return "Low";
 }
+
+export function scoreTone(score: number) {
+  if (score >= 90) return "border-[#54D045]/45 bg-[#54D045]/15 text-[#a6ec9c]";
+  if (score >= 75) return "border-[#35D6E8]/40 bg-[#35D6E8]/12 text-[#9beef7]";
+  if (score >= 50) return "border-amber-300/35 bg-amber-300/10 text-amber-200";
+  return "border-white/15 bg-black/50 text-white/70";
+}
+
+const NEW_FOR_MS = 24 * 60 * 60 * 1000;
 
 function ClipCardInner({
   clip,
@@ -82,12 +97,17 @@ function ClipCardInner({
   onSelectChange,
   onDelete,
   topPick = false,
+  onOpen,
+  onPost,
+  layout = "grid",
 }: ClipCardProps) {
   const [thumbError, setThumbError] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const openPost = () => (onPost ? onPost(clip) : setPostOpen(true));
+  const isNew = Date.now() - new Date(clip.created_at).getTime() < NEW_FOR_MS;
+  const list = layout === "list";
 
   const durationSec = clipDuration(clip);
   const viralScore = clipScore(clip);
@@ -124,7 +144,8 @@ function ClipCardInner({
   return (
     <article
       className={cn(
-        "group/card relative flex flex-col overflow-hidden rounded-2xl border bg-[#101824] transition-all duration-300",
+        "group/card relative flex overflow-hidden rounded-2xl border bg-[#101824] transition-all duration-300",
+        list ? "flex-row" : "flex-col",
         selected
           ? "border-[#54D045]/70 shadow-[0_0_0_1px_rgba(84,208,69,0.35),0_16px_40px_-20px_rgba(84,208,69,0.6)]"
           : topPick
@@ -134,7 +155,7 @@ function ClipCardInner({
       )}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[9/16] w-full overflow-hidden bg-[#070B12]">
+      <div className={cn("relative aspect-[9/16] shrink-0 overflow-hidden bg-[#070B12]", list ? "w-24 sm:w-28" : "w-full")}>
         {clip.thumbnail_url && !thumbError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -160,7 +181,7 @@ function ClipCardInner({
           <button
             type="button"
             aria-label={`Preview ${clip.title}`}
-            onClick={() => setPreviewOpen(true)}
+            onClick={() => onOpen?.(clip.id)}
             className="absolute inset-0 flex items-center justify-center focus-visible:outline-none"
           >
             <span className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.8)] transition-all duration-200 group-hover/card:scale-100 group-hover/card:opacity-100 group-focus-visible/card:opacity-100">
@@ -177,9 +198,16 @@ function ClipCardInner({
         )}
 
         {/* Top-left: top pick */}
-        {topPick && (
-          <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
-            <Flame className="h-3 w-3" /> Top pick
+        {(topPick || isNew) && (
+          <span className="absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1">
+            {topPick && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+                <Flame className="h-3 w-3" /> Top pick
+              </span>
+            )}
+            {isNew && !list && (
+              <span className="rounded-full bg-[#54D045] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#050817]">New</span>
+            )}
           </span>
         )}
 
@@ -217,7 +245,7 @@ function ClipCardInner({
                 "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm",
                 scoreTone(viralScore),
               )}
-              title="Viral score (0–100)"
+              title={`Viral score ${viralScore}/100 · ${scoreLabel(viralScore)}`}
             >
               <Flame className="h-3 w-3" />
               {viralScore}
@@ -233,9 +261,14 @@ function ClipCardInner({
             {clip.title}
           </h3>
           <p className="mt-1 text-xs text-[#94A3B8]">
-            {relativeDate(clip.created_at)}
+            {relativeDate(clip.created_at)} · {formatSeconds(durationSec)}
             {clip.export_quality ? ` · ${clip.export_quality.replace("_", " ").toUpperCase()}` : ""}
           </p>
+          {list && viralScore != null && (
+            <p className="mt-1 text-xs text-[#94A3B8]">
+              Viral score <span className="font-semibold text-white">{viralScore}</span> · {scoreLabel(viralScore)}
+            </p>
+          )}
         </div>
 
         {(postedPubs.length > 0 || pendingPubs.length > 0 || failedPubs.length > 0) && (
@@ -278,7 +311,7 @@ function ClipCardInner({
           {ready && (
             <button
               type="button"
-              onClick={() => setPostOpen(true)}
+              onClick={openPost}
               className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#54D045] text-xs font-semibold text-[#070B12] transition-colors hover:bg-[#62dc53]"
             >
               <Share2 className="h-3.5 w-3.5" /> Post
@@ -311,8 +344,8 @@ function ClipCardInner({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                {canDownload && (
-                  <DropdownMenuItem onSelect={() => setPreviewOpen(true)}>
+                {canDownload && onOpen && (
+                  <DropdownMenuItem onSelect={() => onOpen(clip.id)}>
                     <Play className="mr-2 h-4 w-4" /> Preview
                   </DropdownMenuItem>
                 )}
@@ -334,102 +367,9 @@ function ClipCardInner({
         </div>
       </div>
 
-      <PostClipModal clip={clip} open={postOpen} onClose={() => setPostOpen(false)} />
-      {previewOpen && clip.download_url && (
-        <ClipPreviewModal
-          clip={clip}
-          durationSec={durationSec}
-          downloading={downloading}
-          onDownload={handleDownload}
-          onClose={() => setPreviewOpen(false)}
-        />
-      )}
+      {!onPost && <PostClipModal clip={clip} open={postOpen} onClose={() => setPostOpen(false)} />}
     </article>
   );
 }
 
 export const ClipCard = memo(ClipCardInner);
-
-function ClipPreviewModal({
-  clip,
-  durationSec,
-  downloading,
-  onDownload,
-  onClose,
-}: {
-  clip: Clip;
-  durationSec: number;
-  downloading: boolean;
-  onDownload: () => void;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#070B12]/90 p-4 backdrop-blur-md"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Preview: ${clip.title}`}
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-[#253244] bg-[#101824] shadow-[0_30px_90px_-20px_rgba(0,0,0,0.95)]"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-[#253244] px-4 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-[#F8FAFC]">{clip.title}</p>
-            <p className="text-xs text-[#94A3B8]">{formatSeconds(durationSec)} · 9:16</p>
-          </div>
-          <button
-            type="button"
-            aria-label="Close preview"
-            onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-white/[0.06] hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex min-h-0 justify-center bg-black">
-          <video
-            src={clip.download_url ?? undefined}
-            poster={clip.thumbnail_url ?? undefined}
-            controls
-            autoPlay
-            playsInline
-            className="aspect-[9/16] max-h-[68vh] w-auto max-w-full bg-black object-contain"
-          />
-        </div>
-        <div className="flex gap-2 p-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-10 flex-1 rounded-lg border border-[#253244] text-sm font-medium text-[#cbd5e1] hover:bg-white/[0.04]"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={onDownload}
-            disabled={downloading}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#54D045] text-sm font-semibold text-[#070B12] hover:bg-[#62dc53] disabled:opacity-60"
-          >
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Download
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
