@@ -5,7 +5,7 @@ import { apiFetch, type Clip, type Profile, type Video } from "@/lib/api";
 import { planLabel } from "@/lib/plans";
 import { ClipsList } from "@/components/dashboard/clips-list";
 import { ProcessingVideosPanel } from "@/components/dashboard/processing-videos-panel";
-import { ReadyVideosGrid } from "@/components/dashboard/ready-videos-grid";
+import { AlbumsGrid } from "@/components/dashboard/albums-grid";
 import { ReloadButton } from "@/components/dashboard/reload-button";
 
 export const metadata = { title: "Clips" };
@@ -19,10 +19,11 @@ export default async function ClipsPage() {
   } = await supabase.auth.getSession();
   const token = session!.access_token;
 
-  const [clipsRes, videosRes, me] = await Promise.all([
+  const [clipsRes, videosRes, me, statsRes] = await Promise.all([
     apiFetch<Clip[]>("/api/v1/clips?limit=24", { token }),
     apiFetch<Video[]>("/api/v1/videos?limit=24", { token }),
     apiFetch<Profile>("/api/v1/users/me", { token }),
+    apiFetch<{ total: number; ready: number; processing: number }>("/api/v1/clips/stats", { token }),
   ]);
 
   const loadFailed = !clipsRes.success;
@@ -30,12 +31,9 @@ export default async function ClipsPage() {
   const totalClips = clipsRes.meta?.total ?? clips.length;
   const allVideos = videosRes.data ?? [];
   const processingVideos = allVideos.filter((v) => IN_PROGRESS_STATUSES.has(v.status));
-  const readyVideos = allVideos.filter((v) => v.status === "ready");
 
-  const readyClips = clips.filter((c) => c.status === "completed" && c.download_url).length;
-  const allLoaded = clips.length >= totalClips;
-  const clipCounts: Record<string, number> = {};
-  for (const c of clips) clipCounts[c.video_id] = (clipCounts[c.video_id] ?? 0) + 1;
+  // Real totals from the API (not just the clips this page happened to load).
+  const stats = statsRes.data ?? null;
 
   return (
     <div className="space-y-8">
@@ -48,29 +46,30 @@ export default async function ClipsPage() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#F8FAFC] sm:text-3xl">My Clips</h1>
-            <p className="mt-1 text-sm text-[#94A3B8]">Your AI-generated videos, ready to publish.</p>
+            <p className="mt-1 text-sm text-[#94A3B8]">Your AI-generated content workspace.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <dl className="flex divide-x divide-[#253244] rounded-xl border border-[#253244] bg-[#070B12]/60">
-              <Stat label="Total clips" value={totalClips} />
-              <Stat label={allLoaded ? "Ready to download" : "Ready (loaded)"} value={readyClips} accent />
-              {processingVideos.length > 0 && <Stat label="Processing" value={processingVideos.length} />}
+              <Stat label="Total clips" value={stats?.total ?? totalClips} />
+              <Stat label="Ready" value={stats?.ready ?? null} accent />
+              {/* Videos still being turned into clips (each becomes an album). */}
+              <Stat label="Processing" value={processingVideos.length} />
             </dl>
             <ReloadButton hasProcessing={processingVideos.length > 0} />
+            <Link href="/create" className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#54D045] px-4 text-sm font-semibold text-[#050817] hover:bg-[#62dc53]">
+              <Sparkles className="h-4 w-4" /> Create New Clips
+            </Link>
           </div>
         </div>
       </header>
 
       {processingVideos.length > 0 && <ProcessingVideosPanel videos={processingVideos} />}
 
-      {readyVideos.length > 0 && (
-        <ReadyVideosGrid
-          videos={readyVideos}
-          clipCounts={clipCounts}
-          moreAlbums={!!videosRes.meta?.has_more}
-          planLabel={planLabel(me.data?.subscription_tier)}
-        />
-      )}
+      <AlbumsGrid
+        videos={allVideos}
+        hasMore={!!videosRes.meta?.has_more}
+        planLabel={planLabel(me.data?.subscription_tier)}
+      />
 
       <section>
         <div className="mb-4">
@@ -117,12 +116,12 @@ export default async function ClipsPage() {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+function Stat({ label, value, accent }: { label: string; value: number | null; accent?: boolean }) {
   return (
     <div className="px-4 py-2.5">
       <dt className="whitespace-nowrap text-[11px] text-[#94A3B8]">{label}</dt>
       <dd className={accent ? "text-lg font-semibold tabular-nums text-[#8fe383]" : "text-lg font-semibold tabular-nums text-[#F8FAFC]"}>
-        {value}
+        {value ?? "—"}
       </dd>
     </div>
   );

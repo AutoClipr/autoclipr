@@ -6,13 +6,8 @@ import { Loader2, Wand2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api";
 
-export function GenerateClipsButton({
-  videoId,
-  videoStatus,
-}: {
-  videoId: string;
-  videoStatus: string;
-}) {
+/** "Generate more clips" for a ready video (same request the button sends). */
+export function useGenerateClips(videoId: string, videoStatus: string) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +47,18 @@ export function GenerateClipsButton({
 
     router.refresh();
   }
+
+  return { canGenerate, loading, error, generate };
+}
+
+export function GenerateClipsButton({
+  videoId,
+  videoStatus,
+}: {
+  videoId: string;
+  videoStatus: string;
+}) {
+  const { canGenerate, loading, error, generate } = useGenerateClips(videoId, videoStatus);
 
   if (!canGenerate) {
     return null;

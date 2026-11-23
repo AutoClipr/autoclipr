@@ -102,6 +102,13 @@ describe('ClipsService', () => {
     );
   });
 
+  describe('stats', () => {
+    it('delegates to the repository', async () => {
+      (clipsRepo as any).statsByUser = jest.fn().mockResolvedValue({ total: 1, ready: 1, processing: 0 });
+      await expect(service.stats('u1')).resolves.toEqual({ total: 1, ready: 1, processing: 0 });
+    });
+  });
+
   describe('generate', () => {
     it('throws NotFoundException when the video does not exist', async () => {
       videosRepo.getById.mockResolvedValue(null);

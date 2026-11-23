@@ -84,6 +84,12 @@ export class ClipsController {
     return ApiResponse.ok(result);
   }
 
+  /** Real totals for the My Clips header. */
+  @Get('stats')
+  async stats(@CurrentUser() user: AuthUser) {
+    return ApiResponse.ok(await this.clipsService.stats(user.sub));
+  }
+
   @Get(':id/publications')
   async publications(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     const items = await this.clipsService.getPublications(user.sub, id);

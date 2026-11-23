@@ -47,6 +47,23 @@ export class ClipsRepository {
     return { items: (data ?? []) as Clip[], total: count ?? 0 };
   }
 
+  /** The caller's clips by state: total, ready (completed) and still processing. */
+  async statsByUser(userId: string): Promise<{ total: number; ready: number; processing: number }> {
+    const count = async (filter?: (q: any) => any) => {
+      let q: any = this.supabase.getClient().from('clips').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+      if (filter) q = filter(q);
+      const { count: c, error } = await q;
+      if (error) throw new Error(error.message);
+      return (c as number | null) ?? 0;
+    };
+    const [total, ready, failed] = await Promise.all([
+      count(),
+      count((q) => q.eq('status', 'completed')),
+      count((q) => q.eq('status', 'failed')),
+    ]);
+    return { total, ready, processing: Math.max(0, total - ready - failed) };
+  }
+
   /** Clip count per video for the given videos (only the caller's). */
   async countByVideoIds(userId: string, videoIds: string[]): Promise<Record<string, number>> {
     if (!videoIds.length) return {};

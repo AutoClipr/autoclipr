@@ -32,6 +32,14 @@ describe('ClipsController', () => {
     expect(result.data).toEqual({ id: 'job1' });
   });
 
+  describe('stats', () => {
+    it('returns the caller\'s clip totals', async () => {
+      (service as any).stats = jest.fn().mockResolvedValue({ total: 3, ready: 2, processing: 1 });
+      await expect(controller.stats(user)).resolves.toEqual({ success: true, data: { total: 3, ready: 2, processing: 1 }, meta: undefined });
+      expect((service as any).stats).toHaveBeenCalledWith('u1');
+    });
+  });
+
   describe('list', () => {
     it('computes pagination meta', async () => {
       service.list.mockResolvedValue({ items: [{ id: 'c1' }], total: 20 } as never);

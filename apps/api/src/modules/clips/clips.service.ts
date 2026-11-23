@@ -161,6 +161,10 @@ export class ClipsService {
     }
   }
 
+  stats(userId: string) {
+    return this.clipsRepo.statsByUser(userId);
+  }
+
   async list(userId: string, page: number, limit: number, videoId?: string) {
     const offset = (page - 1) * limit;
     const { items, total } = await this.clipsRepo.listByUser(userId, limit, offset, videoId);

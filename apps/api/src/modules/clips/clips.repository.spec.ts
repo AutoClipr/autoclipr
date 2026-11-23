@@ -13,6 +13,26 @@ describe('ClipsRepository', () => {
     repo = new ClipsRepository(supabase as unknown as SupabaseAdminService);
   });
 
+  describe('statsByUser', () => {
+    it('returns total, ready and processing counts', async () => {
+      const counts = [10, 7, 1];
+      let i = 0;
+      (supabase.getClient as jest.Mock).mockImplementation(() => {
+        const c = createSupabaseMock();
+        c.__setResult({ data: null, error: null, count: counts[i++] } as never);
+        return c;
+      });
+      await expect(repo.statsByUser('u1')).resolves.toEqual({ total: 10, ready: 7, processing: 2 });
+    });
+
+    it('treats a null count as zero and throws on error', async () => {
+      chain.__setResult({ data: null, error: null, count: null } as never);
+      await expect(repo.statsByUser('u1')).resolves.toEqual({ total: 0, ready: 0, processing: 0 });
+      chain.__setResult({ data: null, error: { message: 'boom' } });
+      await expect(repo.statsByUser('u1')).rejects.toThrow('boom');
+    });
+  });
+
   describe('countByVideoIds', () => {
     it('counts clips per video for the caller only', async () => {
       chain.__setResult({ data: [{ video_id: 'v1' }, { video_id: 'v1' }, { video_id: 'v2' }], error: null });
