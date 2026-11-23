@@ -291,13 +291,25 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
       ) : (
         <>
           <PopTitle className="mt-5" info="Which part of the picture stays in frame when cropping.">Fill Layout: Keep in Frame</PopTitle>
-          <div className="flex gap-1.5">
-            {(["top", "center", "bottom"] as const).map((p) => (
-              <button key={p} type="button" aria-pressed={layout.position === p} onClick={() => set({ position: p })}
-                className={cn("h-8 rounded-md border px-3 text-xs capitalize", layout.position === p ? "border-white bg-white/10 text-white" : "border-white/10 text-[#94A3B8] hover:text-white")}>
-                {p}
-              </button>
-            ))}
+          <div className="flex gap-2.5">
+            {(["top", "center", "bottom"] as const).map((p) => {
+              const on = layout.position === p;
+              const y = p === "top" ? "0%" : p === "bottom" ? "100%" : "50%";
+              return (
+                <button key={p} type="button" aria-pressed={on} onClick={() => set({ position: p })} className="flex flex-col items-center gap-1.5">
+                  <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
+                    {/* Tall strip of the source; the bright window is the part kept in frame. */}
+                    <span className="absolute inset-0 opacity-35"><Img src={thumb ?? DEMO.podcast} pos="52% 50%" className="scale-[1.6]" /></span>
+                    <span className="absolute inset-x-0 h-[62%] overflow-hidden border-y border-white/70"
+                      style={{ top: y, transform: `translateY(-${y})` }}>
+                      <Img src={thumb ?? DEMO.podcast} pos={`52% ${y}`} />
+                    </span>
+                    {on && <Tick />}
+                  </span>
+                  <span className="text-[11px] capitalize text-[#A1A1AA]">{p}</span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
