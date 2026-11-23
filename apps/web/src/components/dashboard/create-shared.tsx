@@ -6,7 +6,7 @@
  * with credits and processing time, and the processing card.
  */
 
-import { DEFAULT_LAYOUT, LayoutSubtitlesSection, layoutSummary, type LayoutConfig, type SubtitleInfo } from "./layout-subtitles";
+import { DEFAULT_LAYOUT, LayoutBar, layoutSummary, type LayoutConfig, type SubtitleInfo } from "./layout-subtitles";
 import { BrandKitPicker } from "@/components/brand-kit/brand-kit-picker";
 import { CAPTION_PRESETS, type BrandKit } from "@/lib/brand-kits";
 import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
@@ -634,7 +634,7 @@ function CaptionPicker({ value, onChange }: { value: string; onChange: (id: stri
 }
 
 /** Step 2: clip count, length, language, quality and captions. Extra sections go in children. */
-export function ClipSettingsPanel({ opts, tier, children }: { opts: ClipOptions; tier?: string | null; children?: React.ReactNode }) {
+export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; children?: React.ReactNode }) {
   return (
     <section className={cn(PANEL, "p-5 sm:p-6")}>
       <StepHeader step="02" title="AI clip configuration" description="Tell the AI what kind of clips you want." />
@@ -716,14 +716,6 @@ export function ClipSettingsPanel({ opts, tier, children }: { opts: ClipOptions;
           />
         </div>
 
-        <LayoutSubtitlesSection
-          tier={tier ?? null}
-          layout={opts.layout}
-          onLayoutChange={opts.setLayout}
-          subtitle={opts.subtitle}
-          onSubtitleChange={opts.setSubtitle}
-        />
-
         {/* Captions */}
         <div className="border-t border-[#253244] pt-6">
           <CaptionPicker value={opts.captionStyle} onChange={opts.setCaptionStyle} />
@@ -732,6 +724,13 @@ export function ClipSettingsPanel({ opts, tier, children }: { opts: ClipOptions;
         {children}
       </div>
     </section>
+  );
+}
+
+/** Layout + SRT bar shown under the video in Step 1. */
+export function SourceLayoutBar({ opts, tier }: { opts: ClipOptions; tier: string | null }) {
+  return (
+    <LayoutBar tier={tier} layout={opts.layout} onLayoutChange={opts.setLayout} subtitle={opts.subtitle} onSubtitleChange={opts.setSubtitle} />
   );
 }
 

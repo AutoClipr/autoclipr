@@ -9,6 +9,7 @@ import { deleteVideoRequest } from "@/lib/delete-video";
 import { cn } from "@/lib/utils";
 import {
   ClipSettingsPanel,
+  SourceLayoutBar,
   PANEL,
   PlanLimitHint,
   ProcessingCard,
@@ -420,11 +421,12 @@ export function UploadForm() {
                 </div>
               )}
             </div>
+            <SourceLayoutBar opts={opts} tier={tier} />
           </div>
           </div>
         </section>
 
-        <ClipSettingsPanel opts={opts} tier={tier}>
+        <ClipSettingsPanel opts={opts}>
           <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>

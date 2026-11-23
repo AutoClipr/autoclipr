@@ -6,9 +6,9 @@
  * the worker renders exactly what is chosen here.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, FileText, Loader2, Lock, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Check, ChevronDown, Crown, FileText, Info, Loader2, RefreshCw, UploadCloud, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
@@ -83,7 +83,11 @@ async function call<T>(path: string, body: unknown): Promise<T> {
   return res.data as T;
 }
 
-export function LayoutSubtitlesSection({
+/**
+ * Compact "Layout ▾ · Upload SRT" bar for the Video source card. The layout
+ * button opens a popover with ratio, layout and fit-crop tiles.
+ */
+export function LayoutBar({
   tier,
   layout,
   onLayoutChange,
@@ -96,202 +100,254 @@ export function LayoutSubtitlesSection({
   subtitle: SubtitleInfo | null;
   onSubtitleChange: (s: SubtitleInfo | null) => void;
 }) {
-  const set = (patch: Partial<LayoutConfig>) => onLayoutChange({ ...layout, ...patch });
-
-  return (
-    <div className="border-t border-[#253244] pt-6">
-      <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
-        <div className="min-w-0 space-y-5">
-          {/* Ratio */}
-          <div>
-            <p className="mb-2.5 text-sm font-medium text-[#F8FAFC]">Aspect ratio</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Aspect ratio">
-              {RATIOS.map((r) => {
-                const allowed = ratioAllowed(tier, r.id);
-                const on = layout.aspect_ratio === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    aria-disabled={!allowed}
-                    title={allowed ? r.hint : "Available on Creator, Pro and Business plans"}
-                    onClick={() => allowed && set({ aspect_ratio: r.id })}
-                    className={cn(
-                      "relative flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors",
-                      on ? "border-[#54D045]/60 bg-[#54D045]/10" : "border-[#253244] bg-[#0A111B] hover:border-[#35445a]",
-                      !allowed && "cursor-not-allowed opacity-55 hover:border-[#253244]",
-                    )}
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-                      <span
-                        className={cn("block rounded-[3px] border-2", on ? "border-[#54D045]" : "border-[#64748B]")}
-                        style={{ width: (r.w / Math.max(r.w, r.h)) * 24, height: (r.h / Math.max(r.w, r.h)) * 24 }}
-                      />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-[#F8FAFC]">{r.label}</span>
-                      <span className="block truncate text-[10px] text-[#94A3B8]">{r.hint}</span>
-                    </span>
-                    {!allowed && <Lock className="absolute right-2 top-2 h-3 w-3 text-amber-300" />}
-                  </button>
-                );
-              })}
-            </div>
-            {tier === "starter" && (
-              <p className="mt-2 text-xs text-[#94A3B8]">
-                Starter exports 9:16.{" "}
-                <Link href="/subscription" className="font-medium text-[#8fe383] hover:underline">Upgrade</Link> for 16:9, 1:1 and 4:5.
-              </p>
-            )}
-          </div>
-
-          {/* Layout */}
-          <div>
-            <p className="mb-2.5 text-sm font-medium text-[#F8FAFC]">Layout</p>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Layout">
-              {LAYOUTS.map((l) => {
-                const on = layout.layout === l.id;
-                return (
-                  <button
-                    key={l.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    aria-disabled={!l.enabled}
-                    title={l.enabled ? l.hint : LAYOUT_SOON}
-                    onClick={() => l.enabled && set({ layout: l.id as LayoutMode })}
-                    className={cn(
-                      "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors",
-                      on ? "border-[#54D045]/60 bg-[#54D045]/10 text-[#F8FAFC]" : "border-[#253244] bg-[#0A111B] text-[#94A3B8]",
-                      l.enabled ? "hover:text-[#F8FAFC]" : "cursor-not-allowed opacity-50",
-                    )}
-                  >
-                    {on && <Check className="h-3.5 w-3.5 text-[#54D045]" />}
-                    {l.label}
-                    {!l.enabled && <span className="text-[10px] text-[#64748B]">Soon</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-2 text-xs text-[#64748B]">Split, multi-panel, screen-share and gameplay layouts need extra sources or face tracking and aren&apos;t available yet.</p>
-          </div>
-
-          {/* Framing options */}
-          {layout.layout === "fill" ? (
-            <Segmented
-              label="Keep in frame"
-              value={layout.position}
-              onChange={(v) => set({ position: v as LayoutConfig["position"] })}
-              options={[["top", "Top"], ["center", "Center"], ["bottom", "Bottom"]]}
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Segmented
-                label="Crop video to"
-                value={layout.crop_ratio}
-                onChange={(v) => set({ crop_ratio: v as LayoutConfig["crop_ratio"] })}
-                options={[["original", "Original"], ["4:3", "4:3"], ["1:1", "1:1"]]}
-              />
-              <div>
-                <Segmented
-                  label="Background"
-                  value={layout.background}
-                  onChange={(v) => set({ background: v as LayoutConfig["background"] })}
-                  options={[["blur", "Blur"], ["black", "Black"], ["color", "Color"]]}
-                />
-                {layout.background === "color" && (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-[#94A3B8]">
-                    <input
-                      type="color"
-                      value={layout.background_color}
-                      onChange={(e) => set({ background_color: e.target.value.toUpperCase() })}
-                      className="h-7 w-9 cursor-pointer rounded border border-[#253244] bg-transparent"
-                      aria-label="Background color"
-                    />
-                    {layout.background_color}
-                  </label>
-                )}
-              </div>
-            </div>
-          )}
-
-          <SrtUpload value={subtitle} onChange={onSubtitleChange} />
-        </div>
-
-        <LayoutPreview layout={layout} hasSrt={!!subtitle} />
-      </div>
-    </div>
-  );
-}
-
-function Segmented({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
-  return (
-    <div>
-      <p className="mb-2 text-xs font-medium text-[#94A3B8]">{label}</p>
-      <div className="inline-flex rounded-xl border border-[#253244] bg-[#0A111B] p-0.5" role="radiogroup" aria-label={label}>
-        {options.map(([id, text]) => (
-          <button key={id} type="button" role="radio" aria-checked={value === id} onClick={() => onChange(id)}
-            className={cn("h-8 rounded-lg px-3 text-xs font-medium", value === id ? "bg-[#263244] text-white" : "text-[#94A3B8] hover:text-white")}>
-            {text}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Schematic of the output frame: where the source sits and what fills the rest. */
-function LayoutPreview({ layout, hasSrt }: { layout: LayoutConfig; hasSrt: boolean }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const srt = useSrtUpload(onSubtitleChange);
   const r = RATIOS.find((x) => x.id === layout.aspect_ratio)!;
-  const box = 150;
-  const W = r.w >= r.h ? box * 1.3 : (box * r.w) / r.h;
-  const H = r.w >= r.h ? (box * 1.3 * r.h) / r.w : box;
-  // Source assumed 16:9 (typical); cropped first when a crop ratio is set.
-  const src = layout.crop_ratio === "1:1" ? 1 : layout.crop_ratio === "4:3" ? 4 / 3 : 16 / 9;
-  const fitW = Math.min(W, H * src);
-  const fitH = fitW / src;
-  const bg =
-    layout.layout === "fill" ? "transparent" : layout.background === "black" ? "#000" : layout.background === "color" ? layout.background_color : "linear-gradient(135deg,#1e3a4a,#3b2f4a)";
+
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: MouseEvent) => wrap.current && !wrap.current.contains(e.target as Node) && setOpen(false);
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", down);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", down);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
 
   return (
-    <div className="flex flex-col items-center gap-2 lg:w-[210px]">
-      <p className="self-start text-xs font-medium text-[#94A3B8] lg:self-center">Preview</p>
-      <div className="flex h-[200px] items-center justify-center">
-        <div className="relative overflow-hidden rounded-lg border border-[#35445a]" style={{ width: W, height: H, background: bg }} aria-label={`${layout.aspect_ratio} ${layoutSummary(layout)}`}>
-          {layout.layout === "fit" && layout.background === "blur" && <div className="absolute inset-0 backdrop-blur" />}
-          {layout.layout === "fill" ? (
-            <div className={cn("absolute inset-0 flex justify-center bg-gradient-to-br from-[#2a5d4a] to-[#24405e]",
-              layout.position === "top" ? "items-start pt-3" : layout.position === "bottom" ? "items-end pb-8" : "items-center")}>
-              <span className="h-7 w-7 rounded-full bg-white/70" />
-            </div>
-          ) : (
-            <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-gradient-to-br from-[#2a5d4a] to-[#24405e] ring-1 ring-white/20"
-              style={{ width: fitW, height: fitH }}>
-              <span className="h-5 w-5 rounded-full bg-white/70" />
-            </div>
-          )}
-          <span className="absolute inset-x-2 bottom-2 rounded bg-black/50 px-1 py-0.5 text-center text-[8px] font-bold text-white">
-            {hasSrt ? "YOUR SUBTITLES" : "AI CAPTIONS"}
-          </span>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div ref={wrap} className="relative flex items-center gap-2">
+          <span className="text-sm text-[#94A3B8]">Layout</span>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[#F8FAFC] hover:bg-white/[0.06]"
+          >
+            <RatioGlyph w={r.w} h={r.h} />
+            {layout.aspect_ratio}, {layout.layout === "fill" ? "Fill" : "Fit"}
+            <ChevronDown className={cn("h-3.5 w-3.5 text-[#94A3B8] transition-transform", open && "rotate-180")} />
+          </button>
+          {open && <LayoutPopover tier={tier} layout={layout} onChange={onLayoutChange} />}
         </div>
+
+        <input ref={srt.input} type="file" accept=".srt,application/x-subrip" className="hidden"
+          onChange={(e) => e.target.files?.[0] && srt.upload(e.target.files[0])} />
+        {!subtitle && (
+          <button type="button" onClick={srt.pick} disabled={srt.busy}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm text-[#94A3B8] hover:bg-white/[0.06] hover:text-white disabled:opacity-60">
+            {srt.busy ? "Checking…" : "Upload SRT"}
+            {srt.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
-      <p className="text-center text-[11px] text-[#64748B]">{layout.aspect_ratio} · {layout.layout === "fill" ? "Fill" : "Fit"}</p>
+
+      {subtitle && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-[#54D045]/25 bg-[#54D045]/[0.06] px-3 py-2">
+          <FileText className="h-4 w-4 shrink-0 text-[#54D045]" />
+          <div className="min-w-0 flex-1" title={subtitle.first.map((c) => `${fmtTime(c.start)}  ${c.text}`).join("\n")}>
+            <p className="truncate text-xs font-medium text-white">{subtitle.filename}</p>
+            <p className="text-[11px] text-[#94A3B8]">
+              {fmtSize(subtitle.size)} · {subtitle.cues} lines · to {fmtTime(subtitle.lastEnd)}
+              {subtitle.skipped > 0 && <span className="text-amber-300"> · {subtitle.skipped} skipped</span>}
+            </p>
+          </div>
+          <button type="button" onClick={srt.pick} disabled={srt.busy} aria-label="Replace subtitle file"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[#94A3B8] hover:bg-white/[0.06] hover:text-white">
+            {srt.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          </button>
+          <button type="button" onClick={() => onSubtitleChange(null)} aria-label="Remove subtitle file"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[#94A3B8] hover:bg-rose-500/10 hover:text-rose-300">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+      {srt.error && <p className="text-xs text-[#fca5a5]" role="alert">{srt.error}</p>}
     </div>
   );
 }
 
-function SrtUpload({ value, onChange }: { value: SubtitleInfo | null; onChange: (s: SubtitleInfo | null) => void }) {
+function RatioGlyph({ w, h, size = 14 }: { w: number; h: number; size?: number }) {
+  const m = Math.max(w, h);
+  return <span className="inline-block rounded-[2px] border-[1.5px] border-current" style={{ width: (w / m) * size, height: (h / m) * size }} />;
+}
+
+const TILE_ON = "border-white ring-1 ring-white/70";
+const TILE_OFF = "border-transparent hover:border-white/30";
+
+function Tick() {
+  return (
+    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#111]">
+      <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+    </span>
+  );
+}
+
+function LayoutPopover({ tier, layout, onChange }: { tier: string | null; layout: LayoutConfig; onChange: (l: LayoutConfig) => void }) {
+  const set = (p: Partial<LayoutConfig>) => onChange({ ...layout, ...p });
+  return (
+    <div role="dialog" aria-label="Layout settings"
+      className="absolute left-0 top-full z-50 mt-2 w-[min(470px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#1F2330]/95 p-4 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+      <PopTitle>Select ratio</PopTitle>
+      <div className="flex items-end gap-2.5">
+        {RATIOS.map((r) => {
+          const allowed = ratioAllowed(tier, r.id);
+          const on = layout.aspect_ratio === r.id;
+          const hgt = 80;
+          const wd = r.w >= r.h ? Math.min(90, (hgt * r.w) / r.h * 0.62) : (hgt * r.w) / r.h;
+          return (
+            <button key={r.id} type="button" aria-pressed={on} disabled={!allowed}
+              title={allowed ? r.hint : "Available on Creator, Pro and Business plans"}
+              onClick={() => set({ aspect_ratio: r.id })}
+              className="group flex flex-col items-center gap-1.5 disabled:cursor-not-allowed">
+              <span className={cn("relative block rounded-lg border-2 bg-[#2C3140]", on ? TILE_ON : TILE_OFF, !allowed && "opacity-60")}
+                style={{ width: Math.max(wd, 48), height: r.w >= r.h ? (Math.max(wd, 48) * r.h) / r.w : hgt }}>
+                {on && <Tick />}
+              </span>
+              <span className="flex items-center gap-0.5 text-[11px] text-[#CBD5E1]">
+                {r.label} {!allowed && <Crown className="h-3 w-3 fill-amber-400 text-amber-400" />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {tier === "starter" && (
+        <p className="mt-2 text-[11px] text-[#94A3B8]">
+          <Crown className="mr-1 inline h-3 w-3 fill-amber-400 text-amber-400" />
+          <Link href="/subscription" className="font-medium text-amber-300 hover:underline">Upgrade</Link> to export 16:9, 1:1 and 4:5.
+        </p>
+      )}
+
+      <PopTitle className="mt-4" info="Fill crops to the frame. Fit keeps the whole picture with a background.">Layout</PopTitle>
+      <div className="grid grid-cols-7 gap-1.5">
+        {LAYOUTS.map((l) => {
+          const on = layout.layout === l.id;
+          return (
+            <button key={l.id} type="button" aria-pressed={on} disabled={!l.enabled}
+              title={l.enabled ? l.hint : LAYOUT_SOON}
+              onClick={() => set({ layout: l.id as LayoutMode })}
+              className="flex min-w-0 flex-col items-center gap-1 disabled:cursor-not-allowed">
+              <span className={cn("relative block aspect-[9/16] w-full overflow-hidden rounded-lg border-2", on ? TILE_ON : TILE_OFF, !l.enabled && "opacity-40")}>
+                <LayoutArt id={l.id} />
+                {on && <Tick />}
+                {!l.enabled && (
+                  <span className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 text-center text-[8px] font-semibold uppercase tracking-wide text-white">Soon</span>
+                )}
+              </span>
+              <span className="w-full truncate text-center text-[10px] text-[#CBD5E1]">{l.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {layout.layout === "fit" ? (
+        <>
+          <PopTitle className="mt-4" info="Crop the source before fitting it into the frame.">Fit layout: crop ratio</PopTitle>
+          <div className="flex gap-2.5">
+            {(["original", "4:3", "1:1"] as const).map((c) => {
+              const on = layout.crop_ratio === c;
+              const band = c === "original" ? 0.32 : c === "4:3" ? 0.42 : 0.56;
+              return (
+                <button key={c} type="button" aria-pressed={on} onClick={() => set({ crop_ratio: c })} className="flex flex-col items-center gap-1.5">
+                  <span className={cn("relative block h-[80px] w-[46px] rounded-lg border-2 bg-[#2C3140]", on ? TILE_ON : TILE_OFF)}>
+                    <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 bg-[#6B7280]" style={{ height: `${band * 100}%` }} />
+                    {on && <Tick />}
+                  </span>
+                  <span className="text-[11px] text-[#CBD5E1]">{c === "original" ? "Original" : c}</span>
+                </button>
+              );
+            })}
+            <div className="ml-auto flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium text-[#94A3B8]">Background</span>
+              <div className="flex gap-1.5">
+                {(["blur", "black", "color"] as const).map((b) => (
+                  <button key={b} type="button" aria-pressed={layout.background === b} onClick={() => set({ background: b })}
+                    className={cn("h-7 rounded-md border px-2 text-[11px] capitalize", layout.background === b ? "border-white bg-white/10 text-white" : "border-white/10 text-[#94A3B8] hover:text-white")}>
+                    {b}
+                  </button>
+                ))}
+              </div>
+              {layout.background === "color" && (
+                <label className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
+                  <input type="color" value={layout.background_color} aria-label="Background color"
+                    onChange={(e) => set({ background_color: e.target.value.toUpperCase() })}
+                    className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent" />
+                  {layout.background_color}
+                </label>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <PopTitle className="mt-4" info="Which part of the picture stays in frame when cropping.">Fill layout: keep in frame</PopTitle>
+          <div className="flex gap-1.5">
+            {(["top", "center", "bottom"] as const).map((p) => (
+              <button key={p} type="button" aria-pressed={layout.position === p} onClick={() => set({ position: p })}
+                className={cn("h-8 rounded-md border px-3 text-xs capitalize", layout.position === p ? "border-white bg-white/10 text-white" : "border-white/10 text-[#94A3B8] hover:text-white")}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PopTitle({ children, info, className }: { children: React.ReactNode; info?: string; className?: string }) {
+  return (
+    <p className={cn("mb-2.5 flex items-center gap-1.5 text-sm font-medium text-[#E2E8F0]", className)}>
+      {children}
+      {info && <Info className="h-3.5 w-3.5 text-[#94A3B8]" aria-label={info}><title>{info}</title></Info>}
+    </p>
+  );
+}
+
+/** Schematic speaker thumbnails for each layout tile. */
+function LayoutArt({ id }: { id: string }) {
+  const person = (x: number, y: number, s: number, c: string, k: string) => (
+    <g key={k}>
+      <circle cx={x} cy={y} r={4.2 * s} fill="#F1C7A5" />
+      <path d={`M${x - 8 * s} ${y + 14 * s} q${8 * s} -${12 * s} ${16 * s} 0 v${6 * s} h-${16 * s}z`} fill={c} />
+      <path d={`M${x - 4.4 * s} ${y - 1 * s} q${4.4 * s} -${6.5 * s} ${8.8 * s} 0`} fill="#3B2A20" />
+    </g>
+  );
+  const panel = (y: number, h: number, bg: string, c: string, k: string, x = 0, w = 36) => (
+    <g key={k}>
+      <rect x={x} y={y} width={w} height={h} fill={bg} />
+      {person(x + w / 2, y + h * 0.42, Math.min(h / 32, w / 36) * 1.1, c, `${k}p`)}
+    </g>
+  );
+  let body: React.ReactNode;
+  switch (id) {
+    case "fill": body = panel(0, 64, "#D7C3B0", "#2EA3D8", "a"); break;
+    case "fit": body = <><rect width="36" height="64" fill="#3D6C78" />{panel(16, 24, "#D7C3B0", "#2EA3D8", "a")}</>; break;
+    case "split": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a")}{panel(32, 32, "#E9D8C8", "#8B5A3C", "b")}</>; break;
+    case "three": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a")}{panel(32, 32, "#B7E3C5", "#555", "b", 0, 18)}{panel(32, 32, "#F5C2C7", "#C0392B", "c", 18, 18)}</>; break;
+    case "four": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a", 0, 18)}{panel(0, 32, "#EAD7F3", "#6C3483", "b", 18, 18)}{panel(32, 32, "#B7E3C5", "#555", "c", 0, 18)}{panel(32, 32, "#F5C2C7", "#C0392B", "d", 18, 18)}</>; break;
+    case "screen": body = <>{panel(0, 28, "#D7C3B0", "#2EA3D8", "a")}<rect y="28" width="36" height="36" fill="#F8FAFC" /><rect x="4" y="33" width="28" height="4" rx="1" fill="#93C5FD" />{[0, 1, 2].map((i) => <rect key={i} x={4 + i * 10} y="41" width="8" height="10" rx="1" fill={["#FCA5A5", "#A7F3D0", "#FDE68A"][i]} />)}</>; break;
+    default: body = <>{panel(0, 26, "#D7C3B0", "#2EA3D8", "a")}<rect y="26" width="36" height="38" fill="#4B7A3A" /><rect y="50" width="36" height="14" fill="#5B4636" /><rect x="14" y="36" width="8" height="12" fill="#1F2937" /><rect x="15" y="32" width="6" height="5" fill="#9CA3AF" /></>;
+  }
+  return <svg viewBox="0 0 36 64" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>{body}</svg>;
+}
+
+function useSrtUpload(onChange: (s: SubtitleInfo | null) => void) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
     setError(null);
+    if (input.current) input.current.value = "";
     if (!/\.srt$/i.test(file.name)) return setError("Only .srt subtitle files are supported.");
+    if (file.size === 0) return setError("This subtitle file is empty.");
     if (file.size > 1024 * 1024) return setError("Subtitle file is too large (max 1 MB).");
-    if (file.size === 0) return setError("This file is empty.");
     setBusy(true);
     try {
       const { path, upload_url } = await call<{ path: string; upload_url: string }>("/subtitles", { filename: file.name, size: file.size });
@@ -303,54 +359,7 @@ function SrtUpload({ value, onChange }: { value: SubtitleInfo | null; onChange: 
       setError(e instanceof Error ? e.message : "Upload failed. Please try again.");
     } finally {
       setBusy(false);
-      if (input.current) input.current.value = "";
     }
   }
-
-  return (
-    <div>
-      <p className="mb-1 text-sm font-medium text-[#F8FAFC]">Subtitles <span className="font-normal text-[#64748B]">· optional</span></p>
-      <p className="mb-2.5 text-xs text-[#94A3B8]">Upload an .srt to use your own subtitles instead of AI captions. Each clip gets the lines from its own time range.</p>
-      <input ref={input} type="file" accept=".srt,application/x-subrip" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-      {value ? (
-        <div className="rounded-xl border border-[#54D045]/30 bg-[#54D045]/[0.06] p-3">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5 shrink-0 text-[#54D045]" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-white">{value.filename}</p>
-              <p className="text-[11px] text-[#94A3B8]">
-                {fmtSize(value.size)} · {value.cues} lines · up to {fmtTime(value.lastEnd)}
-                {value.skipped > 0 && <span className="text-amber-300"> · {value.skipped} invalid skipped</span>}
-              </p>
-            </div>
-            <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label="Replace subtitle file"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-white/[0.06] hover:text-white">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            </button>
-            <button type="button" onClick={() => onChange(null)} aria-label="Remove subtitle file"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#94A3B8] hover:bg-rose-500/10 hover:text-rose-300">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-          {value.first.length > 0 && (
-            <ul className="mt-2.5 space-y-1 border-t border-white/5 pt-2.5">
-              {value.first.map((c, i) => (
-                <li key={i} className="flex gap-2 text-[11px]">
-                  <span className="shrink-0 tabular-nums text-[#64748B]">{fmtTime(c.start)}</span>
-                  <span className="truncate text-[#CBD5E1]">{c.text}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <button type="button" onClick={() => input.current?.click()} disabled={busy}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-[#35445a] px-4 text-sm font-medium text-[#CBD5E1] hover:border-[#54D045]/50 hover:text-white disabled:opacity-60">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {busy ? "Checking subtitles…" : "Upload SRT"}
-        </button>
-      )}
-      {error && <p className="mt-2 text-xs text-[#fca5a5]" role="alert">{error}</p>}
-    </div>
-  );
+  return { input, busy, error, upload, pick: () => input.current?.click() };
 }

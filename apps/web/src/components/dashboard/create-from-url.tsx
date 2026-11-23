@@ -8,6 +8,7 @@ import { SUPPORTED_SOURCES } from "@/lib/video-sources";
 import { cn } from "@/lib/utils";
 import {
   ClipSettingsPanel,
+  SourceLayoutBar,
   PANEL,
   ProcessingCard,
   PublishTargets,
@@ -194,11 +195,12 @@ export function CreateFromUrl() {
                         .map((s) => s.label)
                         .join(" · ")}`}
               </p>
+              <div className="mt-4"><SourceLayoutBar opts={opts} tier={tier} /></div>
             </div>
           </div>
         </section>
 
-        <ClipSettingsPanel opts={opts} tier={tier}>
+        <ClipSettingsPanel opts={opts}>
           <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>
