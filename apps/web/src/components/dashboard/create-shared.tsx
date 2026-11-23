@@ -120,9 +120,10 @@ export function useClipOptions() {
       layout: {
         aspect_ratio: layout.aspect_ratio,
         layout: layout.layout,
+        crop_ratio: layout.crop_ratio,
         ...(layout.layout === "fill"
-          ? { position: layout.position }
-          : { crop_ratio: layout.crop_ratio, background: layout.background, ...(layout.background === "color" ? { background_color: layout.background_color } : {}) }),
+          ? {}
+          : { background: layout.background, ...(layout.background === "color" ? { background_color: layout.background_color } : {}) }),
       },
       ...(subtitle ? { subtitle_srt_path: subtitle.path } : {}),
     }),

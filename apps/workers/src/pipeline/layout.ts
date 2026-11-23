@@ -61,7 +61,9 @@ export function layoutGraph(cfg: LayoutConfig, W: number, H: number, input = '0:
   const mode = cfg.layout ?? 'fill';
   if (mode === 'fill') {
     const yExpr = cfg.position === 'top' ? '0' : cfg.position === 'bottom' ? 'ih-oh' : '(ih-oh)/2';
-    return [`[${input}]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}:(iw-ow)/2:${yExpr},setsar=1[${out}]`];
+    // Optional content crop first (zooms in), then cover the frame.
+    const pre = contentCrop(cfg.crop_ratio, cfg.position);
+    return [`[${input}]${pre ? `${pre},` : ''}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}:(iw-ow)/2:${yExpr},setsar=1[${out}]`];
   }
   const crop = contentCrop(cfg.crop_ratio, cfg.position);
   const fg = `${crop ? `${crop},` : ''}scale=${W}:${H}:force_original_aspect_ratio=decrease,setsar=1`;

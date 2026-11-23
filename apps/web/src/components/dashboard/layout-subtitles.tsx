@@ -66,7 +66,7 @@ export const ratioAllowed = (tier: string | null, r: AspectRatio) => r === "9:16
 
 export const layoutSummary = (l: LayoutConfig) =>
   l.layout === "fill"
-    ? `Fill · ${l.position}`
+    ? `Fill · ${l.crop_ratio === "original" ? "original crop" : l.crop_ratio}`
     : `Fit · ${l.crop_ratio === "original" ? "original crop" : l.crop_ratio} · ${l.background === "color" ? l.background_color : l.background} background`;
 
 const fmtSize = (b: number) => (b < 1024 ? `${b} B` : `${(b / 1024).toFixed(1)} KB`);
@@ -248,71 +248,49 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
         })}
       </div>
 
-      {layout.layout === "fit" ? (
-        <>
-          <PopTitle className="mt-5" info="Crop the source before fitting it into the frame.">Fit Layout: Crop Ratio</PopTitle>
-          <div className="flex gap-2.5">
-            {(["original", "4:3", "1:1"] as const).map((c) => {
-              const on = layout.crop_ratio === c;
-              const band = c === "original" ? 0.32 : c === "4:3" ? 0.42 : 0.56;
-              return (
-                <button key={c} type="button" aria-pressed={on} onClick={() => set({ crop_ratio: c })} className="flex flex-col items-center gap-1.5">
-                  <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
-                    <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden bg-[#6B6C72]" style={{ height: `${band * 100}%` }}>
-                      <Img src={thumb ?? DEMO.podcast} pos="52% 40%" />
-                    </span>
-                    {on && <Tick />}
-                  </span>
-                  <span className="text-[11px] text-[#A1A1AA]">{c === "original" ? "Original" : c}</span>
+      <PopTitle className="mt-5" info={layout.layout === "fit" ? "Crop the source before fitting it into the frame." : "Crop the source before filling the frame (zooms in)."}>
+        {layout.layout === "fit" ? "Fit" : "Fill"} Layout: Crop Ratio
+      </PopTitle>
+      <div className="flex gap-2.5">
+        {(["original", "4:3", "1:1"] as const).map((c) => {
+          const on = layout.crop_ratio === c;
+          const band = c === "original" ? 0.42 : c === "4:3" ? 0.56 : 0.74;
+          return (
+            <button key={c} type="button" aria-pressed={on} onClick={() => set({ crop_ratio: c })} className="flex flex-col items-center gap-1.5">
+              <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
+                {/* Faded source; the bright window is the part kept after cropping. */}
+                <span className="absolute inset-0 opacity-35"><Img src={thumb ?? DEMO.podcast} pos="52% 50%" className="scale-[1.6]" /></span>
+                <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden border-y border-white/70" style={{ height: `${band * 100}%` }}>
+                  <Img src={thumb ?? DEMO.podcast} pos="52% 40%" />
+                </span>
+                {on && <Tick />}
+              </span>
+              <span className="text-[11px] text-[#A1A1AA]">{c === "original" ? "Original" : c}</span>
+            </button>
+          );
+        })}
+        {layout.layout === "fit" && (
+          <div className="ml-auto flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium text-[#94A3B8]">Background</span>
+            <div className="flex gap-1.5">
+              {(["blur", "black", "color"] as const).map((b) => (
+                <button key={b} type="button" aria-pressed={layout.background === b} onClick={() => set({ background: b })}
+                  className={cn("h-7 rounded-md border px-2 text-[11px] capitalize", layout.background === b ? "border-white bg-white/10 text-white" : "border-white/10 text-[#94A3B8] hover:text-white")}>
+                  {b}
                 </button>
-              );
-            })}
-            <div className="ml-auto flex flex-col gap-1.5">
-              <span className="text-[11px] font-medium text-[#94A3B8]">Background</span>
-              <div className="flex gap-1.5">
-                {(["blur", "black", "color"] as const).map((b) => (
-                  <button key={b} type="button" aria-pressed={layout.background === b} onClick={() => set({ background: b })}
-                    className={cn("h-7 rounded-md border px-2 text-[11px] capitalize", layout.background === b ? "border-white bg-white/10 text-white" : "border-white/10 text-[#94A3B8] hover:text-white")}>
-                    {b}
-                  </button>
-                ))}
-              </div>
-              {layout.background === "color" && (
-                <label className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
-                  <input type="color" value={layout.background_color} aria-label="Background color"
-                    onChange={(e) => set({ background_color: e.target.value.toUpperCase() })}
-                    className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent" />
-                  {layout.background_color}
-                </label>
-              )}
+              ))}
             </div>
+            {layout.background === "color" && (
+              <label className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
+                <input type="color" value={layout.background_color} aria-label="Background color"
+                  onChange={(e) => set({ background_color: e.target.value.toUpperCase() })}
+                  className="h-6 w-8 cursor-pointer rounded border border-white/10 bg-transparent" />
+                {layout.background_color}
+              </label>
+            )}
           </div>
-        </>
-      ) : (
-        <>
-          <PopTitle className="mt-5" info="Which part of the picture stays in frame when cropping.">Fill Layout: Keep in Frame</PopTitle>
-          <div className="flex gap-2.5">
-            {(["top", "center", "bottom"] as const).map((p) => {
-              const on = layout.position === p;
-              const y = p === "top" ? "0%" : p === "bottom" ? "100%" : "50%";
-              return (
-                <button key={p} type="button" aria-pressed={on} onClick={() => set({ position: p })} className="flex flex-col items-center gap-1.5">
-                  <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
-                    {/* Tall strip of the source; the bright window is the part kept in frame. */}
-                    <span className="absolute inset-0 opacity-35"><Img src={thumb ?? DEMO.podcast} pos="52% 50%" className="scale-[1.6]" /></span>
-                    <span className="absolute inset-x-0 h-[62%] overflow-hidden border-y border-white/70"
-                      style={{ top: y, transform: `translateY(-${y})` }}>
-                      <Img src={thumb ?? DEMO.podcast} pos={`52% ${y}`} />
-                    </span>
-                    {on && <Tick />}
-                  </span>
-                  <span className="text-[11px] capitalize text-[#A1A1AA]">{p}</span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
