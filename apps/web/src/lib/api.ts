@@ -203,5 +203,7 @@ export interface AnalyticsOverview {
     metrics_updated_at?: string | null;
     metrics_supported: boolean;
     thumbnail_url?: string | null;
+    /** Signed video link when there's no thumbnail (uploaded scheduler media). */
+    preview_url?: string | null;
   }>;
 }

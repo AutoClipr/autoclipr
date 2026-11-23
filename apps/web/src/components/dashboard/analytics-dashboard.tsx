@@ -470,7 +470,7 @@ export function AnalyticsDashboard({ initialData, loadFailed = false }: { initia
               {topPosts.map((p, i) => (
                 <li key={p.id} className="flex items-center gap-3 rounded-xl border border-[#253244] bg-[#0B1220] p-2.5">
                   <span className="w-4 text-center text-xs font-semibold text-[#64748B]">{i + 1}</span>
-                  <Thumb src={p.thumbnail_url} />
+                  <Thumb src={p.thumbnail_url} preview={p.preview_url} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-[#F8FAFC]">{p.clip_title}</p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-[#94A3B8]">
@@ -551,7 +551,7 @@ export function AnalyticsDashboard({ initialData, loadFailed = false }: { initia
                     <tr key={p.id} className="hover:bg-white/[0.02]">
                       <td className="px-5 py-2.5">
                         <div className="flex items-center gap-3">
-                          <Thumb src={p.thumbnail_url} />
+                          <Thumb src={p.thumbnail_url} preview={p.preview_url} />
                           <span className="max-w-[220px] truncate font-medium text-[#F8FAFC]">{p.clip_title}</span>
                         </div>
                       </td>
@@ -628,11 +628,30 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Thumb({ src }: { src?: string | null }) {
-  return src ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" loading="lazy" className="h-11 w-7 shrink-0 rounded object-cover" />
-  ) : (
+function Thumb({ src, preview }: { src?: string | null; preview?: string | null }) {
+  // Image → first video frame → icon, so a failed link never shows a broken image.
+  const [imgFailed, setImgFailed] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  if (src && !imgFailed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" loading="lazy" onError={() => setImgFailed(true)} className="h-11 w-7 shrink-0 rounded bg-black object-cover" />
+    );
+  }
+  if (preview && !videoFailed) {
+    return (
+      <video
+        src={`${preview}#t=0.5`}
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden
+        onError={() => setVideoFailed(true)}
+        className="pointer-events-none h-11 w-7 shrink-0 rounded bg-black object-cover"
+      />
+    );
+  }
+  return (
     <span className="flex h-11 w-7 shrink-0 items-center justify-center rounded bg-[#0A111B]">
       <Share2 className="h-3.5 w-3.5 text-[#475569]" />
     </span>

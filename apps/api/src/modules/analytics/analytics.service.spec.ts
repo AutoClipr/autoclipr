@@ -27,6 +27,7 @@ function makeStorage() {
   return {
     clipsBucket: jest.fn().mockReturnValue('clips'),
     clipThumbPath: jest.fn((path: string) => `${path}_thumb.jpg`),
+    parseObjectPathFromUrl: jest.fn((url: string | null) => (url?.startsWith('https://sb/') ? url.slice(11) : null)),
     objectExists: jest.fn(),
     createSignedDownloadUrl: jest.fn(),
   } as unknown as jest.Mocked<StorageService>;
@@ -190,6 +191,36 @@ describe('AnalyticsService', () => {
 
       expect(storage.clipThumbPath).toHaveBeenCalledWith('clip1.mp4');
       expect(result.publications[0].thumbnail_url).toBe('https://signed.example.com/thumb.jpg');
+    });
+
+    it('signs scheduler thumbnails and falls back to a video preview for uploads', async () => {
+      platformsRepo.listByUser.mockResolvedValue([]);
+      publicationsRepo.listPostedByUser.mockResolvedValue([]);
+      publicationsRepo.countByUser.mockResolvedValue({ posted: 0, failed: 0, pending: 0 });
+      (publicationsRepo as any).listScheduledPostedByUser.mockResolvedValue([
+        makePublication({ id: 't1', source: 'scheduler', clip_thumbnail_url: 'https://sb/u/a_thumb.jpg', clip_storage_path: 'u/a.mp4', posted_at: '2026-11-23T00:00:00Z' }),
+        makePublication({ id: 't2', source: 'scheduler', clip_thumbnail_url: null, clip_storage_path: 'u/scheduled/b.mp4', posted_at: '2026-11-22T00:00:00Z' }),
+        makePublication({ id: 't3', source: 'scheduler', clip_thumbnail_url: 'https://cdn.example/x.jpg', clip_storage_path: null, posted_at: '2026-11-21T00:00:00Z' }),
+      ]);
+      storage.objectExists.mockImplementation(async (_b: string, p: string) => p === 'u/a_thumb.jpg');
+      storage.createSignedDownloadUrl.mockImplementation(async (_b: string, p: string) => `https://signed/${p}`);
+
+      const { publications } = await service.getOverview('u1', false);
+
+      expect(publications.map((p: any) => [p.id, p.thumbnail_url, p.preview_url])).toEqual([
+        ['t1', 'https://signed/u/a_thumb.jpg', null],
+        ['t2', null, 'https://signed/u/scheduled/b.mp4'],
+        ['t3', 'https://cdn.example/x.jpg', null],
+      ]);
+    });
+
+    it('returns no thumbnail when storage fails', async () => {
+      platformsRepo.listByUser.mockResolvedValue([]);
+      publicationsRepo.listPostedByUser.mockResolvedValue([makePublication()]);
+      publicationsRepo.countByUser.mockResolvedValue({ posted: 1, failed: 0, pending: 0 });
+      storage.objectExists.mockRejectedValue(new Error('down'));
+      const { publications } = await service.getOverview('u1', false);
+      expect(publications[0].thumbnail_url).toBeNull();
     });
 
     it('leaves thumbnail_url null when the publication has no clip_storage_path', async () => {

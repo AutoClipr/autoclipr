@@ -209,13 +209,31 @@ export class AnalyticsService {
 
   private async enrichPublication(pub: PostedPublicationRow) {
     const bucket = this.storage.clipsBucket();
-    let thumbnail_url: string | null = pub.source === 'scheduler' ? pub.clip_thumbnail_url : null;
-
-    if (!thumbnail_url && pub.clip_storage_path) {
-      const thumbPath = this.storage.clipThumbPath(pub.clip_storage_path);
-      if (await this.storage.objectExists(bucket, thumbPath)) {
-        thumbnail_url = await this.storage.createSignedDownloadUrl(bucket, thumbPath);
+    let thumbnail_url: string | null = null;
+    let preview_url: string | null = null;
+    try {
+      // Stored thumbnail URLs point at the private bucket, so always sign a
+      // fresh link: the stored thumbnail's object, else <media>_thumb.jpg.
+      const candidates: string[] = [];
+      const fromUrl = this.storage.parseObjectPathFromUrl(pub.clip_thumbnail_url ?? null, bucket);
+      if (fromUrl) candidates.push(/\.mp4$/i.test(fromUrl) ? this.storage.clipThumbPath(fromUrl) : fromUrl);
+      if (pub.clip_storage_path) candidates.push(this.storage.clipThumbPath(pub.clip_storage_path));
+      for (const c of candidates) {
+        if (await this.storage.objectExists(bucket, c)) {
+          thumbnail_url = await this.storage.createSignedDownloadUrl(bucket, c);
+          if (thumbnail_url) break;
+        }
       }
+      // A non-storage (external) thumbnail URL can be used as is.
+      if (!thumbnail_url && !fromUrl && pub.clip_thumbnail_url && /^https?:\/\//.test(pub.clip_thumbnail_url)) {
+        thumbnail_url = pub.clip_thumbnail_url;
+      }
+      // Uploaded scheduler media has no thumbnail: let the UI show a frame.
+      if (!thumbnail_url && pub.source === 'scheduler' && pub.clip_storage_path) {
+        preview_url = await this.storage.createSignedDownloadUrl(bucket, pub.clip_storage_path);
+      }
+    } catch {
+      thumbnail_url = null;
     }
 
     return {
@@ -234,6 +252,7 @@ export class AnalyticsService {
       metrics_updated_at: pub.metrics_updated_at,
       metrics_supported: pub.platform === 'youtube' || pub.platform === 'instagram',
       thumbnail_url,
+      preview_url,
     };
   }
 }
