@@ -653,7 +653,69 @@ describe('VideosService', () => {
       jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
       await service.completeUpload('u1', 'v1', {});
       expect(brandKits.renderConfig).not.toHaveBeenCalled();
-      expect(jobsService.enqueueAndDispatch.mock.calls[0][0].payload).not.toHaveProperty('brand');
+      expect((jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any)).not.toHaveProperty('brand');
+    });
+  });
+
+  describe('layout and subtitles', () => {
+    const ready = () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+    };
+
+    it('passes an allowed layout to the job', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { layout: { aspect_ratio: '16:9', layout: 'fit', background: 'blur' } } as never);
+      expect((jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any)).toMatchObject({ layout: { aspect_ratio: '16:9', layout: 'fit' } });
+    });
+
+    it('refuses a ratio the plan lacks, before charging', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      ready();
+      await expect(service.completeUpload('u1', 'v1', { layout: { aspect_ratio: '1:1' } } as never)).rejects.toThrow('1:1 output is available');
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+      // Default 9:16 is fine on Starter.
+      await service.completeUpload('u1', 'v1', { layout: { layout: 'fill' } } as never);
+      expect((jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any).layout.aspect_ratio).toBe('9:16');
+    });
+
+    it('accepts only the caller\'s own, existing SRT', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      (storage as any).objectExists = jest.fn().mockResolvedValue(true);
+      await service.completeUpload('u1', 'v1', { subtitle_srt_path: 'u1/subtitles/a.srt' } as never);
+      expect((jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any).subtitle_srt_path).toBe('u1/subtitles/a.srt');
+      await expect(service.completeUpload('u1', 'v1', { subtitle_srt_path: 'u2/subtitles/a.srt' } as never)).rejects.toThrow('Invalid subtitle file');
+      (storage as any).objectExists.mockResolvedValue(false);
+      await expect(service.completeUpload('u1', 'v1', { subtitle_srt_path: 'u1/subtitles/b.srt' } as never)).rejects.toThrow('Subtitle file not found');
+    });
+
+    it('signs an SRT upload and rejects other file types', async () => {
+      (storage as any).createSignedUploadUrl = jest.fn().mockResolvedValue({ signedUrl: 'https://up' });
+      const res = await service.createSubtitleUpload('u1', { filename: 'Subs.SRT', size: 100 });
+      expect(res.path).toMatch(/^u1\/subtitles\/[0-9a-f-]+\.srt$/);
+      await expect(service.createSubtitleUpload('u1', { filename: 'a.vtt', size: 10 })).rejects.toThrow('Only .srt');
+    });
+
+    it('validates SRT content', async () => {
+      (storage as any).createSignedDownloadUrl = jest.fn().mockResolvedValue('https://dl');
+      const realFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, text: async () => '1\n00:00:01,000 --> 00:00:02,000\nHello\n\nbad\n' }) as never;
+      try {
+        await expect(service.validateSubtitle('u1', 'u1/subtitles/a.srt')).resolves.toMatchObject({ cues: 1, skipped: 1, lastEnd: 2 });
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: true, text: async () => 'nothing here' });
+        await expect(service.validateSubtitle('u1', 'u1/subtitles/a.srt')).rejects.toThrow('No valid subtitles');
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: true, text: async () => 'x'.repeat(1_048_577) });
+        await expect(service.validateSubtitle('u1', 'u1/subtitles/a.srt')).rejects.toThrow('too large');
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: false });
+        await expect(service.validateSubtitle('u1', 'u1/subtitles/a.srt')).rejects.toThrow('not found');
+        (storage as any).createSignedDownloadUrl.mockResolvedValue(null);
+        await expect(service.validateSubtitle('u1', 'u1/subtitles/a.srt')).rejects.toThrow('not found');
+        await expect(service.validateSubtitle('u1', 'u2/subtitles/a.srt')).rejects.toThrow('Invalid subtitle file');
+      } finally {
+        global.fetch = realFetch;
+      }
     });
   });
 

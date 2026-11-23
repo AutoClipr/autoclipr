@@ -36,7 +36,11 @@ export interface PlanConfig {
   brandKits: boolean;
   /** How many brand kits the plan may keep. 0 when brandKits is false. */
   maxBrandKits: number;
+  /** Output aspect ratios this plan may render. */
+  aspectRatios: string[];
 }
+
+const ALL_RATIOS = ['9:16', '16:9', '1:1', '4:5'];
 
 const ALL_PLATFORMS: PublishPlatform[] = ['youtube', 'instagram', 'tiktok', 'facebook', 'linkedin', 'x', 'threads'];
 
@@ -56,6 +60,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     analytics: false,
     brandKits: false,
     maxBrandKits: 0,
+    aspectRatios: ['9:16'],
   },
   creator: {
     id: 'creator',
@@ -72,6 +77,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     analytics: true,
     brandKits: true,
     maxBrandKits: 3,
+    aspectRatios: ALL_RATIOS,
   },
   pro: {
     id: 'pro',
@@ -88,6 +94,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     analytics: true,
     brandKits: true,
     maxBrandKits: 10,
+    aspectRatios: ALL_RATIOS,
   },
   business: {
     id: 'business',
@@ -104,6 +111,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     analytics: true,
     brandKits: true,
     maxBrandKits: 25,
+    aspectRatios: ALL_RATIOS,
   },
 };
 

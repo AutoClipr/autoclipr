@@ -6,8 +6,7 @@ import {
   Param,
   Post,
   Query,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards, HttpCode } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { THROTTLE } from '../../config/throttle.config';
@@ -15,6 +14,7 @@ import { ApiResponse } from '../../common/api-response';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard, AuthUser } from '../../common/guards/jwt-auth.guard';
 import { parsePagination } from '../../common/utils/pagination';
+import { SubtitleUploadDto, SubtitleValidateDto } from './dto/layout.dto';
 import { VideosService } from './videos.service';
 import { InitUploadDto } from './dto/init-upload.dto';
 import { ImportUrlDto } from './dto/import-url.dto';
@@ -27,6 +27,19 @@ import { CompleteUploadDto } from './dto/complete-upload.dto';
 @UseGuards(JwtAuthGuard)
 export class VideosController {
   constructor(private readonly videosService: VideosService) {}
+
+  /** Signed upload URL for an .srt subtitle file. */
+  @Post('subtitles')
+  async subtitleUpload(@CurrentUser() user: AuthUser, @Body() dto: SubtitleUploadDto) {
+    return ApiResponse.ok(await this.videosService.createSubtitleUpload(user.sub, dto));
+  }
+
+  /** Parse an uploaded .srt and report cues / problems. */
+  @Post('subtitles/validate')
+  @HttpCode(200)
+  async subtitleValidate(@CurrentUser() user: AuthUser, @Body() dto: SubtitleValidateDto) {
+    return ApiResponse.ok(await this.videosService.validateSubtitle(user.sub, dto.path));
+  }
 
   @Post('upload')
   async initUpload(@CurrentUser() user: AuthUser, @Body() dto: InitUploadDto) {

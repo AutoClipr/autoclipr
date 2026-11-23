@@ -1,3 +1,6 @@
+import 'reflect-metadata';
+import { Type } from 'class-transformer';
+import { LayoutDto } from './layout.dto';
 import {
   IsArray,
   IsIn,
@@ -8,6 +11,8 @@ import {
   Max,
   Matches,
   Min,
+  MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { CAPTION_STYLE_IDS } from './caption-styles';
 
@@ -58,4 +63,16 @@ export class ImportUrlDto {
   @IsString()
   @Matches(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|preset:[a-z0-9-]{1,40})$/i)
   brand_kit_id?: string;
+
+  /** Output ratio and Fill/Fit layout. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LayoutDto)
+  layout?: LayoutDto;
+
+  /** An uploaded SRT (from POST /videos/subtitles) to use instead of AI captions. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  subtitle_srt_path?: string;
 }

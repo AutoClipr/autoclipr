@@ -499,12 +499,26 @@ function styleLine(s: CaptionStyleDef & { alignment?: number }): string {
   ].join(',');
 }
 
-function header(s: CaptionStyleDef): string {
+/** Output frame for the subtitle canvas. Defaults to vertical 1080×1920. */
+export type CaptionFrame = { width: number; height: number };
+
+/**
+ * Keep PlayResX at 1080 so font sizes mean the same thing on every ratio, and
+ * size PlayResY to the frame's shape so text is never stretched. Vertical
+ * margins scale with the canvas height.
+ */
+function fitToFrame(s: CaptionStyleDef & { alignment?: number }, frame?: CaptionFrame) {
+  const playY = frame ? Math.max(200, Math.round((1080 * frame.height) / frame.width)) : 1920;
+  const scale = playY / 1920;
+  return { style: { ...s, marginV: Math.round((s.marginV ?? 420) * scale) }, playY };
+}
+
+function header(s: CaptionStyleDef, playY = 1920): string {
   return [
     '[Script Info]',
     'ScriptType: v4.00+',
     'PlayResX: 1080',
-    'PlayResY: 1920',
+    `PlayResY: ${playY}`,
     'WrapStyle: 0',
     'ScaledBorderAndShadow: yes',
     '',
@@ -527,8 +541,11 @@ export function buildAss(
   styleId: string,
   clipDuration: number,
   overrides?: CaptionOverrides,
+  frame?: CaptionFrame,
 ): string {
-  const style = applyOverrides(getCaptionStyle(styleId), overrides);
+  const fitted = fitToFrame(applyOverrides(getCaptionStyle(styleId), overrides), frame);
+  const style = fitted.style;
+  const playY = fitted.playY;
   const lines: string[] = [];
   const lead = style.lineTags ? `{${style.lineTags}}` : '';
   const chunks = chunkWords(words, style.wordsPerChunk);
@@ -586,7 +603,30 @@ export function buildAss(
 
   if (!lines.length) {
     // No speech in this window — leave the clip without captions rather than inventing text.
-    return `${header(style)}\n`;
+    return `${header(style, playY)}\n`;
   }
-  return `${header(style)}\n${lines.join('\n')}\n`;
+  return `${header(style, playY)}\n${lines.join('\n')}\n`;
+}
+
+/**
+ * Captions from an uploaded SRT (already re-based to the clip). Each cue is
+ * shown as written for its own time range, in the same caption style.
+ */
+export function buildAssFromCues(
+  cues: { start: number; end: number; text: string }[],
+  styleId: string,
+  overrides?: CaptionOverrides,
+  frame?: CaptionFrame,
+): string {
+  const fitted = fitToFrame(applyOverrides(getCaptionStyle(styleId), overrides), frame);
+  const style = fitted.style;
+  const lead = style.lineTags ? `{${style.lineTags}}` : '';
+  const lines = cues.map((c) => {
+    const text = c.text
+      .split('\n')
+      .map((l) => transform(escapeAss(l), style))
+      .join('\\N');
+    return dialogue(c.start, c.end, `${style.entrance ?? ''}${lead}${text}`);
+  });
+  return `${header(style, fitted.playY)}\n${lines.join('\n')}${lines.length ? '\n' : ''}`;
 }

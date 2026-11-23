@@ -143,4 +143,13 @@ describe('VideosController', () => {
     expect(service.delete).toHaveBeenCalledWith('u1', 'v1');
     expect(result.data).toEqual({ deleted: true, id: 'v1' });
   });
+
+  describe('subtitles', () => {
+    it('delegates upload and validation', async () => {
+      (service as any).createSubtitleUpload = jest.fn().mockResolvedValue({ path: 'p' });
+      (service as any).validateSubtitle = jest.fn().mockResolvedValue({ cues: 1 });
+      await expect(controller.subtitleUpload({ sub: 'u1' } as never, { filename: 'a.srt', size: 1 })).resolves.toMatchObject({ data: { path: 'p' } });
+      await expect(controller.subtitleValidate({ sub: 'u1' } as never, { path: 'p' })).resolves.toMatchObject({ data: { cues: 1 } });
+    });
+  });
 });

@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { escapeFfmpegPath, runCommand } from './exec.util';
 import { resolveBinary } from './resolve-binary.util';
+import { layoutGraph, outputSize, type LayoutConfig } from './layout';
 
 const QUALITY_PRESETS: Record<string, { crf: string; scale: string }> = {
   hd: { crf: '23', scale: '1080:1920' },
@@ -158,21 +159,19 @@ export class FfmpegService {
     exportQuality = 'hd',
     watermark = false,
     logo?: LogoOverlay | null,
+    layout?: LayoutConfig | null,
   ): Promise<void> {
     const preset = QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd;
     const startSec = (startMs / 1000).toFixed(3);
     const durationSec = ((endMs - startMs) / 1000).toFixed(3);
-    const [w, h] = preset.scale.split(':');
-    const W = Number(w);
-    const H = Number(h);
+    // Output canvas from the chosen aspect ratio (default vertical 9:16).
+    const [W, H] = outputSize(layout?.aspect_ratio, exportQuality);
 
     // Base frame, then an optional brand logo, then the Starter watermark on
     // top. The watermark is drawn with the `ass` filter (libass), the same
     // renderer the captions use; if it fails the render fails — never a
     // silently clean file.
-    const graph: string[] = [
-      `[0:v]scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1[base]`,
-    ];
+    const graph: string[] = layoutGraph(layout ?? {}, W, H, '0:v', 'base');
     let last = 'base';
     if (logo) {
       graph.push(`[1:v]${logoScaleFilter(W, logo)}[lg]`, `[${last}][lg]overlay=${logoPosition(W, H, logo.position)}[withlogo]`);

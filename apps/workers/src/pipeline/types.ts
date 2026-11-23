@@ -59,6 +59,10 @@ export type UrlPipelinePayload = {
   watermark?: boolean;
   /** Resolved brand kit (API-side, after plan + ownership checks). */
   brand?: BrandRenderConfig;
+  /** Output ratio + Fill/Fit layout (API-validated against the plan). */
+  layout?: import('./layout').LayoutConfig;
+  /** User-uploaded SRT for the source video (videos bucket path). Replaces AI captions. */
+  subtitle_srt_path?: string;
 };
 
 export type BrandRenderConfig = {

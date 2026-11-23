@@ -6,6 +6,7 @@
  * with credits and processing time, and the processing card.
  */
 
+import { DEFAULT_LAYOUT, LayoutSubtitlesSection, layoutSummary, type LayoutConfig, type SubtitleInfo } from "./layout-subtitles";
 import { BrandKitPicker } from "@/components/brand-kit/brand-kit-picker";
 import { CAPTION_PRESETS, type BrandKit } from "@/lib/brand-kits";
 import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
@@ -85,7 +86,13 @@ export function useClipOptions() {
   const [platforms, setPlatforms] = useState<string[]>(DEFAULT_PLATFORMS);
   // Kept here (not in the picker) so it survives re-renders and step changes.
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
+  const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
+  const [subtitle, setSubtitle] = useState<SubtitleInfo | null>(null);
   return {
+    layout,
+    setLayout,
+    subtitle,
+    setSubtitle,
     brandKit,
     setBrandKit,
     clipCount,
@@ -110,6 +117,14 @@ export function useClipOptions() {
       export_quality: exportQuality,
       platforms: platforms.length ? platforms : DEFAULT_PLATFORMS,
       ...(brandKit ? { brand_kit_id: brandKit.id } : {}),
+      layout: {
+        aspect_ratio: layout.aspect_ratio,
+        layout: layout.layout,
+        ...(layout.layout === "fill"
+          ? { position: layout.position }
+          : { crop_ratio: layout.crop_ratio, background: layout.background, ...(layout.background === "color" ? { background_color: layout.background_color } : {}) }),
+      },
+      ...(subtitle ? { subtitle_srt_path: subtitle.path } : {}),
     }),
   };
 }
@@ -619,7 +634,7 @@ function CaptionPicker({ value, onChange }: { value: string; onChange: (id: stri
 }
 
 /** Step 2: clip count, length, language, quality and captions. Extra sections go in children. */
-export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; children?: React.ReactNode }) {
+export function ClipSettingsPanel({ opts, tier, children }: { opts: ClipOptions; tier?: string | null; children?: React.ReactNode }) {
   return (
     <section className={cn(PANEL, "p-5 sm:p-6")}>
       <StepHeader step="02" title="AI clip configuration" description="Tell the AI what kind of clips you want." />
@@ -694,12 +709,20 @@ export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; child
           <FieldSelect id="opt-language" label="Video language" value={opts.language} onChange={opts.setLanguage} options={LANGUAGES} />
           <FieldSelect
             id="opt-quality"
-            label="Output quality (vertical 9:16)"
+            label="Output quality"
             value={opts.exportQuality}
             onChange={opts.setExportQuality}
             options={EXPORT_QUALITIES}
           />
         </div>
+
+        <LayoutSubtitlesSection
+          tier={tier ?? null}
+          layout={opts.layout}
+          onLayoutChange={opts.setLayout}
+          subtitle={opts.subtitle}
+          onSubtitleChange={opts.setSubtitle}
+        />
 
         {/* Captions */}
         <div className="border-t border-[#253244] pt-6">
@@ -844,6 +867,9 @@ export function SummaryPanel({
         ) : (
           <Row label="Captions" value={CAPTION_STYLES.find((s) => s.id === opts.captionStyle)?.label ?? "–"} />
         )}
+        <Row label="Aspect ratio" value={opts.layout.aspect_ratio} />
+        <Row label="Layout" value={layoutSummary(opts.layout)} />
+        <Row label="Subtitles" value={opts.subtitle ? `SRT · ${opts.subtitle.filename}` : "AI captions"} />
         <Row label="Quality" value={quality} />
         <Row
           label="Processing time"

@@ -1,4 +1,7 @@
-import { IsArray, IsIn, IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import 'reflect-metadata';
+import { Type } from 'class-transformer';
+import { LayoutDto } from './layout.dto';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, Matches, MaxLength, Max, Min, ValidateNested } from 'class-validator';
 import { CAPTION_STYLE_IDS } from './caption-styles';
 
 /** Clip options chosen on the create screen after a file upload (all optional). */
@@ -45,4 +48,16 @@ export class CompleteUploadDto {
   @IsString()
   @Matches(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|preset:[a-z0-9-]{1,40})$/i)
   brand_kit_id?: string;
+
+  /** Output ratio and Fill/Fit layout. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LayoutDto)
+  layout?: LayoutDto;
+
+  /** An uploaded SRT (from POST /videos/subtitles) to use instead of AI captions. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  subtitle_srt_path?: string;
 }

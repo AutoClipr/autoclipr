@@ -424,7 +424,7 @@ export function UploadForm() {
           </div>
         </section>
 
-        <ClipSettingsPanel opts={opts}>
+        <ClipSettingsPanel opts={opts} tier={tier}>
           <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>

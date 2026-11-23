@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import type { TranscriptSegment } from './types';
-import { buildAss, clipWords, type CaptionOverrides } from './caption-styles';
+import { buildAss, clipWords, type CaptionFrame, type CaptionOverrides } from './caption-styles';
 
 @Injectable()
 export class CaptionService {
@@ -13,11 +13,12 @@ export class CaptionService {
     outputPath: string,
     style: string,
     overrides?: CaptionOverrides,
+    frame?: CaptionFrame,
   ): Promise<void> {
     const clipStart = clipStartMs / 1000;
     const clipEnd = clipEndMs / 1000;
     const words = clipWords(segments, clipStart, clipEnd);
-    await fs.writeFile(outputPath, buildAss(words, style, clipEnd - clipStart, overrides), 'utf8');
+    await fs.writeFile(outputPath, buildAss(words, style, clipEnd - clipStart, overrides, frame), 'utf8');
   }
 
   /** Build SRT for a clip time range from full-video transcript segments. */

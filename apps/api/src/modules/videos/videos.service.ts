@@ -1,5 +1,8 @@
 import { estimateCompletionAt } from './utils/estimate-completion';
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { summarizeSrt } from '../../common/srt';
+import type { LayoutDto, SubtitleUploadDto } from './dto/layout.dto';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService, NR_EVENTS } from '@autoclipr/monitoring';
 import { ClipsRepository, type Clip } from '../clips/clips.repository';
@@ -94,6 +97,7 @@ export class VideosService {
     const limits = await this.planLimits(userId);
     // Before charging: an unknown/foreign kit or a Starter plan fails here.
     const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
+    const render = await this.renderOptions(userId, dto.layout, dto.subtitle_srt_path);
     const clipCount = dto.clip_count ?? 10;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
     const totalCost = costPerClip * clipCount;
@@ -153,6 +157,7 @@ export class VideosService {
           credit_cost: totalCost,
           ...limits.payload,
           ...(brand ? { brand } : {}),
+          ...render,
         },
       });
     } catch (err) {
@@ -189,6 +194,58 @@ export class VideosService {
         watermark: plan.watermark,
       },
     };
+  }
+
+  /**
+   * Layout + subtitle options for a job, checked server-side before charging:
+   * the aspect ratio must be on the user's plan, and an SRT must be the
+   * caller's own upload that exists.
+   */
+  private async renderOptions(userId: string, layout?: LayoutDto, srtPath?: string) {
+    const out: Record<string, unknown> = {};
+    if (layout) {
+      const ratio = layout.aspect_ratio ?? '9:16';
+      const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+      if (!plan.aspectRatios.includes(ratio)) {
+        throw new ForbiddenException(`${ratio} output is available on the Creator, Pro and Business plans.`);
+      }
+      out.layout = { ...layout, aspect_ratio: ratio };
+    }
+    if (srtPath) {
+      if (!srtPath.startsWith(`${userId}/subtitles/`) || srtPath.includes('..')) {
+        throw new BadRequestException('Invalid subtitle file.');
+      }
+      if (!(await this.storage.objectExists(this.videosBucket(), srtPath))) {
+        throw new BadRequestException('Subtitle file not found. Please upload it again.');
+      }
+      out.subtitle_srt_path = srtPath;
+    }
+    return out;
+  }
+
+  /** Signed upload URL for an .srt under the caller's own prefix. */
+  async createSubtitleUpload(userId: string, dto: SubtitleUploadDto) {
+    if (!/\.srt$/i.test(dto.filename)) throw new BadRequestException('Only .srt subtitle files are supported.');
+    const path = `${userId}/subtitles/${randomUUID()}.srt`;
+    const signed = await this.storage.createSignedUploadUrl(path, this.videosBucket());
+    return { path, upload_url: signed.signedUrl };
+  }
+
+  /**
+   * Read an uploaded SRT back and check its content (not just the extension):
+   * returns cue count, skipped blocks and a short preview.
+   */
+  async validateSubtitle(userId: string, path: string) {
+    if (!path.startsWith(`${userId}/subtitles/`) || path.includes('..')) throw new BadRequestException('Invalid subtitle file.');
+    const url = await this.storage.createSignedDownloadUrl(this.videosBucket(), path, 120);
+    if (!url) throw new BadRequestException('Subtitle file not found. Please upload it again.');
+    const res = await fetch(url);
+    if (!res.ok) throw new BadRequestException('Subtitle file not found. Please upload it again.');
+    const text = await res.text();
+    if (text.length > 1_048_576) throw new BadRequestException('Subtitle file is too large (max 1 MB).');
+    const summary = summarizeSrt(text);
+    if (!summary.cues) throw new BadRequestException('No valid subtitles found. Check the file is a valid .srt.');
+    return { path, ...summary };
   }
 
   /**
@@ -295,6 +352,7 @@ export class VideosService {
       throw new BadRequestException(limits.tooLongMessage);
     }
     const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
+    const render = await this.renderOptions(userId, dto.layout, dto.subtitle_srt_path);
 
     const clipCount = dto.clip_count ?? 5;
     const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
@@ -331,6 +389,7 @@ export class VideosService {
           credit_cost: totalCost,
           ...limits.payload,
           ...(brand ? { brand } : {}),
+          ...render,
         },
       });
     } catch (err) {

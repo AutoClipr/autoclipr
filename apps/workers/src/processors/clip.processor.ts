@@ -304,6 +304,8 @@ export class ClipProcessor extends WorkerHost {
         ...(typeof data.max_video_seconds === 'number' ? { max_video_seconds: data.max_video_seconds } : {}),
         ...(typeof data.plan_id === 'string' ? { plan_id: data.plan_id } : {}),
         ...(data.brand && typeof data.brand === 'object' ? { brand: data.brand } : {}),
+        ...(data.layout && typeof data.layout === 'object' ? { layout: data.layout } : {}),
+        ...(typeof data.subtitle_srt_path === 'string' ? { subtitle_srt_path: data.subtitle_srt_path } : {}),
         // Missing flag (jobs queued before plans existed) → no watermark.
         watermark: data.watermark === true,
       } as UrlPipelinePayload,

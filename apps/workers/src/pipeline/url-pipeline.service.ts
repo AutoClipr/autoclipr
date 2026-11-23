@@ -10,7 +10,10 @@ import { FfmpegService } from './ffmpeg.service';
 import { HookAnalysisService } from './hook-analysis.service';
 import { TempFilesService } from './temp-files.service';
 import type { BrandRenderConfig, PipelineStep, UrlPipelinePayload, ViralMoment } from './types';
-import { exportSize, type LogoOverlay } from './ffmpeg.service';
+import { type LogoOverlay } from './ffmpeg.service';
+import { outputSize, type LayoutConfig } from './layout';
+import { cuesForClip, parseSrt, toSrt, type SrtCue } from './srt';
+import { buildAssFromCues } from './caption-styles';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { WorkersStorageService } from './storage.service';
@@ -55,6 +58,7 @@ export class UrlPipelineService {
     const maxVideoSeconds = typeof data.max_video_seconds === 'number' ? data.max_video_seconds : 0;
     const watermark = data.watermark === true;
     const brand = data.brand ?? null;
+    const layout = data.layout ?? null;
 
     const userRes = await this.db.client.query(
       `SELECT user_id, title, storage_path, source_url FROM videos WHERE id = $1`,
@@ -252,6 +256,7 @@ export class UrlPipelineService {
       await this.updateProgress(jobId, 50, 3, steps, analysis);
 
       const brandAssets = brand ? await this.loadBrandAssets(brand, workDir, plog) : null;
+      const srtCues = data.subtitle_srt_path ? await this.loadSrt(data.subtitle_srt_path, workDir) : null;
 
       const clipIds: string[] = [];
       for (let i = 0; i < moments.length; i++) {
@@ -270,6 +275,8 @@ export class UrlPipelineService {
           exportQuality,
           watermark,
           brand: brandAssets,
+          layout,
+          srtCues,
         });
         clipIds.push(clipId);
 
@@ -410,6 +417,19 @@ export class UrlPipelineService {
     };
   }
 
+  /** Download and parse the uploaded SRT once per job. Unreadable → AI captions. */
+  private async loadSrt(objectPath: string, workDir: string): Promise<SrtCue[] | null> {
+    const dest = this.temp.jobPath(workDir, 'source_subtitles.srt');
+    try {
+      await this.storage.downloadToFile(this.storage.bucketVideos(), objectPath, dest);
+      const { cues } = parseSrt(await fs.readFile(dest, 'utf8'));
+      return cues.length ? cues : null;
+    } catch (err) {
+      this.logger.warn(`Uploaded SRT unavailable (${objectPath}): ${(err as Error).message}; using AI captions`);
+      return null;
+    }
+  }
+
   private async renderAndUploadClip(opts: {
     workDir: string;
     userId: string;
@@ -424,6 +444,9 @@ export class UrlPipelineService {
     exportQuality: string;
     watermark: boolean;
     brand?: BrandAssets | null;
+    layout?: LayoutConfig | null;
+    /** Uploaded subtitles for the whole source (seconds). */
+    srtCues?: SrtCue[] | null;
   }): Promise<string> {
     const {
       workDir,
@@ -453,24 +476,22 @@ export class UrlPipelineService {
       exportQuality,
       opts.watermark,
       opts.brand?.logo ?? null,
+      opts.layout ?? null,
     );
 
-    // Plain SRT is uploaded as the clip's downloadable subtitle file.
-    await this.captions.writeClipSrt(
-      transcript,
-      moment.start_ms,
-      moment.end_ms,
-      srtPath,
-      captionStyle,
-    );
-    await this.captions.writeClipAss(
-      transcript,
-      moment.start_ms,
-      moment.end_ms,
-      captionsPath,
-      opts.brand?.captionStyle ?? captionStyle,
-      opts.brand?.captionOverrides,
-    );
+    const [frameW, frameH] = outputSize(opts.layout?.aspect_ratio, exportQuality);
+    const frame = { width: frameW, height: frameH };
+    const styleId = opts.brand?.captionStyle ?? captionStyle;
+    if (opts.srtCues) {
+      // Uploaded subtitles: re-based to this clip, drawn in the caption style.
+      const cues = cuesForClip(opts.srtCues, moment.start_ms / 1000, moment.end_ms / 1000);
+      await fs.writeFile(srtPath, toSrt(cues), 'utf8');
+      await fs.writeFile(captionsPath, buildAssFromCues(cues, styleId, opts.brand?.captionOverrides, frame), 'utf8');
+    } else {
+      // Plain SRT is uploaded as the clip's downloadable subtitle file.
+      await this.captions.writeClipSrt(transcript, moment.start_ms, moment.end_ms, srtPath, captionStyle);
+      await this.captions.writeClipAss(transcript, moment.start_ms, moment.end_ms, captionsPath, styleId, opts.brand?.captionOverrides, frame);
+    }
 
     await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle);
 
@@ -479,7 +500,7 @@ export class UrlPipelineService {
     if (opts.brand && (opts.brand.intro || opts.brand.outro)) {
       const bumpered = this.temp.jobPath(workDir, `clip_${index}_branded.mp4`);
       try {
-        const [bw, bh] = exportSize(exportQuality);
+        const [bw, bh] = [frameW, frameH];
         await this.ffmpeg.addBumpers(captionedClip, bumpered, {
           intro: opts.brand.intro,
           outro: opts.brand.outro,
@@ -514,7 +535,7 @@ export class UrlPipelineService {
          ai_score, viral_score, duration_seconds, caption_style, caption_language,
          platform_targets, export_quality, viral_metrics
        )
-       VALUES ($1, $2, $3, $4, $5, 'processing', '9:16', $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
+       VALUES ($1, $2, $3, $4, $5, 'processing', $14, $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
        RETURNING id`,
       [
         userId,
@@ -530,6 +551,7 @@ export class UrlPipelineService {
         platforms,
         exportQuality,
         JSON.stringify(moment.metrics),
+        opts.layout?.aspect_ratio ?? '9:16',
       ],
     );
 
