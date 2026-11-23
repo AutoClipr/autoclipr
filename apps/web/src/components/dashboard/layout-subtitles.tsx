@@ -236,7 +236,7 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
               onClick={() => set({ layout: l.id as LayoutMode })}
               className="flex min-w-0 flex-col items-center gap-1 disabled:cursor-not-allowed">
               <span className={cn("relative block aspect-[9/16] w-full overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF, !l.enabled && "saturate-[0.6]")}>
-                {thumb ? <ThumbArt id={l.id} src={thumb} /> : <LayoutArt id={l.id} />}
+                {thumb ? <ThumbArt id={l.id} src={thumb} /> : <DemoArt id={l.id} />}
                 {on && <Tick />}
                 {!l.enabled && (
                   <span className="absolute left-1 top-1 rounded bg-black/70 px-1 py-px text-[7px] font-bold uppercase tracking-wide text-white">Soon</span>
@@ -259,7 +259,7 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
                 <button key={c} type="button" aria-pressed={on} onClick={() => set({ crop_ratio: c })} className="flex flex-col items-center gap-1.5">
                   <span className={cn("relative block h-[88px] w-[56px] overflow-hidden rounded-[10px] border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF)}>
                     <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden bg-[#6B6C72]" style={{ height: `${band * 100}%` }}>
-                      {thumb && <Img src={thumb} />}
+                      <Img src={thumb ?? DEMO.podcast} pos="52% 40%" />
                     </span>
                     {on && <Tick />}
                   </span>
@@ -321,27 +321,27 @@ function Img({ src, pos = "center", className }: { src: string; pos?: string; cl
 /* eslint-enable @next/next/no-img-element */
 
 /** Layout tiles built from the user's own video thumbnail. */
-function ThumbArt({ id, src }: { id: string; src: string }) {
-  const cell = (style: React.CSSProperties, pos: string, k: string) => (
-    <span key={k} className="absolute overflow-hidden" style={style}><Img src={src} pos={pos} /></span>
+function ThumbArt({ id, src, b = src, pos = "center" }: { id: string; src: string; b?: string; pos?: string }) {
+  const cell = (style: React.CSSProperties, p: string, k: string, img = src) => (
+    <span key={k} className="absolute overflow-hidden" style={style}><Img src={img} pos={p} /></span>
   );
   const half = { left: 0, right: 0, height: "50%" } as const;
   switch (id) {
     case "fill":
-      return <Img src={src} />;
+      return <Img src={src} pos={pos} />;
     case "fit":
       return (
         <>
           <Img src={src} className="scale-125 blur-[6px] brightness-75" />
-          <span className="absolute inset-x-0 top-1/2 aspect-video -translate-y-1/2 overflow-hidden"><Img src={src} /></span>
+          <span className="absolute inset-x-0 top-1/2 aspect-video -translate-y-1/2 overflow-hidden"><Img src={src} pos={pos} /></span>
         </>
       );
     case "split":
-      return <>{cell({ ...half, top: 0 }, "30% center", "a")}{cell({ ...half, bottom: 0 }, "70% center", "b")}</>;
+      return <>{cell({ ...half, top: 0 }, pos, "a")}{cell({ ...half, bottom: 0 }, "50% 30%", "b", b)}</>;
     case "three":
-      return <>{cell({ ...half, top: 0 }, "center", "a")}{cell({ left: 0, width: "50%", bottom: 0, height: "50%" }, "20% center", "b")}{cell({ right: 0, width: "50%", bottom: 0, height: "50%" }, "80% center", "c")}</>;
+      return <>{cell({ ...half, top: 0 }, pos, "a")}{cell({ left: 0, width: "50%", bottom: 0, height: "50%" }, "50% 30%", "b", b)}{cell({ right: 0, width: "50%", bottom: 0, height: "50%" }, pos, "c")}</>;
     case "four":
-      return <>{[["0", "0", "15%"], ["50%", "0", "40%"], ["0", "50%", "65%"], ["50%", "50%", "90%"]].map(([l, t, p], i) => cell({ left: l, top: t, width: "50%", height: "50%" }, `${p} center`, String(i)))}</>;
+      return <>{[["0", "0"], ["50%", "0"], ["0", "50%"], ["50%", "50%"]].map(([l, t], i) => cell({ left: l, top: t, width: "50%", height: "50%" }, i % 3 ? "50% 30%" : pos, String(i), i % 3 ? b : src))}</>;
     case "screen":
       return (
         <>
@@ -359,32 +359,30 @@ function ThumbArt({ id, src }: { id: string; src: string }) {
   }
 }
 
-/** Schematic speaker thumbnails for each layout tile (used until a video is picked). */
-function LayoutArt({ id }: { id: string }) {
-  const person = (x: number, y: number, s: number, c: string, k: string) => (
-    <g key={k}>
-      <circle cx={x} cy={y} r={4.2 * s} fill="#F1C7A5" />
-      <path d={`M${x - 8 * s} ${y + 14 * s} q${8 * s} -${12 * s} ${16 * s} 0 v${6 * s} h-${16 * s}z`} fill={c} />
-      <path d={`M${x - 4.4 * s} ${y - 1 * s} q${4.4 * s} -${6.5 * s} ${8.8 * s} 0`} fill="#3B2A20" />
-    </g>
-  );
-  const panel = (y: number, h: number, bg: string, c: string, k: string, x = 0, w = 36) => (
-    <g key={k}>
-      <rect x={x} y={y} width={w} height={h} fill={bg} />
-      {person(x + w / 2, y + h * 0.42, Math.min(h / 32, w / 36) * 1.1, c, `${k}p`)}
-    </g>
-  );
-  let body: React.ReactNode;
-  switch (id) {
-    case "fill": body = panel(0, 64, "#D7C3B0", "#2EA3D8", "a"); break;
-    case "fit": body = <><rect width="36" height="64" fill="#3D6C78" />{panel(16, 24, "#D7C3B0", "#2EA3D8", "a")}</>; break;
-    case "split": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a")}{panel(32, 32, "#E9D8C8", "#8B5A3C", "b")}</>; break;
-    case "three": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a")}{panel(32, 32, "#B7E3C5", "#555", "b", 0, 18)}{panel(32, 32, "#F5C2C7", "#C0392B", "c", 18, 18)}</>; break;
-    case "four": body = <>{panel(0, 32, "#D7C3B0", "#2EA3D8", "a", 0, 18)}{panel(0, 32, "#EAD7F3", "#6C3483", "b", 18, 18)}{panel(32, 32, "#B7E3C5", "#555", "c", 0, 18)}{panel(32, 32, "#F5C2C7", "#C0392B", "d", 18, 18)}</>; break;
-    case "screen": body = <>{panel(0, 28, "#D7C3B0", "#2EA3D8", "a")}<rect y="28" width="36" height="36" fill="#F8FAFC" /><rect x="4" y="33" width="28" height="4" rx="1" fill="#93C5FD" />{[0, 1, 2].map((i) => <rect key={i} x={4 + i * 10} y="41" width="8" height="10" rx="1" fill={["#FCA5A5", "#A7F3D0", "#FDE68A"][i]} />)}</>; break;
-    default: body = <>{panel(0, 26, "#D7C3B0", "#2EA3D8", "a")}<rect y="26" width="36" height="38" fill="#4B7A3A" /><rect y="50" width="36" height="14" fill="#5B4636" /><rect x="14" y="36" width="8" height="12" fill="#1F2937" /><rect x="15" y="32" width="6" height="5" fill="#9CA3AF" /></>;
-  }
-  return <svg viewBox="0 0 36 64" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>{body}</svg>;
+/** Sample stills shown until the user picks a video. */
+const DEMO = {
+  podcast: "/showcase/podcast.jpg",
+  talking: "/showcase/talking-head.jpg",
+  screen: "/showcase/screenshare.jpg",
+  gameplay: "/showcase/gameplay.jpg",
+};
+
+function DemoArt({ id }: { id: string }) {
+  if (id === "screen")
+    return (
+      <>
+        <span className="absolute inset-x-0 top-0 h-[42%] overflow-hidden"><Img src={DEMO.screen} pos="92% 85%" className="scale-[2.2] origin-[92%_85%]" /></span>
+        <span className="absolute inset-x-0 bottom-0 h-[58%] overflow-hidden"><Img src={DEMO.screen} pos="30% 30%" /></span>
+      </>
+    );
+  if (id === "gameplay")
+    return (
+      <>
+        <span className="absolute inset-x-0 top-0 h-[42%] overflow-hidden"><Img src={DEMO.gameplay} pos="0% 0%" className="scale-[2.4] origin-top-left" /></span>
+        <span className="absolute inset-x-0 bottom-0 h-[58%] overflow-hidden"><Img src={DEMO.gameplay} pos="65% 60%" /></span>
+      </>
+    );
+  return <ThumbArt id={id} src={DEMO.podcast} b={DEMO.talking} pos="52% 40%" />;
 }
 
 function useSrtUpload(onChange: (s: SubtitleInfo | null) => void) {
