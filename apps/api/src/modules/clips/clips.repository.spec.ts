@@ -13,6 +13,29 @@ describe('ClipsRepository', () => {
     repo = new ClipsRepository(supabase as unknown as SupabaseAdminService);
   });
 
+  describe('countByVideoIds', () => {
+    it('counts clips per video for the caller only', async () => {
+      chain.__setResult({ data: [{ video_id: 'v1' }, { video_id: 'v1' }, { video_id: 'v2' }], error: null });
+      await expect(repo.countByVideoIds('u1', ['v1', 'v2'])).resolves.toEqual({ v1: 2, v2: 1 });
+      expect(chain.eq).toHaveBeenCalledWith('user_id', 'u1');
+      expect(chain.in).toHaveBeenCalledWith('video_id', ['v1', 'v2']);
+    });
+
+    it('skips the query for no videos, handles null data, and throws on error', async () => {
+      await expect(repo.countByVideoIds('u1', [])).resolves.toEqual({});
+      chain.__setResult({ data: null, error: null });
+      await expect(repo.countByVideoIds('u1', ['v1'])).resolves.toEqual({});
+      chain.__setResult({ data: null, error: { message: 'boom' } });
+      await expect(repo.countByVideoIds('u1', ['v1'])).rejects.toThrow('boom');
+    });
+
+    it('filters listByUser to one video', async () => {
+      chain.__setResult({ data: [], error: null, count: 0 });
+      await repo.listByUser('u1', 20, 0, 'v9');
+      expect(chain.eq).toHaveBeenCalledWith('video_id', 'v9');
+    });
+  });
+
   describe('listByUser', () => {
     it('returns items and total on success', async () => {
       chain.__setResult({ data: [{ id: 'c1' }], error: null, count: 1 });

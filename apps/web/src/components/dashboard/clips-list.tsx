@@ -37,9 +37,11 @@ type ClipsListProps = {
   clips: Clip[];
   /** Total clips on the server (for pagination). */
   total?: number;
+  /** Album view: only this video's clips (also used when loading more). */
+  videoId?: string;
 };
 
-export function ClipsList({ clips: initialClips, total: initialTotal }: ClipsListProps) {
+export function ClipsList({ clips: initialClips, total: initialTotal, videoId }: ClipsListProps) {
   const router = useRouter();
   const { confirm, dialog } = useConfirm();
   const [clips, setClips] = useState(initialClips);
@@ -153,7 +155,7 @@ export function ClipsList({ clips: initialClips, total: initialTotal }: ClipsLis
       const token = await getAccessToken();
       if (!token) return;
       const next = page + 1;
-      const res = await apiFetch<Clip[]>(`/api/v1/clips?page=${next}&limit=${PAGE_SIZE}`, { token });
+      const res = await apiFetch<Clip[]>(`/api/v1/clips?page=${next}&limit=${PAGE_SIZE}${videoId ? `&video_id=${videoId}` : ""}`, { token });
       if (!res.success || !res.data) {
         toast.error("Couldn't load more clips. Please try again.");
         return;

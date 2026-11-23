@@ -35,6 +35,7 @@ describe('VideosService', () => {
     } as unknown as jest.Mocked<VideosRepository>;
 
     clipsRepo = {
+      countByVideoIds: jest.fn().mockResolvedValue({}),
       listByVideoId: jest.fn(),
     } as unknown as jest.Mocked<ClipsRepository>;
 
@@ -806,6 +807,14 @@ describe('VideosService', () => {
       videosRepo.listByUser.mockResolvedValue({ items: [], total: 0 } as never);
       await service.list('u1', 3, 20);
       expect(videosRepo.listByUser).toHaveBeenCalledWith('u1', 20, 40);
+    });
+
+    it('adds each video\'s real clip count, and survives a count failure', async () => {
+      videosRepo.listByUser.mockResolvedValue({ items: [{ id: 'v1' }, { id: 'v2' }], total: 2 } as never);
+      (clipsRepo as any).countByVideoIds = jest.fn().mockResolvedValue({ v1: 7 });
+      await expect(service.list('u1', 1, 20)).resolves.toEqual({ items: [{ id: 'v1', clip_count: 7 }, { id: 'v2', clip_count: 0 }], total: 2 });
+      (clipsRepo as any).countByVideoIds.mockRejectedValue(new Error('db'));
+      await expect(service.list('u1', 1, 20)).resolves.toEqual({ items: [{ id: 'v1', clip_count: 0 }, { id: 'v2', clip_count: 0 }], total: 2 });
     });
   });
 

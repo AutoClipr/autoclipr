@@ -81,3 +81,9 @@ export function yearlySavingPct(p: Pick<PlanNumbers, "price_cents" | "yearly_pri
 }
 
 export const formatMinutes = (seconds: number) => `${Math.round(seconds / 60)} min`;
+
+/** "Free Plan" / "Creator Plan" … for tags. */
+export function planLabel(tier?: string | null): string {
+  const p = FALLBACK_PLANS.find((x) => x.id === tier);
+  return !p || p.id === "starter" ? "Free Plan" : `${p.name} Plan`;
+}

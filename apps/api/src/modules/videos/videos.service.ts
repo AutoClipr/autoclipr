@@ -368,7 +368,10 @@ export class VideosService {
 
   async list(userId: string, page: number, limit: number) {
     const offset = (page - 1) * limit;
-    return this.videosRepo.listByUser(userId, limit, offset);
+    const { items, total } = await this.videosRepo.listByUser(userId, limit, offset);
+    // Real clip totals per video (the album cards), not just the clips a page loaded.
+    const counts = await this.clipsRepo.countByVideoIds(userId, items.map((v) => v.id)).catch(() => ({} as Record<string, number>));
+    return { items: items.map((v) => ({ ...v, clip_count: counts[v.id] ?? 0 })), total };
   }
 
   async get(userId: string, videoId: string) {

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Clapperboard, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { apiFetch, type Clip, type Video } from "@/lib/api";
+import { apiFetch, type Clip, type Profile, type Video } from "@/lib/api";
+import { planLabel } from "@/lib/plans";
 import { ClipsList } from "@/components/dashboard/clips-list";
 import { ProcessingVideosPanel } from "@/components/dashboard/processing-videos-panel";
 import { ReadyVideosGrid } from "@/components/dashboard/ready-videos-grid";
@@ -18,9 +19,10 @@ export default async function ClipsPage() {
   } = await supabase.auth.getSession();
   const token = session!.access_token;
 
-  const [clipsRes, videosRes] = await Promise.all([
+  const [clipsRes, videosRes, me] = await Promise.all([
     apiFetch<Clip[]>("/api/v1/clips?limit=24", { token }),
-    apiFetch<Video[]>("/api/v1/videos?limit=12", { token }),
+    apiFetch<Video[]>("/api/v1/videos?limit=24", { token }),
+    apiFetch<Profile>("/api/v1/users/me", { token }),
   ]);
 
   const loadFailed = !clipsRes.success;
@@ -61,7 +63,14 @@ export default async function ClipsPage() {
 
       {processingVideos.length > 0 && <ProcessingVideosPanel videos={processingVideos} />}
 
-      {readyVideos.length > 0 && <ReadyVideosGrid videos={readyVideos} clipCounts={clipCounts} />}
+      {readyVideos.length > 0 && (
+        <ReadyVideosGrid
+          videos={readyVideos}
+          clipCounts={clipCounts}
+          moreAlbums={!!videosRes.meta?.has_more}
+          planLabel={planLabel(me.data?.subscription_tier)}
+        />
+      )}
 
       <section>
         <div className="mb-4">

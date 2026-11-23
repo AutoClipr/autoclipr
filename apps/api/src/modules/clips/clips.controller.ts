@@ -45,12 +45,15 @@ export class ClipsController {
     @CurrentUser() user: AuthUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    /** Only this video's clips (an "album"). Ignored unless it's a UUID. */
+    @Query('video_id') videoId?: string,
   ) {
     const { page: p, limit: l } = parsePagination(
       parseInt(page ?? '1', 10),
       parseInt(limit ?? '20', 10),
     );
-    const { items, total } = await this.clipsService.list(user.sub, p, l);
+    const vid = videoId && /^[0-9a-f-]{36}$/i.test(videoId) ? videoId : undefined;
+    const { items, total } = await this.clipsService.list(user.sub, p, l, vid);
     return ApiResponse.ok(items, {
       page: p,
       limit: l,

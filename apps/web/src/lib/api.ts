@@ -79,6 +79,8 @@ export interface Video {
   source_type?: string;
   analysis?: Record<string, unknown>;
   created_at: string;
+  /** All clips made from this video (album size), from the API. */
+  clip_count?: number;
 }
 
 export interface ViralMetrics {

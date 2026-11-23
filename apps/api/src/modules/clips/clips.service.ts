@@ -161,9 +161,9 @@ export class ClipsService {
     }
   }
 
-  async list(userId: string, page: number, limit: number) {
+  async list(userId: string, page: number, limit: number, videoId?: string) {
     const offset = (page - 1) * limit;
-    const { items, total } = await this.clipsRepo.listByUser(userId, limit, offset);
+    const { items, total } = await this.clipsRepo.listByUser(userId, limit, offset, videoId);
     const publications = await this.publicationsRepo.listByClipIds(items.map((c) => c.id));
     const pubsByClip = new Map<string, ClipPublication[]>();
     for (const pub of publications) {

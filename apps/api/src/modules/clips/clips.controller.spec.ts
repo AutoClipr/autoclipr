@@ -38,7 +38,7 @@ describe('ClipsController', () => {
 
       const result = await controller.list(user, '2', '10');
 
-      expect(service.list).toHaveBeenCalledWith('u1', 2, 10);
+      expect(service.list).toHaveBeenCalledWith('u1', 2, 10, undefined);
       expect(result.meta).toEqual({ page: 2, limit: 10, total: 20, has_more: false });
     });
 
@@ -47,7 +47,16 @@ describe('ClipsController', () => {
 
       await controller.list(user, undefined, undefined);
 
-      expect(service.list).toHaveBeenCalledWith('u1', 1, 20);
+      expect(service.list).toHaveBeenCalledWith('u1', 1, 20, undefined);
+    });
+
+    it('filters to one album when video_id is a UUID, and ignores anything else', async () => {
+      service.list.mockResolvedValue({ items: [], total: 0 } as never);
+      const id = '11111111-2222-3333-4444-555555555555';
+      await controller.list(user, '1', '20', id);
+      expect(service.list).toHaveBeenLastCalledWith('u1', 1, 20, id);
+      await controller.list(user, '1', '20', 'not-a-uuid');
+      expect(service.list).toHaveBeenLastCalledWith('u1', 1, 20, undefined);
     });
 
     it('sets has_more = true when more pages remain', async () => {
