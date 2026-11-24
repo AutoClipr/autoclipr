@@ -7,11 +7,13 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { Check, ChevronDown, Crown, FileText, Info, Loader2, RefreshCw, UploadCloud, X } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
+import { isPaidTier } from "@/lib/plans";
+import { createPortal } from "react-dom";
+import { PlanUpgradeCard } from "@/components/billing/plan-upgrade-card";
 
 export type AspectRatio = "9:16" | "16:9" | "1:1" | "4:5";
 export type LayoutMode = "fill" | "fit";
@@ -62,7 +64,7 @@ const LAYOUTS: { id: string; label: string; enabled: boolean; hint: string }[] =
 const LAYOUT_SOON = "Coming soon: this layout needs multiple video sources or face tracking, which AutoClipr doesn't support yet.";
 
 /** Plans allowed every ratio; Starter is vertical only (mirrors apps/api/src/common/plans.ts). */
-export const ratioAllowed = (tier: string | null, r: AspectRatio) => r === "9:16" || (!!tier && tier !== "starter");
+export const ratioAllowed = (tier: string | null, r: AspectRatio) => r === "9:16" || isPaidTier(tier);
 
 export const layoutSummary = (l: LayoutConfig) =>
   l.layout === "fill"
@@ -104,6 +106,7 @@ export function LayoutBar({
   thumbnail?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [upsell, setUpsell] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const srt = useSrtUpload(onSubtitleChange);
   const r = RATIOS.find((x) => x.id === layout.aspect_ratio)!;
@@ -136,7 +139,11 @@ export function LayoutBar({
             {layout.aspect_ratio}, {layout.layout === "fill" ? "Fill" : "Fit"}
             <ChevronDown className={cn("h-3.5 w-3.5 text-[#94A3B8] transition-transform", open && "rotate-180")} />
           </button>
-          {open && <LayoutPopover tier={tier} layout={layout} onChange={onLayoutChange} thumb={thumbnail ?? null} />}
+          {open && (
+            <LayoutPopover tier={tier} layout={layout} onChange={onLayoutChange} thumb={thumbnail ?? null}
+              onUpgrade={() => { setOpen(false); setUpsell(true); }} />
+          )}
+          {upsell && <LayoutUpgradeModal onClose={() => setUpsell(false)} />}
         </div>
 
         <input ref={srt.input} type="file" accept=".srt,application/x-subrip" className="hidden"
@@ -191,7 +198,7 @@ function Tick() {
   );
 }
 
-function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null; layout: LayoutConfig; onChange: (l: LayoutConfig) => void; thumb: string | null }) {
+function LayoutPopover({ tier, layout, onChange, thumb, onUpgrade }: { tier: string | null; layout: LayoutConfig; onChange: (l: LayoutConfig) => void; thumb: string | null; onUpgrade: () => void }) {
   const set = (p: Partial<LayoutConfig>) => onChange({ ...layout, ...p });
   return (
     <div role="dialog" aria-label="Layout settings"
@@ -204,10 +211,10 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
           const hgt = 80;
           const wd = r.w >= r.h ? Math.min(90, (hgt * r.w) / r.h * 0.62) : (hgt * r.w) / r.h;
           return (
-            <button key={r.id} type="button" aria-pressed={on} disabled={!allowed}
+            <button key={r.id} type="button" aria-pressed={on}
               title={allowed ? r.hint : "Available on Creator, Pro and Business plans"}
-              onClick={() => set({ aspect_ratio: r.id })}
-              className="group flex flex-col items-center gap-1.5 disabled:cursor-not-allowed">
+              onClick={() => (allowed ? set({ aspect_ratio: r.id }) : onUpgrade())}
+              className="group flex flex-col items-center gap-1.5">
               <span className={cn("relative block rounded-lg border-2 bg-[#3A3B41]", on ? TILE_ON : TILE_OFF, !allowed && "opacity-60")}
                 style={{ width: Math.max(wd, 48), height: r.w >= r.h ? (Math.max(wd, 48) * r.h) / r.w : hgt }}>
                 {on && <Tick />}
@@ -219,10 +226,10 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
           );
         })}
       </div>
-      {tier === "starter" && (
+      {!isPaidTier(tier) && (
         <p className="mt-2 text-[11px] text-[#94A3B8]">
           <Crown className="mr-1 inline h-3 w-3 fill-amber-400 text-amber-400" />
-          <Link href="/subscription" className="font-medium text-amber-300 hover:underline">Upgrade</Link> to export 16:9, 1:1 and 4:5.
+          <button type="button" onClick={onUpgrade} className="font-medium text-amber-300 hover:underline">Upgrade</button> to export 16:9, 1:1 and 4:5.
         </p>
       )}
 
@@ -292,6 +299,37 @@ function LayoutPopover({ tier, layout, onChange, thumb }: { tier: string | null;
         )}
       </div>
     </div>
+  );
+}
+
+const LAYOUT_BENEFITS = [
+  "Landscape 16:9 for YouTube",
+  "Square 1:1 for feeds",
+  "Portrait 4:5 for Instagram",
+  "Fill and Fit layouts in every ratio",
+  "Your SRT subtitles, sized to each ratio",
+];
+
+/** Upgrade pitch shown when a Starter user picks a paid ratio. */
+function LayoutUpgradeModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [onClose]);
+  return createPortal(
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 p-4" onClick={onClose} role="dialog" aria-modal="true" aria-label="Upgrade for more aspect ratios">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg">
+        <PlanUpgradeCard
+          icon={Crown}
+          title="Make every clip fit every platform."
+          description="Export in landscape, square and portrait as well as vertical, so one video works on YouTube, Instagram, LinkedIn and more."
+          benefits={LAYOUT_BENEFITS}
+          onClose={onClose}
+        />
+      </div>
+    </div>,
+    document.body,
   );
 }
 
