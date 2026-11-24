@@ -1,4 +1,4 @@
-import type { BlogPost } from "@/lib/blog-posts";
+import { plainText, wordCount, type BlogPost } from "@/lib/blog-posts";
 import { MARKETING_FAQS } from "@/lib/faqs";
 import type { LandingPage } from "@/lib/landing-pages";
 import { DEFAULT_DESCRIPTION, OG_IMAGE_PATH, SITE_NAME, SITE_URL, SOCIAL_PROFILES } from "@/lib/seo";
@@ -168,7 +168,18 @@ export function BlogPostJsonLd({ post, url }: { post: BlogPost; url: string }) {
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     keywords: post.keywords.join(", "),
+    inLanguage: "en",
+    wordCount: wordCount(post),
+    ...(post.category ? { articleSection: post.category } : {}),
   };
+
+  const faq = post.faqs?.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: post.faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: plainText(f.a) } })),
+      }
+    : null;
 
   const breadcrumb = {
     "@context": "https://schema.org",
@@ -180,7 +191,7 @@ export function BlogPostJsonLd({ post, url }: { post: BlogPost; url: string }) {
     ],
   };
 
-  return <JsonLd data={[article, breadcrumb]} />;
+  return <JsonLd data={faq ? [article, breadcrumb, faq] : [article, breadcrumb]} />;
 }
 
 export function BlogIndexJsonLd({ posts }: { posts: BlogPost[] }) {

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
 
   const meta = pageMetadata({
-    title: post.title,
+    title: post.seoTitle ?? post.title,
     description: post.description,
     path: `/blog/${post.slug}`,
     keywords: post.keywords,
@@ -31,7 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.publishedAt,
       ...(post.updatedAt ? { modifiedTime: post.updatedAt } : {}),
       authors: [SITE_NAME],
+      tags: post.keywords,
+      ...(post.category ? { section: post.category } : {}),
     },
+    twitter: { card: "summary_large_image", title: `${post.seoTitle ?? post.title} | ${SITE_NAME}`, description: post.description },
   };
 }
 

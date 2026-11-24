@@ -18,14 +18,31 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
-    version: "v1.4.0",
-    date: "June 2025",
+    version: "v1.5.0",
+    date: "November 2026",
     badge: "Latest",
     badgeColor: "from-emerald-500 to-teal-400",
+    headline: "AI hooks, pro enhancements and every aspect ratio",
+    description:
+      "Open clips with animated AI hooks, clean up speech and audio, add auto zoom, motion graphics and sound effects, translate and dub, and export in 9:16, 16:9, 1:1 or 4:5.",
+    highlight: true,
+    changes: [
+      { type: "feature", text: "AI Hook & Headline Studio: 19 animated hooks and 4 headline styles, with AI text written per clip" },
+      { type: "feature", text: "Export in 9:16, 16:9, 1:1 and 4:5 with Fill or Fit layouts" },
+      { type: "feature", text: "Upload your own SRT subtitles, mapped to each clip" },
+      { type: "feature", text: "Speech cleanup removes filler words and long pauses" },
+      { type: "feature", text: "Enhance audio, Auto SFX, Auto Zoom, transitions and colour correction" },
+      { type: "feature", text: "Motion graphics and AI Emojis" },
+      { type: "feature", text: "Caption translation and AI voice dubbing in 11 languages" },
+      { type: "improvement", text: "Sharper exports: better scaling and less quality loss between render passes" },
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "June 2025",
     headline: "Starter Plan is now free + 100 credits on signup",
     description:
       "We're making AutoClipr accessible to every creator. The Starter plan is now completely free with 100 credits included on signup — no credit card required.",
-    highlight: true,
     changes: [
       { type: "feature", text: "Starter plan is now $0/month — free forever" },
       { type: "feature", text: "New signups receive 100 credits automatically" },

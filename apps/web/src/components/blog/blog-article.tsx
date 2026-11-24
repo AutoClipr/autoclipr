@@ -45,12 +45,31 @@ export function BlogArticle({ post }: { post: BlogPost }) {
             )}
             {section.paragraphs.map((p, j) => (
               <p key={j} className="mb-4">
-                {p}
+                <RichText text={p} />
               </p>
             ))}
           </section>
         ))}
       </div>
+
+      {post.faqs && post.faqs.length > 0 && (
+        <section className="mt-4 border-t border-white/10 pt-10" aria-labelledby="faq-heading">
+          <h2 id="faq-heading" className="mb-6 text-2xl font-semibold text-foreground">Frequently asked questions</h2>
+          <div className="space-y-3">
+            {post.faqs.map((f) => (
+              <details key={f.q} className="group rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 open:bg-white/[0.05]">
+                <summary className="cursor-pointer list-none font-medium text-foreground marker:hidden">
+                  <span className="flex items-center justify-between gap-4">
+                    <h3 className="text-base font-medium">{f.q}</h3>
+                    <span className="text-muted-foreground transition-transform group-open:rotate-45" aria-hidden>+</span>
+                  </span>
+                </summary>
+                <p className="mt-3 leading-relaxed text-muted-foreground"><RichText text={f.a} /></p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
 
       {post.relatedTools && post.relatedTools.length > 0 && (
         <div className="mt-12 border-t border-white/10 pt-8">
@@ -79,5 +98,24 @@ export function BlogArticle({ post }: { post: BlogPost }) {
         </Button>
       </div>
     </article>
+  );
+}
+
+/** Paragraph text with internal links written as [label](/path). */
+function RichText({ text }: { text: string }) {
+  const parts = text.split(/(\[[^\]]+\]\(\/[^)]*\))/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const m = /^\[([^\]]+)\]\((\/[^)]*)\)$/.exec(part);
+        return m ? (
+          <Link key={i} href={m[2]} className="font-medium text-emerald-400 underline-offset-4 hover:underline">
+            {m[1]}
+          </Link>
+        ) : (
+          part
+        );
+      })}
+    </>
   );
 }
