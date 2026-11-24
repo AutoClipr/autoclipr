@@ -35,6 +35,8 @@ export class JobsService {
     const traceHeaders: DistributedTraceHeaders = {};
     this.monitoring.insertDistributedTraceHeaders(traceHeaders);
 
+    // Cleared once the race settles so no 15 s timer outlives each enqueue.
+    let queueTimeout: NodeJS.Timeout | undefined;
     try {
       await Promise.race([
         this.clipQueue.add(
@@ -53,8 +55,8 @@ export class JobsService {
             removeOnFail: 100,
           },
         ),
-        new Promise<never>((_, reject) =>
-          setTimeout(
+        new Promise<never>((_, reject) => {
+          queueTimeout = setTimeout(
             () =>
               reject(
                 new ServiceUnavailableException(
@@ -62,8 +64,8 @@ export class JobsService {
                 ),
               ),
             15_000,
-          ),
-        ),
+          );
+        }),
       ]);
     } catch (err) {
       if (err instanceof ServiceUnavailableException) {
@@ -85,6 +87,8 @@ export class JobsService {
       throw new ServiceUnavailableException(
         `Job queue error: ${message}. Check REDIS_URL on Railway API.`,
       );
+    } finally {
+      clearTimeout(queueTimeout);
     }
 
     this.monitoring.recordEvent(NR_EVENTS.VIDEO_PROCESSING_STARTED, {

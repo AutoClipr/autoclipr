@@ -19,6 +19,8 @@ jobs:
   ci-web:
     name: CI · web
     runs-on: ubuntu-latest
+    # Fail fast instead of hanging for GitHub's 6-hour default.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -40,6 +42,8 @@ jobs:
   ci-api:
     name: CI · api
     runs-on: ubuntu-latest
+    # Fail fast instead of hanging for GitHub's 6-hour default.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -79,6 +83,8 @@ jobs:
   ci-workers:
     name: CI · workers
     runs-on: ubuntu-latest
+    # Fail fast instead of hanging for GitHub's 6-hour default.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
