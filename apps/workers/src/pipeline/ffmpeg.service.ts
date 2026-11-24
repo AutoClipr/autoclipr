@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
@@ -299,6 +300,61 @@ export class FfmpegService {
       '-f', 'concat', '-safe', '0', '-i', list,
       '-c', 'copy', '-movflags', '+faststart',
       outputPath,
+    ]);
+  }
+
+  /**
+   * Opening hook card: background from the clip (or a colour), hook text
+   * burned from an ASS file, a synthesised sound effect (or silence).
+   * Output matches the concat format of normalizeForConcat.
+   */
+  async renderHookCard(opts: {
+    clipPath: string;
+    assPath: string;
+    outputPath: string;
+    width: number;
+    height: number;
+    seconds: number;
+    clipSeconds: number;
+    background: string;
+    sfx: string | null;
+  }): Promise<void> {
+    const { width: W, height: H, seconds } = opts;
+    const fontsDir = SUBTITLE_FONT_DIRS.find((d) => existsSync(d));
+    const ass = `ass=${escapeFfmpegPath(opts.assPath)}${fontsDir ? `:fontsdir=${escapeFfmpegPath(fontsDir)}` : ''}`;
+    const audio = opts.sfx
+      ? `${opts.sfx},apad=whole_dur=${seconds}[a]`
+      : `anullsrc=r=44100:cl=stereo,atrim=duration=${seconds}[a]`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', opts.clipPath,
+      '-filter_complex', `${opts.background};[bg]${ass},format=yuv420p[v];${audio}`,
+      '-map', '[v]', '-map', '[a]',
+      '-t', String(seconds),
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '20',
+      '-c:a', 'aac', '-b:a', '128k',
+      '-movflags', '+faststart',
+      opts.outputPath,
+    ]);
+  }
+
+  /** Mix a sound effect into a clip's audio at `atSeconds`; video is copied. */
+  async mixSfx(input: string, output: string, sfx: string, atSeconds = 0): Promise<void> {
+    const audio = await this.hasAudio(input);
+    const delay = Math.round(atSeconds * 1000);
+    const fx = `${sfx},adelay=${delay}|${delay}[fx]`;
+    const graph = audio
+      ? `${fx};[0:a]aresample=44100,aformat=channel_layouts=stereo[a0];[a0][fx]amix=inputs=2:duration=first:normalize=0[a]`
+      : `${fx};[fx]apad[a]`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', input,
+      '-filter_complex', graph,
+      '-map', '0:v:0', '-map', '[a]',
+      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
+      ...(audio ? [] : ['-shortest']),
+      '-movflags', '+faststart',
+      output,
     ]);
   }
 

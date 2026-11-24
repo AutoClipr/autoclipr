@@ -63,6 +63,8 @@ export type UrlPipelinePayload = {
   layout?: import('./layout').LayoutConfig;
   /** User-uploaded SRT for the source video (videos bucket path). Replaces AI captions. */
   subtitle_srt_path?: string;
+  /** AI Hook & Headline settings (validated and charged by the API). */
+  hook?: import('./hooks').HookConfig & { credits?: number };
 };
 
 export type BrandRenderConfig = {

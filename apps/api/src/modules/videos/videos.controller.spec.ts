@@ -152,4 +152,9 @@ describe('VideosController', () => {
       await expect(controller.subtitleValidate({ sub: 'u1' } as never, { path: 'p' })).resolves.toMatchObject({ data: { cues: 1 } });
     });
   });
+
+  it('lists hook templates', async () => {
+    (service as any).hookTemplates = jest.fn().mockResolvedValue({ access: 'all', templates: [] });
+    await expect(controller.hookTemplates({ sub: 'u1' } as never)).resolves.toMatchObject({ data: { access: 'all' } });
+  });
 });

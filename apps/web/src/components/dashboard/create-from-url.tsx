@@ -200,7 +200,7 @@ export function CreateFromUrl() {
           </div>
         </section>
 
-        <ClipSettingsPanel opts={opts}>
+        <ClipSettingsPanel opts={opts} media={{ image: thumbnail }}>
           <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>

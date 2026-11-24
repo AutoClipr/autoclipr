@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Type } from 'class-transformer';
 import { LayoutDto } from './layout.dto';
+import { HookDto } from './hook.dto';
 import {
   IsArray,
   IsIn,
@@ -69,6 +70,11 @@ export class ImportUrlDto {
   @ValidateNested()
   @Type(() => LayoutDto)
   layout?: LayoutDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => HookDto)
+  hook?: HookDto;
 
   /** An uploaded SRT (from POST /videos/subtitles) to use instead of AI captions. */
   @IsOptional()

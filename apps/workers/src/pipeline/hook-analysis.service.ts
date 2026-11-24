@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type OpenAI from 'openai';
 import type { TranscriptResult, ViralMoment } from './types';
 import { createHookAnalysisLlmClient } from './llm-client.util';
+import { cleanHookText, fallbackHook } from './hooks';
 
 @Injectable()
 export class HookAnalysisService implements OnModuleInit {
@@ -217,5 +218,43 @@ ${segmentLines}`;
     }
 
     return out;
+  }
+
+  /**
+   * A short opening line for one clip, written from that clip's own
+   * transcript: no re-transcription, one small LLM call. Falls back to a
+   * trimmed title when the LLM is unavailable or returns nothing usable.
+   */
+  async hookPhrase(clipText: string, title: string, kind: 'viral' | 'headline'): Promise<string> {
+    const fallback = fallbackHook(title, clipText, kind);
+    if (!this.llm || !clipText.trim()) return fallback;
+    const maxWords = kind === 'headline' ? 8 : 6;
+    try {
+      const completion = await this.llm.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: 'You output only valid JSON for video editors.' },
+          {
+            role: 'user',
+            content:
+              `Write ${kind === 'headline' ? 'a headline title' : 'an opening hook'} for this short video clip, at most ${maxWords} words.\n` +
+              'It must describe what is actually said in the clip: no invented facts, numbers, or promises, and no misleading clickbait. ' +
+              'Plain words, no hashtags, no emojis, no quotes. Use the clip language.\n' +
+              `Return {"text": "..."}.\n\nClip title: ${title}\nTranscript:\n${clipText.slice(0, 2500)}`,
+          },
+        ],
+        temperature: 0.6,
+        response_format: { type: 'json_object' },
+        max_tokens: 80,
+      });
+      const parsed = JSON.parse(completion.choices[0]?.message?.content ?? '{}') as { text?: string };
+      const text = cleanHookText(String(parsed.text ?? '')).replace(/^["']|["']$/g, '');
+      if (!text) return fallback;
+      const words = text.split(' ');
+      return words.length > maxWords + 2 ? words.slice(0, maxWords).join(' ') : text;
+    } catch (err) {
+      this.logger.warn(`${this.providerLabel} hook phrase failed, using title: ${err}`);
+      return fallback;
+    }
   }
 }

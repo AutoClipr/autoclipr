@@ -2,6 +2,8 @@ import { estimateCompletionAt } from './utils/estimate-completion';
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { summarizeSrt } from '../../common/srt';
+import { HOOK_TEMPLATES, hookAllowed, hookTemplate } from '../../common/hook-templates';
+import type { HookDto } from './dto/hook.dto';
 import type { LayoutDto, SubtitleUploadDto } from './dto/layout.dto';
 import { ConfigService } from '@nestjs/config';
 import { MonitoringService, NR_EVENTS } from '@autoclipr/monitoring';
@@ -98,8 +100,9 @@ export class VideosService {
     // Before charging: an unknown/foreign kit or a Starter plan fails here.
     const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
     const render = await this.renderOptions(userId, dto.layout, dto.subtitle_srt_path);
+    const hook = await this.hookOptions(userId, dto.hook, dto.layout?.aspect_ratio);
     const clipCount = dto.clip_count ?? 10;
-    const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
+    const costPerClip = (this.config.get<number>('clipCreditCost') ?? 1) + hook.perClip;
     const totalCost = costPerClip * clipCount;
 
     const title =
@@ -158,6 +161,7 @@ export class VideosService {
           ...limits.payload,
           ...(brand ? { brand } : {}),
           ...render,
+          ...hook.payload,
         },
       });
     } catch (err) {
@@ -221,6 +225,50 @@ export class VideosService {
       out.subtitle_srt_path = srtPath;
     }
     return out;
+  }
+
+  /**
+   * AI Hook & Headline: the template must exist, match the kind, support the
+   * output ratio and be on the user's plan. Checked before charging; its
+   * per-clip credits are added to the job cost (and refunded with it).
+   */
+  private async hookOptions(userId: string, hook: HookDto | undefined, ratio = '9:16') {
+    if (!hook) return { payload: {}, perClip: 0 };
+    const t = hookTemplate(hook.template_id);
+    if (!t || t.kind !== hook.kind) throw new BadRequestException('Unknown hook template.');
+    if (!t.ratios.includes(ratio)) throw new BadRequestException(`${t.name} isn't available for ${ratio} output.`);
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    if (!hookAllowed(plan.hookAccess, t)) {
+      throw new ForbiddenException(
+        plan.hookAccess === 'none'
+          ? 'AI hooks and headlines are available on the Creator, Pro and Business plans.'
+          : `The ${t.name} hook is available on the Pro and Business plans.`,
+      );
+    }
+    return {
+      perClip: t.credits,
+      payload: {
+        hook: {
+          ...hook,
+          placement: hook.placement ?? 'opening',
+          duration: hook.duration ?? t.defaultSeconds,
+          sfx: hook.sfx ?? t.sfx !== 'none',
+          sfx_type: t.sfx,
+          // Refunded per clip by the worker if this hook fails to render.
+          credits: t.credits,
+          text: hook.text?.trim() || undefined,
+        },
+      },
+    };
+  }
+
+  /** Hook templates with the caller's access to each. */
+  async hookTemplates(userId: string) {
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    return {
+      access: plan.hookAccess,
+      templates: HOOK_TEMPLATES.map((t) => ({ ...t, allowed: hookAllowed(plan.hookAccess, t) })),
+    };
   }
 
   /** Signed upload URL for an .srt under the caller's own prefix. */
@@ -353,9 +401,10 @@ export class VideosService {
     }
     const brand = dto.brand_kit_id ? await this.brandKits.renderConfig(userId, dto.brand_kit_id) : null;
     const render = await this.renderOptions(userId, dto.layout, dto.subtitle_srt_path);
+    const hook = await this.hookOptions(userId, dto.hook, dto.layout?.aspect_ratio);
 
     const clipCount = dto.clip_count ?? 5;
-    const costPerClip = this.config.get<number>('clipCreditCost') ?? 1;
+    const costPerClip = (this.config.get<number>('clipCreditCost') ?? 1) + hook.perClip;
     const totalCost = costPerClip * clipCount;
 
     // Charged up front, same as URL imports; the pipeline refunds on failure.
@@ -390,6 +439,7 @@ export class VideosService {
           ...limits.payload,
           ...(brand ? { brand } : {}),
           ...render,
+          ...hook.payload,
         },
       });
     } catch (err) {

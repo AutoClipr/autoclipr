@@ -12,7 +12,8 @@ import { TempFilesService } from './temp-files.service';
 import type { BrandRenderConfig, PipelineStep, UrlPipelinePayload, ViralMoment } from './types';
 import { type LogoOverlay } from './ffmpeg.service';
 import { outputSize, type LayoutConfig } from './layout';
-import { cuesForClip, parseSrt, toSrt, type SrtCue } from './srt';
+import { cuesForClip, parseSrt, shiftCues, toSrt, type SrtCue } from './srt';
+import { buildHookAss, cardBackground, mergeAss, resolveSpec, sfxSource, type HookConfig, type HookSpec } from './hooks';
 import { buildAssFromCues } from './caption-styles';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -277,6 +278,7 @@ export class UrlPipelineService {
           brand: brandAssets,
           layout,
           srtCues,
+          hook: data.hook ?? null,
         });
         clipIds.push(clipId);
 
@@ -430,6 +432,35 @@ export class UrlPipelineService {
     }
   }
 
+  /** Text, resolved style, duration and sound for one clip's hook. */
+  private async prepareHook(
+    hook: HookConfig,
+    moment: ViralMoment,
+    transcript: import('./types').TranscriptSegment[],
+    srtCues: SrtCue[] | null,
+    brand: BrandAssets | null,
+    clipSeconds: number,
+  ) {
+    const startS = moment.start_ms / 1000;
+    const endS = moment.end_ms / 1000;
+    const clipText = srtCues
+      ? cuesForClip(srtCues, startS, endS).map((c) => c.text).join(' ')
+      : transcript.filter((t) => t.end > startS && t.start < endS).map((t) => t.text).join(' ');
+    const text = hook.text?.trim() || (await this.hooks.hookPhrase(clipText, moment.title, hook.kind));
+    const spec = resolveSpec(hook, brand ? { primary: brand.captionOverrides?.highlight_color, font: brand.captionOverrides?.font } : null);
+    const want = Math.min(5, Math.max(1, hook.duration || 2.5));
+    // An overlay can't outlast the clip; an opening card can be any length.
+    const seconds = hook.placement === 'overlay' ? Math.min(want, Math.max(1, clipSeconds - 0.2)) : want;
+    const sfx = hook.sfx === false ? null : sfxSource(hook.sfx_type);
+    return { text, spec, seconds, sfx };
+  }
+
+  /** A hook that fails to render never costs the clip: ship it without, refund the hook. */
+  private async hookFailed(userId: string, videoId: string, index: number, hook: HookConfig & { credits?: number }, err: unknown) {
+    this.logger.warn(`Hook skipped for clip ${index}: ${(err as Error)?.message ?? err}`);
+    if (hook.credits && hook.credits > 0) await this.refundCredits(userId, hook.credits, 'hook_render_failed', videoId);
+  }
+
   private async renderAndUploadClip(opts: {
     workDir: string;
     userId: string;
@@ -447,6 +478,7 @@ export class UrlPipelineService {
     layout?: LayoutConfig | null;
     /** Uploaded subtitles for the whole source (seconds). */
     srtCues?: SrtCue[] | null;
+    hook?: (HookConfig & { credits?: number }) | null;
   }): Promise<string> {
     const {
       workDir,
@@ -493,7 +525,35 @@ export class UrlPipelineService {
       await this.captions.writeClipAss(transcript, moment.start_ms, moment.end_ms, captionsPath, styleId, opts.brand?.captionOverrides, frame);
     }
 
+    // AI hook: overlay hooks join the caption file (same burn pass); opening
+    // hooks become a card in front of the finished clip further down.
+    const clipSeconds = (moment.end_ms - moment.start_ms) / 1000;
+    let hookUsed: { text: string; seconds: number; spec: HookSpec; sfx: string | null } | null = null;
+    if (opts.hook) {
+      try {
+        hookUsed = await this.prepareHook(opts.hook, moment, transcript, opts.srtCues ?? null, opts.brand ?? null, clipSeconds);
+        if (opts.hook.placement === 'overlay') {
+          const caps = await fs.readFile(captionsPath, 'utf8');
+          const hookAss = buildHookAss(hookUsed.text, hookUsed.spec, frameW, frameH, hookUsed.seconds, 0);
+          await fs.writeFile(captionsPath, mergeAss(caps, hookAss), 'utf8');
+        }
+      } catch (err) {
+        hookUsed = null;
+        await this.hookFailed(userId, videoId, index, opts.hook, err);
+      }
+    }
+
     await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle);
+
+    if (hookUsed && opts.hook?.placement === 'overlay' && hookUsed.sfx) {
+      const mixed = this.temp.jobPath(workDir, `clip_${index}_sfx.mp4`);
+      try {
+        await this.ffmpeg.mixSfx(captionedClip, mixed, hookUsed.sfx, 0);
+        await fs.rename(mixed, captionedClip);
+      } catch (err) {
+        this.logger.warn(`Hook sound skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
 
     // Brand intro/outro. Best effort: a bad bumper file must not cost the user
     // the clip, so on failure the clip ships without it.
@@ -512,6 +572,37 @@ export class UrlPipelineService {
         await fs.rename(bumpered, captionedClip);
       } catch (err) {
         this.logger.warn(`Intro/outro skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
+
+    // Opening hook card goes first, ahead of any brand intro, so it is the
+    // first thing a viewer sees. The downloadable SRT is shifted to match.
+    if (hookUsed && opts.hook?.placement === 'opening') {
+      const cardAss = this.temp.jobPath(workDir, `clip_${index}_hook.ass`);
+      const card = this.temp.jobPath(workDir, `clip_${index}_hook.mp4`);
+      const withHook = this.temp.jobPath(workDir, `clip_${index}_hooked.mp4`);
+      try {
+        await fs.writeFile(cardAss, buildHookAss(hookUsed.text, hookUsed.spec, frameW, frameH, hookUsed.seconds, 0), 'utf8');
+        await this.ffmpeg.renderHookCard({
+          clipPath: rawClip,
+          assPath: cardAss,
+          outputPath: card,
+          width: frameW,
+          height: frameH,
+          seconds: hookUsed.seconds,
+          clipSeconds,
+          background: cardBackground(hookUsed.spec, frameW, frameH, hookUsed.seconds, clipSeconds),
+          sfx: hookUsed.sfx,
+        });
+        await this.ffmpeg.addBumpers(captionedClip, withHook, {
+          intro: card, outro: null, width: frameW, height: frameH, maxBumperSeconds: hookUsed.seconds + 1, workDir,
+        });
+        await fs.rename(withHook, captionedClip);
+        const srt = await fs.readFile(srtPath, 'utf8').catch(() => '');
+        if (srt) await fs.writeFile(srtPath, toSrt(shiftCues(parseSrt(srt).cues, hookUsed.seconds)), 'utf8');
+      } catch (err) {
+        await this.hookFailed(userId, videoId, index, opts.hook, err);
+        hookUsed = null;
       }
     }
 
@@ -556,6 +647,20 @@ export class UrlPipelineService {
     );
 
     const clipId = insertRes.rows[0].id as string;
+    if (hookUsed && opts.hook) {
+      // Best effort: needs the clips.hook column (migration 040_clip_hooks).
+      await this.db.client
+        .query(`UPDATE clips SET hook = $2::jsonb WHERE id = $1`, [
+          clipId,
+          JSON.stringify({
+            kind: opts.hook.kind, template_id: opts.hook.template_id, text: hookUsed.text,
+            placement: opts.hook.placement, duration: hookUsed.seconds, sfx: !!hookUsed.sfx,
+            position: hookUsed.spec.pos, aspect_ratio: opts.layout?.aspect_ratio ?? '9:16',
+            ai_text: !opts.hook.text, use_brand: !!opts.hook.use_brand,
+          }),
+        ])
+        .catch((err: Error) => this.logger.warn(`Could not save hook settings for clip ${clipId}: ${err.message}`));
+    }
     const clipStoragePath = this.storage.objectPath(userId, videoId, `${clipId}.mp4`);
     const srtStoragePath = this.storage.objectPath(userId, videoId, `${clipId}.srt`);
 

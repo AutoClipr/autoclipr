@@ -7,6 +7,8 @@
  */
 
 import { DEFAULT_LAYOUT, LayoutBar, layoutSummary, type LayoutConfig, type SubtitleInfo } from "./layout-subtitles";
+import { HookSection, hookSummary, useHookTemplates, type HookMedia } from "./hook-studio";
+import { DEFAULT_HOOK, hookPayload, type HookSettings } from "@/lib/hooks";
 import { BrandKitPicker } from "@/components/brand-kit/brand-kit-picker";
 import { CAPTION_PRESETS, type BrandKit } from "@/lib/brand-kits";
 import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
@@ -88,7 +90,10 @@ export function useClipOptions() {
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
   const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
   const [subtitle, setSubtitle] = useState<SubtitleInfo | null>(null);
+  const [hook, setHook] = useState<HookSettings>(DEFAULT_HOOK);
   return {
+    hook,
+    setHook,
     layout,
     setLayout,
     subtitle,
@@ -126,6 +131,7 @@ export function useClipOptions() {
           : { background: layout.background, ...(layout.background === "color" ? { background_color: layout.background_color } : {}) }),
       },
       ...(subtitle ? { subtitle_srt_path: subtitle.path } : {}),
+      ...(hook.enabled ? { hook: hookPayload(hook) } : {}),
     }),
   };
 }
@@ -635,7 +641,7 @@ function CaptionPicker({ value, onChange }: { value: string; onChange: (id: stri
 }
 
 /** Step 2: clip count, length, language, quality and captions. Extra sections go in children. */
-export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; children?: React.ReactNode }) {
+export function ClipSettingsPanel({ opts, media, children }: { opts: ClipOptions; media?: HookMedia; children?: React.ReactNode }) {
   return (
     <section className={cn(PANEL, "p-5 sm:p-6")}>
       <StepHeader step="02" title="AI clip configuration" description="Tell the AI what kind of clips you want." />
@@ -721,6 +727,15 @@ export function ClipSettingsPanel({ opts, children }: { opts: ClipOptions; child
         <div className="border-t border-[#253244] pt-6">
           <CaptionPicker value={opts.captionStyle} onChange={opts.setCaptionStyle} />
         </div>
+
+        <HookSection
+          hook={opts.hook}
+          onChange={opts.setHook}
+          clipCount={opts.clipCount}
+          ratio={opts.layout.aspect_ratio}
+          media={media}
+          brandPrimary={opts.brandKit?.captions?.highlight_color ?? null}
+        />
 
         {children}
       </div>
@@ -841,7 +856,10 @@ export function SummaryPanel({
   onCreate: () => void;
 }) {
   // Display only — the API computes and charges the real cost.
-  const totalCost = opts.clipCount * costPerClip;
+  const { data: hookData } = useHookTemplates();
+  const hookCredits = opts.hook.enabled ? (hookData?.templates.find((t) => t.id === opts.hook.template_id)?.credits ?? 0) : 0;
+  const perClip = costPerClip + hookCredits;
+  const totalCost = opts.clipCount * perClip;
   const notEnough = credits !== null && credits < totalCost;
   const estimate = estimateProcessingSeconds(videoSeconds, opts.clipCount);
   const quality = EXPORT_QUALITIES.find((q) => q.id === opts.exportQuality)?.label ?? "–";
@@ -870,6 +888,7 @@ export function SummaryPanel({
         <Row label="Aspect ratio" value={opts.layout.aspect_ratio} />
         <Row label="Layout" value={layoutSummary(opts.layout)} />
         <Row label="Subtitles" value={opts.subtitle ? `SRT · ${opts.subtitle.filename}` : "AI captions"} />
+        <Row label="AI hook" value={hookSummary(opts.hook, hookData?.templates)} />
         <Row label="Quality" value={quality} />
         <Row
           label="Processing time"
@@ -883,7 +902,8 @@ export function SummaryPanel({
       <div className="space-y-1.5 text-sm">
         <div className="flex items-center justify-between text-xs text-[#94A3B8]">
           <span>
-            {opts.clipCount} clips × {costPerClip} credit{costPerClip === 1 ? "" : "s"}
+            {opts.clipCount} clips × {perClip} credit{perClip === 1 ? "" : "s"}
+            {hookCredits > 0 && ` (incl. ${hookCredits} hook)`}
           </span>
           {credits !== null && <span>{credits.toLocaleString()} available</span>}
         </div>

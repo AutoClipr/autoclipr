@@ -68,6 +68,14 @@ export function UploadForm() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [file, setFile] = useState<File | null>(null);
+  // Local URL of the picked file for the hook preview (revoked on change).
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) return setFileUrl(null);
+    const u = URL.createObjectURL(file);
+    setFileUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
   const [upload, setUpload] = useState<UploadState>({ progress: 0, done: false, videoId: null, error: null });
@@ -426,7 +434,7 @@ export function UploadForm() {
           </div>
         </section>
 
-        <ClipSettingsPanel opts={opts}>
+        <ClipSettingsPanel opts={opts} media={{ video: fileUrl, image: thumbnail }}>
           <PublishTargets opts={opts} />
         </ClipSettingsPanel>
       </div>

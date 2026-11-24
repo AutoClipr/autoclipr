@@ -657,6 +657,70 @@ describe('VideosService', () => {
     });
   });
 
+  describe('AI hooks', () => {
+    const ready = () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+    };
+    const payload = () => (jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any);
+
+    it('adds the hook to the job and its credits to the cost', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { clip_count: 5, hook: { kind: 'viral', template_id: 'halo' } } as never);
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 15, 'upload_pipeline', 'v1');
+      expect(payload().hook).toMatchObject({ template_id: 'halo', placement: 'opening', duration: 2.5, sfx: true, sfx_type: 'riser', credits: 2 });
+      expect(payload().hook.text).toBeUndefined();
+    });
+
+    it('keeps custom text and settings; headlines cost 1 per clip', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { clip_count: 5, hook: { kind: 'headline', template_id: 'classic', placement: 'overlay', duration: 4, text: '  Hi there ', sfx: false } } as never);
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 10, 'upload_pipeline', 'v1');
+      expect(payload().hook).toMatchObject({ placement: 'overlay', duration: 4, text: 'Hi there', sfx: false });
+    });
+
+    it('enforces plan access before charging', async () => {
+      ready();
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      await expect(service.completeUpload('u1', 'v1', { hook: { kind: 'headline', template_id: 'classic' } } as never)).rejects.toThrow('Creator, Pro and Business');
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      await expect(service.completeUpload('u1', 'v1', { hook: { kind: 'viral', template_id: 'neon' } } as never)).rejects.toThrow('Neon hook is available on the Pro and Business');
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+    });
+
+    it('rejects a template of the wrong kind', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      await expect(service.completeUpload('u1', 'v1', { hook: { kind: 'headline', template_id: 'halo' } } as never)).rejects.toThrow('Unknown hook template');
+    });
+
+    it('rejects a ratio the template does not support', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      const { HOOK_TEMPLATES } = await import('../../common/hook-templates');
+      const t = HOOK_TEMPLATES.find((x) => x.id === 'glass')!;
+      const saved = t.ratios;
+      t.ratios = ['9:16'];
+      try {
+        await expect(service.completeUpload('u1', 'v1', { layout: { aspect_ratio: '16:9' }, hook: { kind: 'viral', template_id: 'glass' } } as never)).rejects.toThrow("isn't available for 16:9");
+      } finally {
+        t.ratios = saved;
+      }
+    });
+
+    it('lists templates with the caller\'s access', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      const res = await service.hookTemplates('u1');
+      expect(res.access).toBe('basic');
+      expect(res.templates.find((t) => t.id === 'halo')!.allowed).toBe(true);
+      expect(res.templates.find((t) => t.id === 'neon')!.allowed).toBe(false);
+      usersRepo.getById.mockResolvedValue(null as never);
+      expect((await service.hookTemplates('u1')).templates.every((t) => !t.allowed)).toBe(true);
+    });
+  });
+
   describe('layout and subtitles', () => {
     const ready = () => {
       videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);

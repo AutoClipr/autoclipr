@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Type } from 'class-transformer';
 import { LayoutDto } from './layout.dto';
+import { HookDto } from './hook.dto';
 import { IsArray, IsIn, IsInt, IsOptional, IsString, Matches, MaxLength, Max, Min, ValidateNested } from 'class-validator';
 import { CAPTION_STYLE_IDS } from './caption-styles';
 
@@ -54,6 +55,11 @@ export class CompleteUploadDto {
   @ValidateNested()
   @Type(() => LayoutDto)
   layout?: LayoutDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => HookDto)
+  hook?: HookDto;
 
   /** An uploaded SRT (from POST /videos/subtitles) to use instead of AI captions. */
   @IsOptional()

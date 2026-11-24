@@ -88,3 +88,8 @@ export function formatSrtTime(sec: number): string {
 export function toSrt(cues: SrtCue[]): string {
   return cues.map((c, i) => `${i + 1}\n${formatSrtTime(c.start)} --> ${formatSrtTime(c.end)}\n${c.text}\n`).join('\n');
 }
+
+/** Move every cue later by `seconds` (e.g. after an opening hook card). */
+export function shiftCues(cues: SrtCue[], seconds: number): SrtCue[] {
+  return cues.map((c) => ({ ...c, start: c.start + seconds, end: c.end + seconds }));
+}
