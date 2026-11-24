@@ -12,7 +12,7 @@ jobs:
     name: Deploy · web (Vercel)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Deploy to Vercel (production)
         # Run from repo root, not apps/web — the linked Vercel project's Root
         # Directory setting is already "apps/web", so cd-ing there first
@@ -27,7 +27,7 @@ jobs:
     name: Deploy · api (Railway)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy API service
@@ -44,7 +44,7 @@ jobs:
     name: Deploy · workers (Railway)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       - name: Deploy Workers service
