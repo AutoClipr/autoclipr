@@ -73,20 +73,44 @@ const THEME: Record<Accent, { header: string; sub: string; pill: string; check: 
 
 type Feature = { label: string; strong?: boolean; soon?: boolean; muted?: boolean };
 
+/**
+ * Newer feature access per plan. Mirrors apps/api/src/common/plans.ts
+ * (maxBrandKits, aspectRatios, hookAccess, enhancementAccess) — the API
+ * enforces these; this list only describes them.
+ */
+const PLAN_EXTRAS: Record<PlanNumbers["id"], { brandKits: number; allRatios: boolean; hooks: "none" | "basic" | "all"; enhancements: "basic" | "all" }> = {
+  starter: { brandKits: 0, allRatios: false, hooks: "none", enhancements: "basic" },
+  creator: { brandKits: 3, allRatios: true, hooks: "basic", enhancements: "all" },
+  pro: { brandKits: 10, allRatios: true, hooks: "all", enhancements: "all" },
+  business: { brandKits: 25, allRatios: true, hooks: "all", enhancements: "all" },
+};
+
 /** Only what the product does today; unbuilt items are marked "Soon". */
 function featuresFor(p: PlanNumbers): Feature[] {
   const paid = p.price_cents > 0;
   const live = p.platforms.filter((x) => LIVE_PUBLISH_PLATFORMS.includes(x));
   const upcoming = p.platforms.filter((x) => !LIVE_PUBLISH_PLATFORMS.includes(x));
+  const x = PLAN_EXTRAS[p.id] ?? PLAN_EXTRAS.starter;
   const f: Feature[] = [
     { label: `${p.credits_per_month.toLocaleString("en-IN")} credits / month`, strong: true },
     { label: `≈ ${p.estimated_clips[0]}–${p.estimated_clips[1]} short clips (estimate)` },
     { label: `Source videos up to ${formatMinutes(p.max_video_seconds)}`, strong: true },
     { label: paid ? "AI viral moment detection & clip scoring" : "AI viral moment detection" },
     { label: "Auto captions & subtitles in 15 styles" },
-    { label: "Vertical 9:16 export for Shorts, Reels & TikTok" },
+    x.allRatios
+      ? { label: "Export in 9:16, 16:9, 1:1 & 4:5", strong: true }
+      : { label: "Vertical 9:16 export for Shorts, Reels & TikTok" },
+    { label: "Fill & Fit layouts, plus your own SRT subtitles" },
     { label: live.length >= 2 ? "Publish to YouTube Shorts & Instagram Reels" : "Publish to YouTube" },
   ];
+  if (x.brandKits) f.push({ label: `Brand kits: logo, colours, captions, intro & outro (up to ${x.brandKits})`, strong: true });
+  if (x.hooks === "all") f.push({ label: "AI hooks & headlines: all 19 animated hooks + 4 headline styles", strong: true });
+  else if (x.hooks === "basic") f.push({ label: "AI hooks & headlines: 7 animated hooks + 4 headline styles", strong: true });
+  f.push(
+    x.enhancements === "all"
+      ? { label: "All enhancements: audio cleanup, auto zoom, motion graphics, SFX, colour, transitions, voice dubbing", strong: true }
+      : { label: "AI emojis & caption translation" },
+  );
   if (p.scheduling) f.push({ label: "Content scheduling for all social media platforms", strong: true });
   if (p.analytics) f.push({ label: "Analytics & performance tracking", strong: true });
   if (paid) f.push({ label: p.id === "creator" ? "Email & chat support" : "Email + 24/7 live chat support", strong: p.id !== "creator" });
