@@ -164,7 +164,7 @@ describe('AnalyticsService', () => {
       });
       expect(result.publications).toHaveLength(2);
       expect(result.publications[0]).toEqual(
-        expect.objectContaining({ id: 'pub1', platform: 'youtube', thumbnail_url: null }),
+        expect.objectContaining({ id: 'pub1', platform: 'youtube', thumbnail_url: 'https://i.ytimg.com/vi/video1/hqdefault.jpg' }),
       );
     });
 
@@ -200,6 +200,7 @@ describe('AnalyticsService', () => {
       (publicationsRepo as any).listScheduledPostedByUser.mockResolvedValue([
         makePublication({ id: 't1', source: 'scheduler', clip_thumbnail_url: 'https://sb/u/a_thumb.jpg', clip_storage_path: 'u/a.mp4', posted_at: '2026-11-23T00:00:00Z' }),
         makePublication({ id: 't2', source: 'scheduler', clip_thumbnail_url: null, clip_storage_path: 'u/scheduled/b.mp4', posted_at: '2026-11-22T00:00:00Z' }),
+        makePublication({ id: 't4', source: 'scheduler', platform: 'instagram', platform_post_id: 'm1', clip_thumbnail_url: null, clip_storage_path: 'u/scheduled/c.mp4', posted_at: '2026-11-20T00:00:00Z' }),
         makePublication({ id: 't3', source: 'scheduler', clip_thumbnail_url: 'https://cdn.example/x.jpg', clip_storage_path: null, posted_at: '2026-11-21T00:00:00Z' }),
       ]);
       storage.objectExists.mockImplementation(async (_b: string, p: string) => p === 'u/a_thumb.jpg');
@@ -209,9 +210,18 @@ describe('AnalyticsService', () => {
 
       expect(publications.map((p: any) => [p.id, p.thumbnail_url, p.preview_url])).toEqual([
         ['t1', 'https://signed/u/a_thumb.jpg', null],
-        ['t2', null, 'https://signed/u/scheduled/b.mp4'],
+        ['t2', 'https://i.ytimg.com/vi/video1/hqdefault.jpg', null],
         ['t3', 'https://cdn.example/x.jpg', null],
+        ['t4', null, 'https://signed/u/scheduled/c.mp4'],
       ]);
+    });
+
+    it('falls back to YouTube\'s public thumbnail for YouTube posts', async () => {
+      platformsRepo.listByUser.mockResolvedValue([]);
+      publicationsRepo.listPostedByUser.mockResolvedValue([makePublication({ platform: 'youtube', platform_post_id: 'NC6qRcITbS0', clip_storage_path: null })]);
+      publicationsRepo.countByUser.mockResolvedValue({ posted: 1, failed: 0, pending: 0 });
+      const { publications } = await service.getOverview('u1', false);
+      expect(publications[0].thumbnail_url).toBe('https://i.ytimg.com/vi/NC6qRcITbS0/hqdefault.jpg');
     });
 
     it('returns no thumbnail when storage fails', async () => {
@@ -226,7 +236,7 @@ describe('AnalyticsService', () => {
     it('leaves thumbnail_url null when the publication has no clip_storage_path', async () => {
       platformsRepo.listByUser.mockResolvedValue([]);
       publicationsRepo.listPostedByUser.mockResolvedValue([
-        makePublication({ clip_storage_path: null }),
+        makePublication({ clip_storage_path: null, platform: 'instagram' }),
       ]);
       publicationsRepo.countByUser.mockResolvedValue({ posted: 1, failed: 0, pending: 0 });
 
@@ -234,6 +244,21 @@ describe('AnalyticsService', () => {
 
       expect(storage.objectExists).not.toHaveBeenCalled();
       expect(result.publications[0].thumbnail_url).toBeNull();
+    });
+
+    it('falls back to the public YouTube thumbnail for a YouTube post with no stored one', async () => {
+      platformsRepo.listByUser.mockResolvedValue([]);
+      publicationsRepo.listPostedByUser.mockResolvedValue([
+        makePublication({ clip_storage_path: null, platform: 'youtube', platform_post_id: 'dQw4w9WgXcQ' }),
+        // Unsafe ids are never put in a URL.
+        makePublication({ clip_storage_path: null, platform: 'youtube', platform_post_id: 'bad/id?x=1' }),
+      ]);
+      publicationsRepo.countByUser.mockResolvedValue({ posted: 2, failed: 0, pending: 0 });
+
+      const { publications } = await service.getOverview('u1', false);
+
+      expect(publications[0].thumbnail_url).toBe('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
+      expect(publications[1].thumbnail_url).toBeNull();
     });
 
     it('falls back to raw platform value and Untitled clip defaults when unknown/missing', async () => {

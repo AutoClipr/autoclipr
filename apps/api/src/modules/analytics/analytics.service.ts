@@ -228,6 +228,10 @@ export class AnalyticsService {
       if (!thumbnail_url && !fromUrl && pub.clip_thumbnail_url && /^https?:\/\//.test(pub.clip_thumbnail_url)) {
         thumbnail_url = pub.clip_thumbnail_url;
       }
+      // YouTube serves a public thumbnail for every video.
+      if (!thumbnail_url && pub.platform === 'youtube' && pub.platform_post_id && /^[\w-]{6,20}$/.test(pub.platform_post_id)) {
+        thumbnail_url = `https://i.ytimg.com/vi/${pub.platform_post_id}/hqdefault.jpg`;
+      }
       // Uploaded scheduler media has no thumbnail: let the UI show a frame.
       if (!thumbnail_url && pub.source === 'scheduler' && pub.clip_storage_path) {
         preview_url = await this.storage.createSignedDownloadUrl(bucket, pub.clip_storage_path);
