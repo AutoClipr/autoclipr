@@ -93,7 +93,7 @@ function featuresFor(p: PlanNumbers): Feature[] {
   const x = PLAN_EXTRAS[p.id] ?? PLAN_EXTRAS.starter;
   const f: Feature[] = [
     { label: `${p.credits_per_month.toLocaleString("en-IN")} credits / month`, strong: true },
-    { label: `≈ ${p.estimated_clips[0]}–${p.estimated_clips[1]} short clips (estimate)` },
+    { label: `${p.estimated_clips[0]}–${p.estimated_clips[1]} short clips (estimate)` },
     { label: `Source videos up to ${formatMinutes(p.max_video_seconds)}`, strong: true },
     { label: paid ? "AI viral moment detection & clip scoring" : "AI viral moment detection" },
     { label: "Auto captions & subtitles in 15 styles" },
