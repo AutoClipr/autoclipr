@@ -69,8 +69,8 @@ export const HOOK_SPECS: Record<string, HookSpec> = {
   // ── Viral hooks ────────────────────────────────────────────────────────
   montage: S({ font: 'EB Garamond', size: 120, color: '#111111', shadow: 0, bold: false, anim: 'words', card: 'montage', box: { color: '#FAFAFA', pad: 18 } }),
   cutaway: S({ font: 'Montserrat ExtraBold', size: 96, color: '#111111', shadow: 0, anim: 'slide', card: 'white' }),
-  halo: S({ font: 'Montserrat Black', size: 170, color: '#FFE45C', anim: 'zoomblur', pos: 'top', upper: true, extra: 'glow', accent: '#FFD000', maxChars: 9 }),
-  condensed_italic: S({ font: 'Montserrat ExtraBold', size: 150, italic: true, scaleX: 72, upper: true, anim: 'snap', outline: 4, maxChars: 12 }),
+  halo: S({ font: 'Montserrat Black', size: 150, color: '#FFE45C', anim: 'zoomblur', pos: 'top', upper: true, extra: 'glow', accent: '#FFD000', maxChars: 9 }),
+  condensed_italic: S({ font: 'Montserrat ExtraBold', size: 130, italic: true, scaleX: 72, upper: true, anim: 'snap', outline: 4, maxChars: 12 }),
   cadence: S({ font: 'Montserrat ExtraBold', size: 104, anim: 'words', outline: 5, shadow: 2, pos: 'middle' }),
   hero: S({ font: 'Pacifico', size: 150, color: '#FFE600', bold: false, outline: 6, anim: 'zoomblur', pos: 'top', extra: 'accent', accentFont: 'Montserrat Black', maxChars: 10 }),
   highlighter: S({ font: 'Montserrat ExtraBold', size: 96, color: '#111111', shadow: 0, box: { color: '#FFE600', pad: 14 }, sweep: true, anim: 'fade', card: 'frame' }),
@@ -78,7 +78,7 @@ export const HOOK_SPECS: Record<string, HookSpec> = {
   neon: S({ font: 'Pacifico', size: 140, color: '#FFE6FF', bold: false, accent: '#FF2BD6', anim: 'flicker', extra: 'glow', card: 'blur', maxChars: 12 }),
   script_editorial: S({ font: 'EB Garamond', size: 120, bold: false, italic: true, anim: 'fade', pos: 'top', extra: 'accent', accentFont: 'Pacifico', accent: '#FFFFFF' }),
   polaroid_tilt: S({ font: 'Montserrat ExtraBold', size: 88, color: '#151515', shadow: 0, box: { color: '#FFFFFF', pad: 26 }, anim: 'drop', tilt: -6 }),
-  depth: S({ font: 'Montserrat Black', size: 190, color: '#F5F0E6', upper: true, anim: 'pop', pos: 'top', extra: 'extrude', accent: '#3A2E26', maxChars: 8 }),
+  depth: S({ font: 'Montserrat Black', size: 160, color: '#F5F0E6', upper: true, anim: 'pop', pos: 'top', extra: 'extrude', accent: '#3A2E26', maxChars: 12 }),
   interrupt: S({ font: 'EB Garamond', size: 140, italic: true, bold: false, anim: 'pop', card: 'color', cardColor: '#0B3A9E', shadow: 0 }),
   scribble: S({ font: 'Montserrat ExtraBold', size: 104, upper: true, outline: 4, anim: 'pop', extra: 'scribble', accent: '#FF3B6B', tilt: -3 }),
   brush: S({ font: 'Montserrat Black', size: 104, color: '#111111', upper: true, shadow: 0, box: { color: '#FFC400', pad: 22 }, sweep: true, anim: 'fade', tilt: -2 }),
@@ -87,8 +87,8 @@ export const HOOK_SPECS: Record<string, HookSpec> = {
   split: S({ font: 'Montserrat Black', size: 110, color: '#111111', upper: true, shadow: 0, anim: 'slide', card: 'split', cardColor: '#F2F2F2', pos: 'bottom' }),
   numbered_list: S({ font: 'Montserrat Black', size: 130, upper: true, outline: 5, anim: 'pop', extra: 'number', accent: '#E8FF3A', maxChars: 10 }),
   // ── Headlines ──────────────────────────────────────────────────────────
-  editorial: S({ font: 'EB Garamond', size: 104, bold: false, anim: 'fade', pos: 'bottom', extra: 'accent', accentFont: 'Pacifico', accent: '#E8FF3A', card: 'frame' }),
-  statement: S({ font: 'Montserrat Black', size: 104, anim: 'slide', pos: 'bottom', extra: 'kicker', card: 'frame' }),
+  editorial: S({ font: 'EB Garamond', size: 104, bold: false, anim: 'fade', pos: 'middle', extra: 'accent', accentFont: 'Pacifico', accent: '#E8FF3A', card: 'frame' }),
+  statement: S({ font: 'Montserrat Black', size: 104, anim: 'slide', pos: 'middle', extra: 'kicker', card: 'frame' }),
   sunset: S({ font: 'Montserrat Black', size: 66, upper: true, shadow: 0, box: { color: '#FF1E9B', pad: 18 }, anim: 'pop', pos: 'top', card: 'frame', maxChars: 18 }),
   classic: S({ font: 'Montserrat Black', size: 66, color: '#111111', upper: true, shadow: 0, box: { color: '#FFFFFF', pad: 18 }, anim: 'pop', pos: 'top', card: 'frame', maxChars: 18 }),
 };
@@ -155,8 +155,15 @@ export function wrapLines(text: string, maxChars: number): string[] {
 
 export const playResY = (W: number, H: number) => Math.max(200, Math.round((1080 * H) / W));
 
-function anchorY(pos: HookSpec['pos'], playY: number): number {
-  return Math.round(pos === 'top' ? playY * 0.22 : pos === 'bottom' ? playY * 0.7 : playY * 0.45);
+/**
+ * Centre y for a text block of height blockH, keeping it off the speaker's
+ * face: top hangs from 8% (above the head), middle sits in the lower third,
+ * bottom grows up from 86%.
+ */
+export function anchorY(pos: HookSpec['pos'], playY: number, blockH = 0): number {
+  if (pos === 'top') return Math.round(playY * 0.08 + blockH / 2);
+  if (pos === 'bottom') return Math.round(playY * 0.86 - blockH / 2);
+  return Math.round(playY * 0.66);
 }
 
 function animTags(a: Anim, sx: number, y: number, tilt: number): string {
@@ -218,7 +225,6 @@ export function buildHookAss(text: string, s: HookSpec, W: number, H: number, du
   const raw = cleanHookText(s.upper ? text.toUpperCase() : text) || 'Watch this';
   const maxChars = Math.max(6, Math.round(s.maxChars * (s.size / fs)));
   let lines = wrapLines(raw, maxChars);
-  const y = anchorY(s.pos, playY);
   const t0 = start;
   const t1 = start + dur;
   const borderStyle = s.box ? 3 : 1;
@@ -240,7 +246,6 @@ export function buildHookAss(text: string, s: HookSpec, W: number, H: number, du
   const ev: string[] = [];
   const dlg = (layer: number, a: number, b: number, tags: string, body: string) =>
     ev.push(`Dialogue: ${layer},${assTimeOf(a)},${assTimeOf(b)},Hook,,0,0,0,,{${tags}}${body}`);
-  const base = `\\an5\\pos(540,${y})${s.tilt ? `\\frz${s.tilt}` : ''}`;
   const sweep = s.sweep ? `\\clip(0,0,0,${playY})\\t(0,300,\\clip(0,0,1080,${playY}))` : '';
   const glassTags = glass ? `\\3a&H90&\\c${assColor('#FFFFFF')}` : '';
 
@@ -255,6 +260,9 @@ export function buildHookAss(text: string, s: HookSpec, W: number, H: number, du
   }
   const body = decorate(lines, s).join('\\N');
   const lineH = fs * 1.15;
+  const blockH = lines.length * lineH + (kicker ? fs * 0.6 : 0);
+  const y = anchorY(s.pos, playY, blockH) + (kicker ? Math.round(fs * 0.3) : 0);
+  const base = `\\an5\\pos(540,${y})${s.tilt ? `\\frz${s.tilt}` : ''}`;
 
   // Background drawings.
   if (s.extra === 'burst') {

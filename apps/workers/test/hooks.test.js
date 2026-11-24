@@ -80,3 +80,11 @@ test('cards, sounds, wrapping and fallbacks', () => {
   assert.equal(H.assTimeOf(62.5), '0:01:02.50');
   assert.deepEqual(shiftCues([{ start: 1, end: 2, text: 'a' }], 2.5), [{ start: 3.5, end: 4.5, text: 'a' }]);
 });
+
+test('hook text stays off the face: top hangs from 8%, middle in the lower third, bottom from 86%', () => {
+  assert.equal(H.anchorY('middle', 1920, 300), Math.round(1920 * 0.66));
+  assert.equal(H.anchorY('top', 1920, 300), Math.round(1920 * 0.08 + 150));
+  assert.equal(H.anchorY('bottom', 1920, 300), Math.round(1920 * 0.86 - 150));
+  const y = Number(/\\pos\(540,(\d+)\)/.exec(H.buildHookAss('Short hook', H.specFor('cadence'), 1080, 1920, 2))[1]);
+  assert.ok(y > 1920 * 0.6, `cadence sits low (${y})`);
+});

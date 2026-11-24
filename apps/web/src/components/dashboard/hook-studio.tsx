@@ -566,8 +566,12 @@ export function HookPreview({
   const playY = (1080 * rh) / rw;
   const fs = look.size * Math.min(1, Math.max(0.6, playY / 1600)) * scale;
   const showHook = still || phase === "hook";
-  const card = placement === "opening" && showHook && !still ? look.card : "frame";
-  const top = look.pos === "top" ? 22 : look.pos === "bottom" ? 70 : 45;
+  // Cards show solid backgrounds (white, colour, split) so the thumbnail matches the result.
+  const card = still ? (["white", "color", "split"].includes(look.card) ? look.card : "frame") : placement === "opening" && showHook ? look.card : "frame";
+  // Same anchors as the renderer: top hangs from 8%, middle is the lower
+  // third, bottom grows up from 86% — text stays off the speaker's face.
+  const top = look.pos === "top" ? 8 : look.pos === "bottom" ? 86 : 66;
+  const shift = look.pos === "top" ? "0%" : look.pos === "bottom" ? "-100%" : "-50%";
   const paused = !playing && !still;
 
   const mediaEl = media?.video ? (
@@ -585,7 +589,7 @@ export function HookPreview({
       {card === "split" && <div className="absolute inset-x-0 bottom-0 h-1/2" style={{ background: look.cardColor }} />}
 
       {showHook && w > 0 && (
-        <div key={cycle} className="pointer-events-none absolute left-1/2 w-[92%] text-center" style={{ top: `${top}%`, transform: `translate(-50%, -50%) rotate(${look.tilt ?? 0}deg)` }}>
+        <div key={cycle} className="pointer-events-none absolute left-1/2 w-[92%] text-center" style={{ top: `${top}%`, transform: `translate(-50%, ${shift}) rotate(${look.tilt ?? 0}deg)`, transformOrigin: "center" }}>
           <HookText look={look} text={text} fs={fs} scale={scale} still={still} paused={paused} />
         </div>
       )}
