@@ -53,6 +53,9 @@ function contentCrop(crop: CropRatio | undefined, anchor: Anchor | undefined): s
 
 const HEX = /^#?([0-9a-f]{6})$/i;
 
+/** Light sharpen after enlarging a cropped source (keeps upscaled clips crisp without halos). */
+const SHARPEN = 'unsharp=5:5:0.6:5:5:0.0';
+
 /**
  * filter_complex fragment reading [in] and writing [out].
  * Returns the graph lines; the caller joins them with ';'.
@@ -63,10 +66,10 @@ export function layoutGraph(cfg: LayoutConfig, W: number, H: number, input = '0:
     const yExpr = cfg.position === 'top' ? '0' : cfg.position === 'bottom' ? 'ih-oh' : '(ih-oh)/2';
     // Optional content crop first (zooms in), then cover the frame.
     const pre = contentCrop(cfg.crop_ratio, cfg.position);
-    return [`[${input}]${pre ? `${pre},` : ''}scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}:(iw-ow)/2:${yExpr},setsar=1[${out}]`];
+    return [`[${input}]${pre ? `${pre},` : ''}scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H}:(iw-ow)/2:${yExpr},${SHARPEN},setsar=1[${out}]`];
   }
   const crop = contentCrop(cfg.crop_ratio, cfg.position);
-  const fg = `${crop ? `${crop},` : ''}scale=${W}:${H}:force_original_aspect_ratio=decrease,setsar=1`;
+  const fg = `${crop ? `${crop},` : ''}scale=${W}:${H}:force_original_aspect_ratio=decrease:flags=lanczos,${SHARPEN},setsar=1`;
   const bg = cfg.background ?? 'blur';
   if (bg === 'blur') {
     return [

@@ -7,10 +7,13 @@ import { escapeFfmpegPath, runCommand } from './exec.util';
 import { resolveBinary } from './resolve-binary.util';
 import { layoutGraph, outputSize, type LayoutConfig } from './layout';
 
+/** Near-lossless CRF for files that are re-encoded later. */
+const INTERMEDIATE_CRF = '14';
+
 const QUALITY_PRESETS: Record<string, { crf: string; scale: string }> = {
-  hd: { crf: '23', scale: '1080:1920' },
-  full_hd: { crf: '20', scale: '1080:1920' },
-  '4k': { crf: '18', scale: '2160:3840' },
+  hd: { crf: '20', scale: '1080:1920' },
+  full_hd: { crf: '18', scale: '1080:1920' },
+  '4k': { crf: '17', scale: '2160:3840' },
 };
 
 /** Font directories libass should search (Alpine installs fonts under /usr/share/fonts). */
@@ -209,8 +212,10 @@ export class FfmpegService {
       'libx264',
       '-preset',
       'fast',
+      // Intermediate file: captions are burned in a second pass, so keep this
+      // one near-lossless and let the final pass set the export quality.
       '-crf',
-      preset.crf,
+      INTERMEDIATE_CRF,
       '-c:a',
       'aac',
       '-b:a',
@@ -264,7 +269,7 @@ export class FfmpegService {
       '-map', audio ? '0:a:0' : '1:a:0',
       '-vf', vf,
       '-af', 'aresample=44100,aformat=channel_layouts=stereo',
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '20',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
       '-c:a', 'aac', '-b:a', '128k',
       '-shortest',
       '-movflags', '+faststart',
@@ -331,7 +336,7 @@ export class FfmpegService {
       '-filter_complex', `${opts.background};[bg]${ass},format=yuv420p[v];${audio}`,
       '-map', '[v]', '-map', '[a]',
       '-t', String(seconds),
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '20',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '18',
       '-c:a', 'aac', '-b:a', '128k',
       '-movflags', '+faststart',
       opts.outputPath,
@@ -363,7 +368,10 @@ export class FfmpegService {
     captionsPath: string,
     outputPath: string,
     captionStyle: string,
+    /** Export quality: this is the final encode, so it sets the file quality. */
+    exportQuality = 'hd',
   ): Promise<void> {
+    const crf = (QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd).crf;
     const escaped = escapeFfmpegPath(captionsPath);
     const attempts = this.buildSubtitleFilterAttempts(escaped, captionStyle);
 
@@ -384,7 +392,7 @@ export class FfmpegService {
           '-preset',
           'fast',
           '-crf',
-          '23',
+          crf,
           '-map',
           '0:v:0',
           '-map',

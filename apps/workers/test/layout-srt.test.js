@@ -64,11 +64,11 @@ test('output sizes follow the ratio and quality', () => {
 
 test('fill crops to cover; fit letterboxes with blur, black or colour', () => {
   assert.deepEqual(layoutGraph({ layout: 'fill', position: 'top' }, 1080, 1920), [
-    '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(iw-ow)/2:0,setsar=1[base]',
+    '[0:v]scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920:(iw-ow)/2:0,unsharp=5:5:0.6:5:5:0.0,setsar=1[base]',
   ]);
   const blur = layoutGraph({ layout: 'fit', crop_ratio: '4:3' }, 1080, 1920);
   assert.equal(blur.length, 4);
-  assert.match(blur[2], /crop=w='min\(iw,ih\*4\/3\)'.*scale=1080:1920:force_original_aspect_ratio=decrease/);
+  assert.match(blur[2], /crop=w='min\(iw,ih\*4\/3\)'.*scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos,unsharp/);
   assert.match(layoutGraph({ layout: 'fit', background: 'color', background_color: '#112233' }, 1080, 1080)[0], /pad=1080:1080:\(ow-iw\)\/2:\(oh-ih\)\/2:color=0x112233\[base\]$/);
   assert.match(layoutGraph({ layout: 'fit', background: 'color', background_color: 'nope' }, 1080, 1080)[0], /color=black/);
 });

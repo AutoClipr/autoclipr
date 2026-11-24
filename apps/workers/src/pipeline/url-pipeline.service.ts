@@ -543,7 +543,7 @@ export class UrlPipelineService {
       }
     }
 
-    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle);
+    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle, exportQuality);
 
     if (hookUsed && opts.hook?.placement === 'overlay' && hookUsed.sfx) {
       const mixed = this.temp.jobPath(workDir, `clip_${index}_sfx.mp4`);
