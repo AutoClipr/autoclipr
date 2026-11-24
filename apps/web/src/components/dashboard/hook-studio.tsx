@@ -313,7 +313,7 @@ function HookStudioModal({
                 </div>
               )}
             </div>
-            <div className="mt-4 grid min-h-0 grid-cols-3 gap-3 overflow-y-auto pr-1 md:max-h-[58vh] lg:grid-cols-4">
+            <div className="hk-scroll mt-4 grid min-h-0 grid-cols-3 gap-3 overflow-y-auto pr-3 md:max-h-[58vh] lg:grid-cols-4">
               {list.map((t, i) => (
                 <TemplateCard key={t.id} t={t} still={media?.image ?? SAMPLE_STILLS[i % SAMPLE_STILLS.length]} ratio="9:16"
                   selected={draft.template_id === t.id}
@@ -328,7 +328,7 @@ function HookStudioModal({
           </div>
 
           {/* Preview + settings */}
-          <div className="flex min-h-0 flex-col gap-4 md:overflow-y-auto md:pr-1">
+          <div className="hk-scroll flex min-h-0 flex-col gap-4 md:overflow-y-auto md:pr-3">
             <div className="mx-auto w-full max-w-[300px]">
               <div className="overflow-hidden rounded-2xl bg-black">
                 <HookPreview key={`${draft.template_id}-${replay}`} look={look} text={draft.textMode === "custom" && draft.text.trim() ? draft.text : SAMPLE_TEXT[draft.kind]}
@@ -696,6 +696,11 @@ function HookKeyframes() {
       .hk-fade, .hk-words, .hk-none { animation: hk-fade .22s ease-out both } .hk-sweep { animation: hk-sweep .3s ease-out both }
       .hk-word { display: inline-block; animation: hk-word .2s ease-out both } .hk-draw { stroke-dashoffset: 1; animation: hk-draw .35s .15s ease-out forwards }
       .hk-flash { animation: hk-flash .5s steps(4) infinite }
+      .hk-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.28) transparent }
+      .hk-scroll::-webkit-scrollbar { width: 6px; height: 6px }
+      .hk-scroll::-webkit-scrollbar-track { background: transparent; margin: 6px 0 }
+      .hk-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.28); border-radius: 999px }
+      .hk-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.45) }
       @media (prefers-reduced-motion: reduce) { [class^="hk-"], [class*=" hk-"] { animation: none !important } }
     `}</style>
   );
