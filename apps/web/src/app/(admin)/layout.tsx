@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-[#1A222C]">
+    <div className="min-h-screen bg-[#0B1120]">
       <AdminShell userEmail={session.user.email ?? ""}>
         {children}
       </AdminShell>

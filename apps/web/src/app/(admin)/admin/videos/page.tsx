@@ -54,7 +54,7 @@ export default async function VideosPage() {
   const kpis = [
     { icon: Video,    label: "Total Videos",   value: videos.total.toLocaleString(),  sub: `+${videos.today} today`,          color: "bg-blue-500/10 text-blue-400" },
     { icon: Scissors, label: "Total Clips",    value: clips.total.toLocaleString(),   sub: `+${clips.today} today`,           color: "bg-violet-500/10 text-violet-400" },
-    { icon: Server,   label: "Storage Used",   value: videos.storageFormatted,        sub: `${videos.storagePct}% of limit`,  color: "bg-amber-500/10 text-amber-400" },
+    { icon: Server,   label: "Storage Used",   value: videos.storageFormatted,        sub: videos.storagePct == null ? "source videos" : `${videos.storagePct}% of limit`,  color: "bg-amber-500/10 text-amber-400" },
     { icon: Clock,    label: "Avg Duration",   value: fmtDuration(videos.avgDurationSecs), sub: "per video",                 color: "bg-indigo-500/10 text-indigo-400" },
     { icon: Scissors, label: "Clips/Video",   value: clips.avgPerVideo,              sub: "average",                          color: "bg-emerald-500/10 text-emerald-400" },
   ];
@@ -84,17 +84,19 @@ export default async function VideosPage() {
         <h3 className="mb-4 text-sm font-semibold text-white/70">Storage Usage</h3>
         <div className="mb-2 flex justify-between text-xs">
           <span className="text-white/50">{videos.storageFormatted} used</span>
-          <span className="text-white/30">{videos.storagePct}% of quota</span>
+          <span className="text-white/30">{videos.storagePct == null ? "no quota set" : `${videos.storagePct}% of quota`}</span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${videos.storagePct}%`,
-              background: videos.storagePct > 80 ? "#ef4444" : videos.storagePct > 60 ? "#f59e0b" : "#10b981",
-            }}
-          />
-        </div>
+        {videos.storagePct != null && (
+          <div className="h-3 overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${videos.storagePct}%`,
+                background: videos.storagePct > 80 ? "#ef4444" : videos.storagePct > 60 ? "#f59e0b" : "#10b981",
+              }}
+            />
+          </div>
+        )}
         <p className="mt-3 text-xs text-white/30">
           Clips per video average: <span className="text-white/60 font-semibold">{clips.avgPerVideo}</span>
         </p>

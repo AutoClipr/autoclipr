@@ -21,6 +21,14 @@ function makeRepo(overrides: Partial<Record<keyof AdminRepository, jest.Mock>> =
     getAffiliateStats: jest.fn().mockResolvedValue({ total: 0, active: 0, totalReferrals: 0, totalRevenuePaise: 0, top: [] }),
     getCreditUsageStats: jest.fn().mockResolvedValue({ totalCreditsUsed: 0, totalTransactions: 0 }),
     getOnlineUsers: jest.fn().mockResolvedValue(0),
+    createdSince: jest.fn().mockResolvedValue([]),
+    creditDebitsSince: jest.fn().mockResolvedValue([]),
+    paymentsSince: jest.fn().mockResolvedValue([]),
+    paidSubscriptions: jest.fn().mockResolvedValue([]),
+    transactionStatusCounts: jest.fn().mockResolvedValue({}),
+    jobHealth: jest.fn().mockResolvedValue({ queued: 0, processing: 0, completed24h: 0, failed24h: 0, avgProcessingSecs: null }),
+    activationCounts: jest.fn().mockResolvedValue({ withVideo: 0, withClip: 0 }),
+    aiUsage: jest.fn().mockResolvedValue({ hooks: 0, enhancementJobs: {} }),
     ...overrides,
   } as unknown as AdminRepository;
 }
@@ -100,6 +108,18 @@ describe('AdminService', () => {
         getAffiliateStats: jest.fn().mockResolvedValue({ total: 3, active: 2, totalReferrals: 9, totalRevenuePaise: 1000, top: [] }),
         getCreditUsageStats: jest.fn().mockResolvedValue({ totalCreditsUsed: 500, totalTransactions: 12 }),
         getOnlineUsers: jest.fn().mockResolvedValue(6),
+        paidSubscriptions: jest.fn().mockResolvedValue([
+          // Monthly ₹599 and yearly ₹6,252 (→ ₹521/mo): both active.
+          { userId: 'a', plan: 'creator', status: 'active', periodEnd: null, cancelledAt: null, lastCharge: { paise: 59900, period: 'monthly' } },
+          { userId: 'b', plan: 'pro', status: 'active', periodEnd: null, cancelledAt: null, lastCharge: { paise: 625200, period: 'yearly' } },
+          // Cancelled 5 days ago: churned, not in MRR.
+          { userId: 'c', plan: 'creator', status: 'cancelled', periodEnd: null, cancelledAt: new Date(Date.now() - 5 * 86400000).toISOString(), lastCharge: { paise: 59900, period: 'monthly' } },
+        ]),
+        transactionStatusCounts: jest.fn().mockResolvedValue({ paid: 9, refunded: 1, failed: 2 }),
+        jobHealth: jest.fn().mockResolvedValue({ queued: 4, processing: 1, completed24h: 30, failed24h: 2, avgProcessingSecs: 95 }),
+        activationCounts: jest.fn().mockResolvedValue({ withVideo: 60, withClip: 40 }),
+        aiUsage: jest.fn().mockResolvedValue({ hooks: 12, enhancementJobs: { auto_zoom: 3 } }),
+        createdSince: jest.fn().mockImplementation(async (table: string) => (table === 'profiles' ? [new Date().toISOString()] : [])),
       });
       const service = new AdminService(repo);
 
@@ -116,25 +136,37 @@ describe('AdminService', () => {
         recent: [{ id: 'u1' }],
       });
 
-      expect(dashboard.revenue.mrrRupees).toBe(1999); // 199900 / 100
-      expect(dashboard.revenue.arrRupees).toBe(1999 * 12);
+      // MRR from active subscriptions: 599 + 6252/12 = 1120.
+      expect(dashboard.revenue.mrrRupees).toBe(1120);
+      expect(dashboard.revenue.arrRupees).toBe(1120 * 12);
       expect(dashboard.revenue.totalRupees).toBe(5000); // 500000 / 100
-      expect(dashboard.revenue.arpuRupees).toBe(200); // 500000/100/25
+      expect(dashboard.revenue.arpuRupees).toBe(560); // MRR / 2 active paid subs
       expect(dashboard.revenue.byMonth).toEqual([{ month: 'Jan 26', revenue: 1999 }]);
       expect(dashboard.revenue.byPlan).toEqual({ creator: 199900 });
       expect(dashboard.revenue.recent).toEqual([{ id: 'tx1' }]);
 
-      expect(dashboard.subscriptions.active).toBe(20);
-      expect(dashboard.subscriptions.cancelled).toBe(2);
+      expect(dashboard.subscriptions.active).toBe(2);
+      expect(dashboard.subscriptions.cancelled).toBe(1);
+      expect(dashboard.subscriptions.byPlan).toEqual({ creator: 1, pro: 1 });
+      expect(dashboard.subscriptions.churnRate).toBe(33.3); // 1 / (2 + 1)
+      expect(dashboard.subscriptions.refundRate).toBe(10); // 1 / (9 + 1)
+      expect(dashboard.subscriptions.failedPayments).toBe(2);
+      expect(dashboard.subscriptions.renewalRate).toBeNull();
 
       expect(dashboard.videos.storageFormatted).toBe('2.0 GB');
       expect(dashboard.clips.avgPerVideo).toBe(4); // 200/50
 
-      expect(dashboard.ai.creditsConsumed).toBe(500);
+      expect(dashboard.ai).toMatchObject({ hooksGenerated: 12, captionsGenerated: 200, scriptsGenerated: null, enhancementJobs: { auto_zoom: 3 }, creditsConsumed: 500 });
       expect(dashboard.affiliates).toEqual({ total: 3, active: 2, totalReferrals: 9, totalRevenuePaise: 1000, top: [] });
-      expect(dashboard.countries).toHaveLength(5);
-      expect(dashboard.funnel).toHaveLength(5);
-      expect(dashboard.system).toBeDefined();
+      // Nothing estimated: countries aren't tracked, funnel is real.
+      expect(dashboard.countries).toEqual([]);
+      expect(dashboard.countriesTracked).toBe(false);
+      expect(dashboard.funnel.map((f) => f.value)).toEqual([100, 60, 40, 25]);
+      expect(dashboard.system).toMatchObject({ queueSize: 4, processingJobs: 1, failedJobs: 2, avgProcessingSecs: 95 });
+      expect(dashboard.videos.storagePct).toBeNull();
+      expect(dashboard.trends.newUsers.current).toBe(1);
+      expect(dashboard.period).toMatchObject({ days: 30, timezone: 'UTC' });
+      expect(dashboard.definitions.mrr).toMatch(/yearly ÷ 12/);
     });
 
     it('avoids divide-by-zero: 0 users -> 0.00 conversion, 0 paid users -> 0 arpu, 0 videos -> 0 avgPerVideo', async () => {
@@ -152,6 +184,13 @@ describe('AdminService', () => {
       expect(dashboard.revenue.arpuRupees).toBe(0);
       expect(dashboard.clips.avgPerVideo).toBe(0);
       expect(dashboard.videos.storageFormatted).toBe('0 B');
+    });
+
+    it('accepts 7/90-day ranges and falls back to 30', async () => {
+      const service = new AdminService(makeRepo());
+      expect((await service.getExecutiveDashboard(7)).trends.clips.series).toHaveLength(7);
+      expect((await service.getExecutiveDashboard(90)).period.days).toBe(90);
+      expect((await service.getExecutiveDashboard(13)).period.days).toBe(30);
     });
 
     it('formats storage sizes across every magnitude', async () => {

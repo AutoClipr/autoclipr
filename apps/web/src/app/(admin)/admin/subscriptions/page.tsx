@@ -18,6 +18,8 @@ async function fetchStats() {
   return (await res.json()).data;
 }
 
+const fmtPct = (v: number | null | undefined) => (v == null ? "Not tracked" : `${v}%`);
+
 export default async function SubscriptionsPage() {
   const stats = await fetchStats();
   if (!stats) return <p className="text-white/40">Failed to load.</p>;
@@ -41,9 +43,9 @@ export default async function SubscriptionsPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           { icon: CreditCard,  label: "Active",       value: subscriptions.active,               color: "bg-emerald-500/10 text-emerald-400" },
-          { icon: TrendingUp,  label: "Renewal Rate", value: `${subscriptions.renewalRate}%`,    color: "bg-indigo-500/10 text-indigo-400" },
-          { icon: TrendingDown,label: "Churn Rate",   value: `${subscriptions.churnRate}%`,      color: "bg-rose-500/10 text-rose-400" },
-          { icon: RefreshCw,   label: "Refund Rate",  value: `${subscriptions.refundRate}%`,     color: "bg-amber-500/10 text-amber-400" },
+          { icon: TrendingUp,  label: "Renewal Rate", value: fmtPct(subscriptions.renewalRate),  color: "bg-indigo-500/10 text-indigo-400" },
+          { icon: TrendingDown,label: "Churn Rate",   value: fmtPct(subscriptions.churnRate),  color: "bg-rose-500/10 text-rose-400" },
+          { icon: RefreshCw,   label: "Refund Rate",  value: fmtPct(subscriptions.refundRate),  color: "bg-amber-500/10 text-amber-400" },
         ].map((k) => (
           <div key={k.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-4">
             <div className={`mb-3 inline-flex rounded-lg p-2 ${k.color}`}>
@@ -81,9 +83,9 @@ export default async function SubscriptionsPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {[
-          { label: "Churn Rate",    value: `${subscriptions.churnRate}%`,   note: "Monthly. <5% is healthy.", ok: subscriptions.churnRate < 5 },
-          { label: "Renewal Rate",  value: `${subscriptions.renewalRate}%`, note: "Auto-renewals processed.", ok: subscriptions.renewalRate > 90 },
-          { label: "Refund Rate",   value: `${subscriptions.refundRate}%`,  note: "Refunds / total paid.",    ok: subscriptions.refundRate < 2 },
+          { label: "Churn Rate",    value: fmtPct(subscriptions.churnRate), note: "Paid subscriptions ended in the last 30 days.", ok: (subscriptions.churnRate ?? 0) < 5 },
+          { label: "Renewal Rate",  value: fmtPct(subscriptions.renewalRate), note: "Not recorded yet.", ok: true },
+          { label: "Refund Rate",   value: fmtPct(subscriptions.refundRate), note: "Refunded ÷ (paid + refunded).", ok: (subscriptions.refundRate ?? 0) < 2 },
         ].map((m) => (
           <div key={m.label} className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 text-center">
             <p className={`text-3xl font-bold ${m.ok ? "text-emerald-400" : "text-rose-400"}`}>{m.value}</p>

@@ -59,12 +59,13 @@ export default async function CountriesPage() {
       </div>
 
       <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.04] px-4 py-3">
-        <p className="text-xs text-amber-400">Country data is estimated based on user demographics. Full geo-tracking requires IP-based analytics integration.</p>
+        <p className="text-xs text-amber-400">Country isn&apos;t recorded at sign-up yet, so there is no country data to show. Nothing here is estimated.</p>
       </div>
 
       <div className="rounded-xl border border-white/[0.07] bg-[#24303F] p-5">
         <h3 className="mb-5 text-[15px] font-semibold text-white">Top Countries</h3>
         <div className="space-y-5">
+          {countries.length === 0 && <p className="py-6 text-center text-sm text-white/40">No country data yet.</p>}
           {countries.map((c: { country: string; users: number; revenueRupees: number }) => (
             <div key={c.country}>
               <div className="mb-2 flex items-center justify-between text-sm">

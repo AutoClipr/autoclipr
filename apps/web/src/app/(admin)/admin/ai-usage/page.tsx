@@ -28,7 +28,6 @@ export default async function AiUsagePage() {
     { icon: Zap,  label: "Hooks Generated",    value: ai.hooksGenerated,    color: "#6366f1", pct: Math.round((ai.hooksGenerated / Math.max(1, clips.total)) * 100) },
     { icon: Type, label: "Titles Generated",   value: ai.titlesGenerated,   color: "#10b981", pct: Math.round((ai.titlesGenerated / Math.max(1, clips.total)) * 100) },
     { icon: Hash, label: "Captions Generated", value: ai.captionsGenerated, color: "#f59e0b", pct: Math.round((ai.captionsGenerated / Math.max(1, clips.total)) * 100) },
-    { icon: Bot,  label: "Scripts Generated",  value: ai.scriptsGenerated,  color: "#3b82f6", pct: Math.round((ai.scriptsGenerated / Math.max(1, clips.total)) * 100) },
   ];
 
   return (

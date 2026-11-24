@@ -843,4 +843,82 @@ describe('AdminRepository', () => {
       await expect(repo.getCreditUsageStats()).resolves.toEqual({ totalCreditsUsed: 0, totalTransactions: 0 });
     });
   });
+
+  describe('executive dashboard queries', () => {
+    it('lists created_at values, debits and payments since a date', async () => {
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ data: [{ created_at: '2026-11-20T00:00:00Z' }] }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: [{ amount: -3, created_at: '2026-11-20T00:00:00Z' }, { amount: null, created_at: 'x' }] }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: [{ amount: '₹599.00', payment_date: '2026-11-21T00:00:00Z' }] }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.createdSince('videos', '2026-11-01')).resolves.toEqual(['2026-11-20T00:00:00Z']);
+      await expect(repo.creditDebitsSince('2026-11-01')).resolves.toEqual([{ at: '2026-11-20T00:00:00Z', credits: 3 }, { at: 'x', credits: 0 }]);
+      await expect(repo.paymentsSince('2026-11-01')).resolves.toEqual([{ at: '2026-11-21T00:00:00Z', paise: 59900 }]);
+      await expect(repo.createdSince('clips', 'x')).resolves.toEqual([]);
+      await expect(repo.creditDebitsSince('x')).resolves.toEqual([]);
+      await expect(repo.paymentsSince('x')).resolves.toEqual([]);
+    });
+
+    it('joins paid subscriptions to their latest paid charge', async () => {
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ data: [
+          { user_id: 'a', plan_id: 'creator', status: 'active', current_period_end: null, cancelled_at: null, cancellation_effective_at: null },
+          { user_id: 'b', plan_id: 'pro', status: 'cancelled', current_period_end: '2026-11-01', cancelled_at: '2026-10-30', cancellation_effective_at: null },
+        ] }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: [
+          { user_id: 'a', amount: '₹599', billing_period: 'monthly' },
+          { user_id: 'a', amount: '₹1', billing_period: 'monthly' },
+          { user_id: 'b', amount: '₹9,999', billing_period: null },
+        ] }));
+      const subs = await repo.paidSubscriptions();
+      expect(subs[0]).toMatchObject({ userId: 'a', plan: 'creator', lastCharge: { paise: 59900, period: 'monthly' } });
+      expect(subs[1]).toMatchObject({ cancelledAt: '2026-10-30', lastCharge: { paise: 999900, period: 'monthly' } });
+      client.from.mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.paidSubscriptions()).resolves.toEqual([]);
+    });
+
+    it('counts transactions by status', async () => {
+      client.from.mockReturnValueOnce(mockQueryBuilder({ data: [{ status: 'paid' }, { status: 'paid' }, { status: 'refunded' }, { status: null }] }));
+      await expect(repo.transactionStatusCounts()).resolves.toEqual({ paid: 2, refunded: 1, unknown: 1 });
+      client.from.mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.transactionStatusCounts()).resolves.toEqual({});
+    });
+
+    it('reports queue state and 24 h job outcomes', async () => {
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ count: 4 }))
+        .mockReturnValueOnce(mockQueryBuilder({ count: null }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: [
+          { status: 'completed', started_at: '2026-11-25T00:00:00Z', completed_at: '2026-11-25T00:01:40Z' },
+          { status: 'completed', started_at: null, completed_at: null },
+          { status: 'failed' },
+        ] }));
+      await expect(repo.jobHealth()).resolves.toEqual({ queued: 4, processing: 0, completed24h: 2, failed24h: 1, avgProcessingSecs: 100 });
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ count: 0 }))
+        .mockReturnValueOnce(mockQueryBuilder({ count: 0 }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.jobHealth()).resolves.toMatchObject({ avgProcessingSecs: null });
+    });
+
+    it('counts distinct activated users', async () => {
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ data: [{ user_id: 'a' }, { user_id: 'a' }, { user_id: 'b' }] }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.activationCounts()).resolves.toEqual({ withVideo: 2, withClip: 0 });
+    });
+
+    it('counts hooks and enhancement usage; a missing hook column is "not tracked"', async () => {
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ count: 7 }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: [{ payload: { enhancements: { auto_zoom: {}, ai_emojis: {}, color_correction: null } } }, { payload: null }] }));
+      await expect(repo.aiUsage('x')).resolves.toEqual({ hooks: 7, enhancementJobs: { auto_zoom: 1, ai_emojis: 1 } });
+      client.from
+        .mockReturnValueOnce(mockQueryBuilder({ error: { message: 'column clips.hook does not exist' }, count: null }))
+        .mockReturnValueOnce(mockQueryBuilder({ data: null }));
+      await expect(repo.aiUsage('x')).resolves.toEqual({ hooks: null, enhancementJobs: {} });
+    });
+  });
 });

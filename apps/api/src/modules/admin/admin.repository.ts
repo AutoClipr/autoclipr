@@ -767,4 +767,118 @@ export class AdminRepository {
     const totalUsed = (data ?? []).reduce((s, t) => s + Math.abs((t.amount as number | null) ?? 0), 0);
     return { totalCreditsUsed: totalUsed, totalTransactions: (data ?? []).length };
   }
+
+  // ─── Executive dashboard (real data only) ───────────────────────────────
+
+  /** Rows created since `since` (ISO) for daily bucketing. */
+  async createdSince(table: 'profiles' | 'videos' | 'clips', since: string) {
+    const { data } = await this.db.from(table).select('created_at').gte('created_at', since).limit(100000);
+    return (data ?? []).map((r) => r.created_at as string);
+  }
+
+  /** Credit debits (amount < 0) since `since`, from the credit ledger. */
+  async creditDebitsSince(since: string) {
+    const { data } = await this.db.from('credit_transactions').select('amount, created_at').lt('amount', 0).gte('created_at', since).limit(100000);
+    return (data ?? []).map((r) => ({ at: r.created_at as string, credits: Math.abs((r.amount as number) ?? 0) }));
+  }
+
+  /** Paid billing transactions since `since`. */
+  async paymentsSince(since: string) {
+    const { data } = await this.db.from('billing_transactions').select('amount, payment_date').eq('status', 'paid').gte('payment_date', since).limit(100000);
+    return (data ?? []).map((r) => ({ at: r.payment_date as string, paise: parseAmountPaise(r.amount as string) }));
+  }
+
+  /**
+   * Paid subscriptions (any status) with the user's latest paid charge, so
+   * MRR can be normalised from what each customer actually pays.
+   */
+  async paidSubscriptions() {
+    const { data: subs } = await this.db
+      .from('user_subscriptions')
+      .select('user_id, plan_id, status, current_period_end, cancelled_at, cancellation_effective_at, created_at')
+      .not('plan_id', 'in', '("starter","free")');
+    const rows = subs ?? [];
+    const ids = rows.map((r) => r.user_id as string);
+    const latest: Record<string, { paise: number; period: string }> = {};
+    if (ids.length) {
+      const { data: tx } = await this.db
+        .from('billing_transactions')
+        .select('user_id, amount, billing_period, payment_date')
+        .eq('status', 'paid')
+        .in('user_id', ids)
+        .order('payment_date', { ascending: false });
+      for (const t of tx ?? []) {
+        const uid = t.user_id as string;
+        if (!latest[uid]) latest[uid] = { paise: parseAmountPaise(t.amount as string), period: (t.billing_period as string) ?? 'monthly' };
+      }
+    }
+    return rows.map((r) => ({
+      userId: r.user_id as string,
+      plan: r.plan_id as string,
+      status: r.status as string,
+      periodEnd: (r.current_period_end as string | null) ?? null,
+      cancelledAt: ((r.cancellation_effective_at ?? r.cancelled_at) as string | null) ?? null,
+      lastCharge: latest[r.user_id as string] ?? null,
+    }));
+  }
+
+  /** Counts of billing transactions by status (paid, refunded, failed …). */
+  async transactionStatusCounts() {
+    const { data } = await this.db.from('billing_transactions').select('status').limit(100000);
+    const out: Record<string, number> = {};
+    for (const r of data ?? []) out[(r.status as string) ?? 'unknown'] = (out[(r.status as string) ?? 'unknown'] ?? 0) + 1;
+    return out;
+  }
+
+  /** Live queue state and the last 24 h of job outcomes. */
+  async jobHealth() {
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const [queued, processing, recent] = await Promise.all([
+      this.db.from('processing_jobs').select('*', { count: 'exact', head: true }).eq('status', 'queued'),
+      this.db.from('processing_jobs').select('*', { count: 'exact', head: true }).eq('status', 'processing'),
+      this.db.from('processing_jobs').select('status, started_at, completed_at').gte('created_at', since).limit(20000),
+    ]);
+    const rows = recent.data ?? [];
+    const done = rows.filter((r) => r.status === 'completed' && r.started_at && r.completed_at);
+    const avgMs = done.length
+      ? done.reduce((s, r) => s + (new Date(r.completed_at as string).getTime() - new Date(r.started_at as string).getTime()), 0) / done.length
+      : null;
+    return {
+      queued: queued.count ?? 0,
+      processing: processing.count ?? 0,
+      completed24h: rows.filter((r) => r.status === 'completed').length,
+      failed24h: rows.filter((r) => r.status === 'failed').length,
+      avgProcessingSecs: avgMs == null ? null : Math.round(avgMs / 1000),
+    };
+  }
+
+  /** Users who uploaded at least one video / got at least one clip (funnel). */
+  async activationCounts() {
+    const [v, c] = await Promise.all([
+      this.db.from('videos').select('user_id').limit(200000),
+      this.db.from('clips').select('user_id').limit(500000),
+    ]);
+    return {
+      withVideo: new Set((v.data ?? []).map((r) => r.user_id as string)).size,
+      withClip: new Set((c.data ?? []).map((r) => r.user_id as string)).size,
+    };
+  }
+
+  /**
+   * AI feature usage from what was actually produced: clips with a saved
+   * hook, and enhancement settings on generation jobs since `since`.
+   */
+  async aiUsage(since: string) {
+    const [hooks, jobs] = await Promise.all([
+      this.db.from('clips').select('*', { count: 'exact', head: true }).not('hook', 'is', null),
+      this.db.from('processing_jobs').select('payload').gte('created_at', since).not('payload->enhancements', 'is', null).limit(20000),
+    ]);
+    const enhancements: Record<string, number> = {};
+    for (const j of jobs.data ?? []) {
+      const fx = (j.payload as { enhancements?: Record<string, unknown> } | null)?.enhancements ?? {};
+      for (const k of Object.keys(fx)) if (fx[k] != null) enhancements[k] = (enhancements[k] ?? 0) + 1;
+    }
+    // A missing hook column (migration 040 not run) reads as "not tracked".
+    return { hooks: hooks.error ? null : (hooks.count ?? 0), enhancementJobs: enhancements };
+  }
 }

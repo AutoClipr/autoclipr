@@ -2,121 +2,78 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard, Users, Video, Trophy, DollarSign, CreditCard,
-  Link2, Bot, BarChart2, Globe, Activity, XCircle, Bell,
-  ClipboardList, Settings, ShieldCheck, ChevronDown, Zap, Ticket, Mail,
-} from "lucide-react";
+import { ArrowLeft, ChevronsLeft, Zap } from "lucide-react";
+import { ADMIN_NAV, isActivePath } from "./admin-nav";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 
-const SECTIONS = [
-  {
-    label: "MENU",
-    items: [
-      { href: "/admin",               icon: LayoutDashboard, label: "Dashboard" },
-      { href: "/admin/users",         icon: Users,           label: "Users" },
-      { href: "/admin/videos",        icon: Video,           label: "Videos & Clips" },
-      { href: "/admin/top-creators",  icon: Trophy,          label: "Top Creators",  badge: "NEW" },
-      { href: "/admin/revenue",       icon: DollarSign,      label: "Revenue" },
-      { href: "/admin/subscriptions", icon: CreditCard,      label: "Subscriptions" },
-      { href: "/admin/affiliates",    icon: Link2,           label: "Affiliates" },
-      { href: "/admin/coupons",       icon: Ticket,          label: "Coupons",       badge: "NEW" },
-      { href: "/admin/campaigns",     icon: Mail,            label: "Campaigns",     badge: "NEW" },
-      { href: "/admin/ai-usage",      icon: Bot,             label: "AI Usage",      badge: "NEW" },
-      { href: "/admin/analytics",     icon: BarChart2,       label: "Analytics" },
-      { href: "/admin/countries",     icon: Globe,           label: "Countries" },
-    ],
-  },
-  {
-    label: "OPS",
-    items: [
-      { href: "/admin/system",        icon: Activity,        label: "System Health" },
-      { href: "/admin/errors",        icon: XCircle,         label: "Errors" },
-      { href: "/admin/notifications", icon: Bell,            label: "Notifications",  badge: "NEW" },
-      { href: "/admin/audit-logs",    icon: ClipboardList,   label: "Audit Logs" },
-    ],
-  },
-  {
-    label: "ADMIN",
-    items: [
-      { href: "/admin/settings",      icon: Settings,        label: "Settings" },
-      { href: "/admin/team",          icon: ShieldCheck,     label: "Admin Team" },
-    ],
-  },
-];
-
-interface SidebarProps {
+/**
+ * Admin navigation. Desktop: fixed, collapsible to an icon rail (labels move
+ * into tooltips). Mobile: slide-over drawer.
+ */
+export function AdminSidebar({
+  open, onClose, collapsed, onToggleCollapsed,
+}: {
   open: boolean;
   onClose: () => void;
-}
-
-export function AdminSidebar({ open, onClose }: SidebarProps) {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <>
-      {/* Backdrop (mobile) */}
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      {open && <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={onClose} aria-hidden />}
 
       <aside
+        aria-label="Admin navigation"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-[#1C2434] transition-transform duration-300 ease-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[#263449] bg-[#0D1524] transition-[width,transform] duration-200 ease-out",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          collapsed ? "w-[248px] lg:w-[72px]" : "w-[248px]",
         )}
       >
-        {/* Logo */}
-        <div className="flex h-[70px] shrink-0 items-center gap-2.5 border-b border-white/[0.08] px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-violet-600 shadow-lg shadow-violet-900/30">
-            <Zap className="h-5 w-5 text-white" fill="white" />
-          </div>
-          <div>
-            <p className="text-[15px] font-bold leading-none text-white">AutoClipr</p>
-            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">Admin Panel</p>
+        {/* Brand */}
+        <div className={cn("flex h-16 shrink-0 items-center gap-2.5 border-b border-[#263449] px-4", collapsed && "lg:justify-center lg:px-0")}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#54D045] shadow-[0_0_20px_-4px_rgba(84,208,69,0.6)]">
+            <Zap className="h-4 w-4 text-[#0B1120]" fill="currentColor" />
+          </span>
+          <div className={cn("min-w-0", collapsed && "lg:hidden")}>
+            <p className="text-sm font-semibold leading-none text-[#F8FAFC]">AutoClipr</p>
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#94A3B8]">Admin Panel</p>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav
-          className="flex-1 overflow-y-auto px-4 py-4"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {SECTIONS.map((section) => (
-            <div key={section.label} className="mb-6">
-              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/30">
-                {section.label}
-              </p>
+        {/* Groups */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:none]">
+          {ADMIN_NAV.map((group) => (
+            <div key={group.label} className="mb-5">
+              <p className={cn("mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#64748B]", collapsed && "lg:sr-only")}>{group.label}</p>
+              {collapsed && <div className="mx-auto mb-2 hidden h-px w-6 bg-[#263449] lg:block" aria-hidden />}
               <ul className="space-y-0.5">
-                {section.items.map((item) => {
-                  const active =
-                    pathname === item.href ||
-                    (item.href !== "/admin" && pathname.startsWith(item.href));
+                {group.items.map((item) => {
+                  const active = isActivePath(pathname, item.href);
                   const Icon = item.icon;
                   return (
-                    <li key={item.href}>
+                    <li key={item.href} className="group/item relative">
                       <Link
                         href={item.href}
                         onClick={onClose}
+                        aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors",
-                          active
-                            ? "bg-[#3C50E0] text-white"
-                            : "text-[#8A99AF] hover:bg-white/[0.05] hover:text-white"
+                          "relative flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-colors",
+                          collapsed && "lg:justify-center lg:px-0",
+                          active ? "bg-[#54D045]/[0.1] text-[#F8FAFC]" : "text-[#94A3B8] hover:bg-white/[0.04] hover:text-[#F8FAFC]",
                         )}
                       >
-                        <Icon className={cn("h-4.5 w-4.5 shrink-0", active ? "text-white" : "text-[#8A99AF] group-hover:text-white")} style={{ width: 18, height: 18 }} />
-                        <span className="flex-1">{item.label}</span>
-                        {item.badge && (
-                          <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-                            {item.badge}
-                          </span>
-                        )}
+                        {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-[#54D045]" aria-hidden />}
+                        <Icon className={cn("h-[17px] w-[17px] shrink-0", active ? "text-[#54D045]" : "")} />
+                        <span className={cn("truncate", collapsed && "lg:hidden")}>{item.label}</span>
                       </Link>
+                      {collapsed && (
+                        <span role="tooltip" className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-[#263449] bg-[#1A2739] px-2 py-1 text-xs text-[#F8FAFC] opacity-0 shadow-lg transition-opacity group-hover/item:opacity-100 lg:block">
+                          {item.label}
+                        </span>
+                      )}
                     </li>
                   );
                 })}
@@ -126,14 +83,17 @@ export function AdminSidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-white/[0.08] p-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#8A99AF] hover:bg-white/[0.05] hover:text-white transition-colors"
-          >
-            <ChevronDown className="h-4 w-4 rotate-90" />
-            Back to App
+        <div className="shrink-0 space-y-1 border-t border-[#263449] p-3">
+          <Link href="/dashboard" title="Back to app"
+            className={cn("flex h-9 items-center gap-3 rounded-lg px-3 text-xs font-medium text-[#94A3B8] hover:bg-white/[0.04] hover:text-[#F8FAFC]", collapsed && "lg:justify-center lg:px-0")}>
+            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <span className={cn(collapsed && "lg:hidden")}>Back to app</span>
           </Link>
+          <button type="button" onClick={onToggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn("hidden h-9 w-full items-center gap-3 rounded-lg px-3 text-xs font-medium text-[#94A3B8] hover:bg-white/[0.04] hover:text-[#F8FAFC] lg:flex", collapsed && "lg:justify-center lg:px-0")}>
+            <ChevronsLeft className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")} />
+            <span className={cn(collapsed && "lg:hidden")}>Collapse</span>
+          </button>
         </div>
       </aside>
     </>

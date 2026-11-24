@@ -60,8 +60,8 @@ export default async function SystemPage() {
       {/* Status badges */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { icon: Cpu,           label: "CPU",             value: `${system.cpuPercent}%`,     ok: system.cpuPercent < 80 },
-          { icon: Database,      label: "Memory",          value: `${system.memoryPercent}%`,  ok: system.memoryPercent < 80 },
+          { icon: Cpu,           label: "API CPU",         value: `${system.cpuPercent}%`,     ok: system.cpuPercent < 80 },
+          { icon: Database,      label: "API memory",      value: `${system.memoryPercent}%`,  ok: system.memoryPercent < 80 },
           { icon: Activity,      label: "Queue Size",      value: system.queueSize,             ok: system.queueSize < 500 },
           { icon: AlertTriangle, label: "Failed Jobs",     value: system.failedJobs,            ok: system.failedJobs === 0 },
         ].map((k) => (
@@ -82,9 +82,8 @@ export default async function SystemPage() {
       {/* Gauges */}
       <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 space-y-5">
         <h3 className="text-sm font-semibold text-white/70">Resource Usage</h3>
-        <Bar label="CPU"     value={system.cpuPercent} />
-        <Bar label="Memory"  value={system.memoryPercent} />
-        <Bar label="Storage" value={videos.storagePct} />
+        <Bar label="API CPU"    value={system.cpuPercent} />
+        <Bar label="API memory" value={system.memoryPercent} />
       </div>
 
       {/* Processing queue */}

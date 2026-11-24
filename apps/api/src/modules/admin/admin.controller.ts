@@ -13,8 +13,8 @@ export class AdminController {
   constructor(private readonly service: AdminService) {}
 
   @Get('stats')
-  async stats() {
-    const data = await this.service.getExecutiveDashboard();
+  async stats(@Query('days') days?: string) {
+    const data = await this.service.getExecutiveDashboard(days ? parseInt(days, 10) : 30);
     return ApiResponse.ok(data);
   }
 

@@ -39,7 +39,7 @@ export default async function RevenuePage() {
     { icon: TrendingUp, label: "Total Revenue", value: fmtInr(revenue.totalRupees), color: "bg-indigo-500/10 text-indigo-400" },
     { icon: BarChart2,  label: "ARPU",          value: fmtInr(revenue.arpuRupees),  color: "bg-violet-500/10 text-violet-400" },
     { icon: CreditCard, label: "Transactions",  value: revenue.transactionCount,    color: "bg-blue-500/10 text-blue-400" },
-    { icon: TrendingUp, label: "Churn",         value: `${subscriptions.churnRate}%`, color: "bg-rose-500/10 text-rose-400" },
+    { icon: TrendingUp, label: "Churn",         value: subscriptions.churnRate == null ? "—" : `${subscriptions.churnRate}%`, color: "bg-rose-500/10 text-rose-400" },
   ];
 
   return (
