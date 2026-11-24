@@ -18,6 +18,13 @@ import { buildAssFromCues } from './caption-styles';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { WorkersStorageService } from './storage.service';
+import { EnhanceAiService } from './enhance-ai.service';
+import { type ImageOverlay } from './ffmpeg.service';
+import {
+  XFADE, audioCleanFilter, cleanupIntervals, clipCharge, colorFilter, emphasisTimes, keptDuration, mergeAssDoc, overlayAss,
+  pickEmojis, pickKeywords, remapSegments, remapTime, sfxEvents, spreadWords, wordsIn, zoomFilter,
+  type EmojiEvent, type Enhancements, type Interval,
+} from './enhance';
 import { WhisperService } from './whisper.service';
 import { YtdlpService } from './ytdlp.service';
 
@@ -45,6 +52,7 @@ export class UrlPipelineService {
     private readonly monitoring: MonitoringService,
     private readonly email: EmailService,
     private readonly config: ConfigService,
+    private readonly enhanceAi: EnhanceAiService,
   ) {}
 
   async run(data: UrlPipelinePayload, jobId?: string): Promise<void> {
@@ -260,6 +268,7 @@ export class UrlPipelineService {
       const srtCues = data.subtitle_srt_path ? await this.loadSrt(data.subtitle_srt_path, workDir) : null;
 
       const clipIds: string[] = [];
+      const fxBilling = { actual: 0 };
       for (let i = 0; i < moments.length; i++) {
         const moment = moments[i];
         const clipId = await this.renderAndUploadClip({
@@ -279,11 +288,20 @@ export class UrlPipelineService {
           layout,
           srtCues,
           hook: data.hook ?? null,
+          enhancements: data.enhancements ?? null,
+          billing: fxBilling,
         });
         clipIds.push(clipId);
 
         const pct = 50 + Math.floor(((i + 1) / moments.length) * 40);
         await this.updateProgress(jobId, pct, 3, steps, analysis, i + 1);
+      }
+
+      // Enhancements were charged at the longest allowed clip length; refund
+      // what the real clips (and features that actually ran) didn't use.
+      const fxCharged = data.enhancement_billing?.charged ?? 0;
+      if (userId && fxCharged > fxBilling.actual) {
+        await this.refundCredits(userId, fxCharged - fxBilling.actual, 'enhancement_settle', videoId);
       }
 
       steps[2].status = 'completed';
@@ -479,6 +497,9 @@ export class UrlPipelineService {
     /** Uploaded subtitles for the whole source (seconds). */
     srtCues?: SrtCue[] | null;
     hook?: (HookConfig & { credits?: number }) | null;
+    enhancements?: Enhancements | null;
+    /** Accumulates what the per-minute enhancements actually cost. */
+    billing?: { actual: number };
   }): Promise<string> {
     const {
       workDir,
@@ -500,34 +521,109 @@ export class UrlPipelineService {
     const captionsPath = this.temp.jobPath(workDir, `clip_${index}.ass`);
     const clipThumb = this.temp.jobPath(workDir, `clip_${index}_thumb.jpg`);
 
-    await this.ffmpeg.cutClip(
-      sourceVideoPath,
-      rawClip,
-      moment.start_ms,
-      moment.end_ms,
-      exportQuality,
-      opts.watermark,
-      opts.brand?.logo ?? null,
-      opts.layout ?? null,
-    );
-
+    const fx = opts.enhancements ?? {};
+    const applied: (keyof Enhancements)[] = [];
+    const startS = moment.start_ms / 1000;
+    const endS = moment.end_ms / 1000;
     const [frameW, frameH] = outputSize(opts.layout?.aspect_ratio, exportQuality);
     const frame = { width: frameW, height: frameH };
     const styleId = opts.brand?.captionStyle ?? captionStyle;
-    if (opts.srtCues) {
+
+    // ── Speech cleanup: cut fillers / long pauses, re-time the transcript ──
+    let keep: Interval[] = [[0, endS - startS]];
+    let cutSource = sourceVideoPath;
+    let cutStartMs = moment.start_ms;
+    let cutEndMs = moment.end_ms;
+    if (fx.speech_cleanup) {
+      try {
+        const plan = cleanupIntervals(wordsIn(transcript, startS, endS), startS, endS, fx.speech_cleanup);
+        if (plan.keep.length > 1 || keptDuration(plan.keep) < endS - startS - 0.05) {
+          const cleaned = this.temp.jobPath(workDir, `clip_${index}_clean.mp4`);
+          await this.ffmpeg.cutSegments(sourceVideoPath, cleaned, startS, endS - startS, plan.keep);
+          keep = plan.keep;
+          cutSource = cleaned;
+          cutStartMs = 0;
+          cutEndMs = Math.round(keptDuration(keep) * 1000);
+          this.logger.log(`Speech cleanup clip ${index}: ${plan.removedFillers} fillers, ${plan.removedPauses} pauses removed`);
+        }
+        applied.push('speech_cleanup');
+      } catch (err) {
+        this.logger.warn(`Speech cleanup skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
+    const clipSeconds = keptDuration(keep);
+    // Clip-relative transcript (seconds from 0) on the final timeline.
+    let clipSegs = remapSegments(transcript, startS, endS, keep);
+    let clipCues = opts.srtCues
+      ? cuesForClip(opts.srtCues, startS, endS)
+          .map((c) => ({ ...c, start: remapTime(c.start, keep) ?? -1, end: remapTime(c.end, keep) ?? -1 }))
+          .filter((c) => c.start >= 0 && c.end > c.start)
+      : null;
+    const words = clipSegs.flatMap((sg) => sg.words ?? [{ start: sg.start, end: sg.end, word: sg.text }]);
+
+    // ── Look: colour + zoom in the cut; audio clean-up in the same pass ──
+    const videoFx: string[] = [];
+    if (fx.color_correction) {
+      videoFx.push(colorFilter(fx.color_correction.preset));
+      applied.push('color_correction');
+    }
+    const zoomTimes = fx.auto_zoom ? emphasisTimes(words, clipSeconds) : [];
+    const zoom = fx.auto_zoom ? zoomFilter(zoomTimes, frameW, frameH, fx.auto_zoom.strength) : null;
+    if (zoom) {
+      videoFx.push(zoom);
+      applied.push('auto_zoom');
+    }
+    const audioFx = fx.enhance_audio ? audioCleanFilter(fx.enhance_audio.noise) : null;
+    try {
+      await this.ffmpeg.cutClip(cutSource, rawClip, cutStartMs, cutEndMs, exportQuality, opts.watermark, opts.brand?.logo ?? null, opts.layout ?? null, { video: videoFx, audio: audioFx });
+      if (audioFx) applied.push('enhance_audio');
+    } catch (err) {
+      if (!videoFx.length && !audioFx) throw err;
+      // An enhancement filter must never cost the clip: cut plainly instead.
+      this.logger.warn(`Enhancement filters failed for clip ${index}, cutting without them: ${(err as Error).message}`);
+      for (const f of ['color_correction', 'auto_zoom'] as const) {
+        const i = applied.indexOf(f);
+        if (i >= 0) applied.splice(i, 1);
+      }
+      await this.ffmpeg.cutClip(cutSource, rawClip, cutStartMs, cutEndMs, exportQuality, opts.watermark, opts.brand?.logo ?? null, opts.layout ?? null);
+    }
+
+    // ── Translate: captions (and the dub script) in another language ──
+    const lang = fx.caption_translation?.language ?? fx.voice_dubbing?.language;
+    let dubLines: { t: number; end: number; text: string }[] = [];
+    if (lang) {
+      try {
+        if (clipCues) {
+          const tr = await this.enhanceAi.translateLines(clipCues.map((c) => c.text), lang);
+          clipCues = clipCues.map((c, i) => ({ ...c, text: tr[i] || c.text }));
+          dubLines = clipCues.map((c) => ({ t: c.start, end: c.end, text: c.text }));
+        } else {
+          const tr = await this.enhanceAi.translateLines(clipSegs.map((sg) => sg.text), lang);
+          clipSegs = clipSegs.map((sg, i) => spreadWords({ ...sg, text: tr[i] || sg.text }));
+          dubLines = clipSegs.map((sg) => ({ t: sg.start, end: sg.end, text: sg.text }));
+        }
+        if (fx.caption_translation) applied.push('caption_translation');
+      } catch (err) {
+        this.logger.warn(`Translation skipped for clip ${index}: ${(err as Error).message}`);
+        dubLines = [];
+      }
+    }
+
+    // Captions follow the voice: translated only when translation or dubbing is on.
+    const capSegs = fx.caption_translation || fx.voice_dubbing ? clipSegs : remapSegments(transcript, startS, endS, keep);
+    if (clipCues) {
       // Uploaded subtitles: re-based to this clip, drawn in the caption style.
-      const cues = cuesForClip(opts.srtCues, moment.start_ms / 1000, moment.end_ms / 1000);
-      await fs.writeFile(srtPath, toSrt(cues), 'utf8');
-      await fs.writeFile(captionsPath, buildAssFromCues(cues, styleId, opts.brand?.captionOverrides, frame), 'utf8');
+      await fs.writeFile(srtPath, toSrt(clipCues), 'utf8');
+      await fs.writeFile(captionsPath, buildAssFromCues(clipCues, styleId, opts.brand?.captionOverrides, frame), 'utf8');
     } else {
       // Plain SRT is uploaded as the clip's downloadable subtitle file.
-      await this.captions.writeClipSrt(transcript, moment.start_ms, moment.end_ms, srtPath, captionStyle);
-      await this.captions.writeClipAss(transcript, moment.start_ms, moment.end_ms, captionsPath, styleId, opts.brand?.captionOverrides, frame);
+      const durMs = Math.round(clipSeconds * 1000);
+      await this.captions.writeClipSrt(capSegs, 0, durMs, srtPath, captionStyle);
+      await this.captions.writeClipAss(capSegs, 0, durMs, captionsPath, styleId, opts.brand?.captionOverrides, frame);
     }
 
     // AI hook: overlay hooks join the caption file (same burn pass); opening
     // hooks become a card in front of the finished clip further down.
-    const clipSeconds = (moment.end_ms - moment.start_ms) / 1000;
     let hookUsed: { text: string; seconds: number; spec: HookSpec; sfx: string | null } | null = null;
     if (opts.hook) {
       try {
@@ -543,7 +639,81 @@ export class UrlPipelineService {
       }
     }
 
-    await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle, exportQuality);
+    // ── Creative: motion graphics + emojis (same caption pass) ──
+    const hookOverlaySec = hookUsed && opts.hook?.placement === 'overlay' ? hookUsed.seconds : 0;
+    const keywordTimes = fx.motion_graphics?.keywords !== false && fx.motion_graphics ? pickKeywords(words, emphasisTimes(words, clipSeconds, 4.5)) : [];
+    const emojis = fx.ai_emojis ? pickEmojis(capSegs, clipSeconds, fx.ai_emojis.density).filter((e) => e.t >= hookOverlaySec) : [];
+    const emojiImages: ImageOverlay[] = [];
+    const emojiSymbols: EmojiEvent[] = [];
+    for (const e of emojis) {
+      const png = await this.enhanceAi.emojiPng(e.emoji, workDir);
+      if (!png) {
+        emojiSymbols.push(e);
+        continue;
+      }
+      const size = Math.round(frameW * 0.16);
+      const corner = fx.ai_emojis?.position === 'corner';
+      emojiImages.push({ path: png, t: e.t, end: e.end, size, x: corner ? Math.round(frameW * 0.86) : Math.round(frameW / 2), y: Math.round(frameH * (corner ? 0.12 : 0.62)) });
+    }
+    const overlay = overlayAss(frameW, frameH, clipSeconds, {
+      progressBar: fx.motion_graphics && fx.motion_graphics.progress_bar !== false ? { color: fx.motion_graphics.color ?? '#54D045' } : undefined,
+      keywords: keywordTimes,
+      keywordColor: fx.motion_graphics?.color ?? '#54D045',
+      emojiSymbols,
+      emojiPosition: fx.ai_emojis?.position,
+      startAfter: hookOverlaySec,
+    });
+    if (overlay) {
+      const caps = await fs.readFile(captionsPath, 'utf8');
+      await fs.writeFile(captionsPath, mergeAssDoc(caps, overlay), 'utf8');
+    }
+    try {
+      await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle, exportQuality, emojiImages);
+    } catch (err) {
+      if (!emojiImages.length) throw err;
+      this.logger.warn(`Emoji images failed for clip ${index}, burning without them: ${(err as Error).message}`);
+      await this.ffmpeg.burnCaptions(rawClip, captionsPath, captionedClip, opts.brand?.captionStyle ?? captionStyle, exportQuality);
+    }
+    if (fx.motion_graphics) applied.push('motion_graphics');
+    if (fx.ai_emojis) applied.push('ai_emojis');
+
+    // ── Sound: voice dub, then sound effects ──
+    if (fx.voice_dubbing && dubLines.length) {
+      try {
+        const spoken: { path: string; t: number; tempo: number }[] = [];
+        for (let i = 0; i < dubLines.length; i++) {
+          const l = dubLines[i];
+          const mp3 = this.temp.jobPath(workDir, `clip_${index}_dub_${i}.mp3`);
+          await this.enhanceAi.speak(l.text, mp3);
+          const slot = Math.max(0.4, (dubLines[i + 1]?.t ?? clipSeconds) - l.t);
+          spoken.push({ path: mp3, t: l.t, tempo: (await this.ffmpeg.durationOf(mp3)) / slot });
+        }
+        const dubbed = this.temp.jobPath(workDir, `clip_${index}_dubbed.mp4`);
+        await this.ffmpeg.mixDub(captionedClip, dubbed, spoken);
+        await fs.rename(dubbed, captionedClip);
+        applied.push('voice_dubbing');
+      } catch (err) {
+        this.logger.warn(`Voice dubbing skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
+    if (fx.auto_sfx) {
+      const cutsAt: number[] = [];
+      let acc = 0;
+      for (const [a, b] of keep.slice(0, -1)) cutsAt.push((acc += b - a));
+      const punch = words.filter((w) => /!$/.test(w.word.trim())).map((w) => w.end);
+      const events = sfxEvents(fx.auto_sfx, { zooms: zoomTimes, keywords: keywordTimes.map((k) => k.t), cuts: cutsAt, emojis: emojis.map((e) => e.t), punchlines: punch })
+        .filter((e) => e.t >= hookOverlaySec)
+        .map((e) => ({ t: e.t, src: sfxSource(e.kind)! }));
+      const mixed = this.temp.jobPath(workDir, `clip_${index}_autosfx.mp4`);
+      try {
+        await this.ffmpeg.mixSfxEvents(captionedClip, mixed, events, (fx.auto_sfx.volume ?? 70) / 100);
+        await fs.rename(mixed, captionedClip);
+        applied.push('auto_sfx');
+      } catch (err) {
+        this.logger.warn(`Auto SFX skipped for clip ${index}: ${(err as Error).message}`);
+      }
+    }
+    const transition = fx.transitions ? { name: XFADE[fx.transitions.style ?? 'fade'], seconds: fx.transitions.duration ?? 0.4 } : null;
 
     if (hookUsed && opts.hook?.placement === 'overlay' && hookUsed.sfx) {
       const mixed = this.temp.jobPath(workDir, `clip_${index}_sfx.mp4`);
@@ -568,6 +738,7 @@ export class UrlPipelineService {
           height: bh,
           maxBumperSeconds: opts.brand.maxBumperSeconds,
           workDir,
+          transition,
         });
         await fs.rename(bumpered, captionedClip);
       } catch (err) {
@@ -595,18 +766,22 @@ export class UrlPipelineService {
           sfx: hookUsed.sfx,
         });
         await this.ffmpeg.addBumpers(captionedClip, withHook, {
-          intro: card, outro: null, width: frameW, height: frameH, maxBumperSeconds: hookUsed.seconds + 1, workDir,
+          intro: card, outro: null, width: frameW, height: frameH, maxBumperSeconds: hookUsed.seconds + 1, workDir, transition,
         });
         await fs.rename(withHook, captionedClip);
+        // A transition overlaps the card and the clip by its length.
+        const shift = hookUsed.seconds - (transition ? Math.min(transition.seconds, hookUsed.seconds / 2 - 0.05) : 0);
         const srt = await fs.readFile(srtPath, 'utf8').catch(() => '');
-        if (srt) await fs.writeFile(srtPath, toSrt(shiftCues(parseSrt(srt).cues, hookUsed.seconds)), 'utf8');
+        if (srt) await fs.writeFile(srtPath, toSrt(shiftCues(parseSrt(srt).cues, shift)), 'utf8');
       } catch (err) {
         await this.hookFailed(userId, videoId, index, opts.hook, err);
         hookUsed = null;
       }
     }
 
-    const durationSec = Math.round((moment.end_ms - moment.start_ms) / 1000);
+    if (transition && ((opts.brand && (opts.brand.intro || opts.brand.outro)) || hookUsed?.seconds)) applied.push('transitions');
+    if (opts.billing) opts.billing.actual += clipCharge(clipSeconds, applied);
+    const durationSec = Math.round(clipSeconds);
 
     let hasThumb = false;
     try {

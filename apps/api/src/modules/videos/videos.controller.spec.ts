@@ -157,4 +157,9 @@ describe('VideosController', () => {
     (service as any).hookTemplates = jest.fn().mockResolvedValue({ access: 'all', templates: [] });
     await expect(controller.hookTemplates({ sub: 'u1' } as never)).resolves.toMatchObject({ data: { access: 'all' } });
   });
+
+  it('lists enhancements', async () => {
+    (service as any).enhancementList = jest.fn().mockResolvedValue({ access: 'all', items: [] });
+    await expect(controller.enhancements({ sub: 'u1' } as never)).resolves.toMatchObject({ data: { access: 'all' } });
+  });
 });

@@ -9,6 +9,8 @@
 import { DEFAULT_LAYOUT, LayoutBar, layoutSummary, type LayoutConfig, type SubtitleInfo } from "./layout-subtitles";
 import { HookSection, hookSummary, useHookTemplates, type HookMedia } from "./hook-studio";
 import { DEFAULT_HOOK, hookPayload, type HookSettings } from "@/lib/hooks";
+import { EnhancementsPanel, useEnhancementList } from "./enhancements-panel";
+import { estimateCredits, type EnhancementSettings } from "@/lib/enhancements";
 import { BrandKitPicker } from "@/components/brand-kit/brand-kit-picker";
 import { CAPTION_PRESETS, type BrandKit } from "@/lib/brand-kits";
 import { formatMinutes, maxVideoSecondsFor } from "@/lib/plans";
@@ -91,7 +93,10 @@ export function useClipOptions() {
   const [layout, setLayout] = useState<LayoutConfig>(DEFAULT_LAYOUT);
   const [subtitle, setSubtitle] = useState<SubtitleInfo | null>(null);
   const [hook, setHook] = useState<HookSettings>(DEFAULT_HOOK);
+  const [enhancements, setEnhancements] = useState<EnhancementSettings>({});
   return {
+    enhancements,
+    setEnhancements,
     hook,
     setHook,
     layout,
@@ -132,6 +137,7 @@ export function useClipOptions() {
       },
       ...(subtitle ? { subtitle_srt_path: subtitle.path } : {}),
       ...(hook.enabled ? { hook: hookPayload(hook) } : {}),
+      ...(Object.keys(enhancements).length ? { enhancements } : {}),
     }),
   };
 }
@@ -737,6 +743,15 @@ export function ClipSettingsPanel({ opts, media, children }: { opts: ClipOptions
           brandPrimary={opts.brandKit?.captions?.highlight_color ?? null}
         />
 
+        <EnhancementsPanel
+          value={opts.enhancements}
+          onChange={opts.setEnhancements}
+          clipCount={opts.clipCount}
+          durations={opts.durations}
+          image={media?.image}
+          hasJoins={(opts.hook.enabled && opts.hook.placement === "opening") || !!(opts.brandKit && (opts.brandKit.intro_enabled || opts.brandKit.outro_enabled))}
+        />
+
         {children}
       </div>
     </section>
@@ -859,7 +874,10 @@ export function SummaryPanel({
   const { data: hookData } = useHookTemplates();
   const hookCredits = opts.hook.enabled ? (hookData?.templates.find((t) => t.id === opts.hook.template_id)?.credits ?? 0) : 0;
   const perClip = costPerClip + hookCredits;
-  const totalCost = opts.clipCount * perClip;
+  const { data: fxData } = useEnhancementList();
+  const fxEst = estimateCredits(fxData?.items, opts.enhancements, opts.clipCount, opts.durations);
+  const fxCount = Object.keys(opts.enhancements).length;
+  const totalCost = opts.clipCount * perClip + fxEst.credits;
   const notEnough = credits !== null && credits < totalCost;
   const estimate = estimateProcessingSeconds(videoSeconds, opts.clipCount);
   const quality = EXPORT_QUALITIES.find((q) => q.id === opts.exportQuality)?.label ?? "–";
@@ -889,6 +907,7 @@ export function SummaryPanel({
         <Row label="Layout" value={layoutSummary(opts.layout)} />
         <Row label="Subtitles" value={opts.subtitle ? `SRT · ${opts.subtitle.filename}` : "AI captions"} />
         <Row label="AI hook" value={hookSummary(opts.hook, hookData?.templates)} />
+        <Row label="Enhancements" value={fxCount ? `${fxCount} on${fxEst.credits ? ` · ≤${fxEst.credits} cr` : ""}` : "Off"} />
         <Row label="Quality" value={quality} />
         <Row
           label="Processing time"
@@ -904,6 +923,7 @@ export function SummaryPanel({
           <span>
             {opts.clipCount} clips × {perClip} credit{perClip === 1 ? "" : "s"}
             {hookCredits > 0 && ` (incl. ${hookCredits} hook)`}
+            {fxEst.credits > 0 && ` + ${fxEst.credits} enhancements`}
           </span>
           {credits !== null && <span>{credits.toLocaleString()} available</span>}
         </div>

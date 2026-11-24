@@ -86,6 +86,34 @@ export function exportSize(exportQuality: string): [number, number] {
   return [w, h];
 }
 
+/** A silent stereo track of `seconds` (base for mixes when the clip has no audio). */
+const silence = (seconds: number) => `anullsrc=r=44100:cl=stereo,atrim=duration=${Math.max(0.1, seconds).toFixed(3)}`;
+
+/** An image shown from t to end, popping in, centred at (x, y) on the frame. */
+export type ImageOverlay = { path: string; t: number; end: number; x: number; y: number; size: number };
+
+/**
+ * Caption filter plus image overlays as one filter_complex ending in [vout].
+ * Each image scales from 20% to 115% to 100% (pop) and fades out.
+ */
+export function overlayGraph(captionVf: string, overlays: ImageOverlay[]): { inputs: string[]; graph: string | null } {
+  if (!overlays.length) return { inputs: [], graph: null };
+  const inputs: string[] = [];
+  const parts = [`[0:v]${captionVf}[c0]`];
+  overlays.forEach((o, i) => {
+    inputs.push('-loop', '1', '-t', (o.end + 0.1).toFixed(2), '-i', o.path);
+    const a = o.t.toFixed(2);
+    const grow = `min(1.15\,0.2+0.95*(t-${a})/0.16)`;
+    const settle = `if(gt(t-${a}\,0.16)\,max(1\,1.15-(t-${a}-0.16)/0.1*0.15)\,${grow})`;
+    parts.push(
+      `[${i + 1}:v]format=rgba,scale=w='${o.size}*${settle}':h=-1:eval=frame,fade=t=out:st=${(o.end - 0.2).toFixed(2)}:d=0.2:alpha=1[e${i}]`,
+      `[c${i}][e${i}]overlay=x='${o.x}-w/2':y='${o.y}-h/2':enable='between(t,${a},${o.end.toFixed(2)})':eval=frame[c${i + 1}]`,
+    );
+  });
+  parts.push(`[c${overlays.length}]format=yuv420p[vout]`);
+  return { inputs, graph: parts.join(';') };
+}
+
 @Injectable()
 export class FfmpegService {
   private readonly logger = new Logger(FfmpegService.name);
@@ -164,6 +192,8 @@ export class FfmpegService {
     watermark = false,
     logo?: LogoOverlay | null,
     layout?: LayoutConfig | null,
+    /** Extra filters after framing (colour, zoom) and for the audio (cleanup). */
+    extra: { video?: string[]; audio?: string | null } = {},
   ): Promise<void> {
     const preset = QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd;
     const startSec = (startMs / 1000).toFixed(3);
@@ -177,6 +207,10 @@ export class FfmpegService {
     // silently clean file.
     const graph: string[] = layoutGraph(layout ?? {}, W, H, '0:v', 'base');
     let last = 'base';
+    if (extra.video?.length) {
+      graph.push(`[base]${extra.video.join(',')},format=yuv420p[fx]`);
+      last = 'fx';
+    }
     if (logo) {
       graph.push(`[1:v]${logoScaleFilter(W, logo)}[lg]`, `[${last}][lg]overlay=${logoPosition(W, H, logo.position)}[withlogo]`);
       last = 'withlogo';
@@ -208,6 +242,7 @@ export class FfmpegService {
       `[${last}]`,
       '-map',
       '0:a?',
+      ...(extra.audio ? ['-af', extra.audio] : []),
       '-c:v',
       'libx264',
       '-preset',
@@ -284,7 +319,11 @@ export class FfmpegService {
   async addBumpers(
     clipPath: string,
     outputPath: string,
-    opts: { intro?: string | null; outro?: string | null; width: number; height: number; maxBumperSeconds: number; workDir: string },
+    opts: {
+      intro?: string | null; outro?: string | null; width: number; height: number; maxBumperSeconds: number; workDir: string;
+      /** xfade transition name and seconds; joins with a plain cut when absent. */
+      transition?: { name: string; seconds: number } | null;
+    },
   ): Promise<void> {
     const base = path.join(opts.workDir, `${path.basename(clipPath, '.mp4')}`);
     const parts: string[] = [];
@@ -297,6 +336,10 @@ export class FfmpegService {
     if (opts.outro) {
       parts.push(`${base}.outro.mp4`);
       await this.normalizeForConcat(opts.outro, `${base}.outro.mp4`, opts.width, opts.height, opts.maxBumperSeconds, true);
+    }
+    if (opts.transition && parts.length > 1) {
+      await this.joinWithTransition(parts, outputPath, opts.transition);
+      return;
     }
     const list = `${base}.concat.txt`;
     await fs.writeFile(list, parts.map((p) => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'), 'utf8');
@@ -350,16 +393,125 @@ export class FfmpegService {
     const fx = `${sfx},adelay=${delay}|${delay}[fx]`;
     const graph = audio
       ? `${fx};[0:a]aresample=44100,aformat=channel_layouts=stereo[a0];[a0][fx]amix=inputs=2:duration=first:normalize=0[a]`
-      : `${fx};[fx]apad[a]`;
+      : `${fx};${silence(await this.durationOf(input))}[a0];[a0][fx]amix=inputs=2:duration=first:normalize=0[a]`;
     await runCommand(this.ffmpeg, [
       '-hide_banner', '-loglevel', 'error', '-y',
       '-i', input,
       '-filter_complex', graph,
       '-map', '0:v:0', '-map', '[a]',
       '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k',
-      ...(audio ? [] : ['-shortest']),
       '-movflags', '+faststart',
       output,
+    ]);
+  }
+
+  /**
+   * Speech cleanup: keep only the given clip-relative intervals of
+   * [startSec, startSec+durationSec] and join them, with 15 ms audio fades so
+   * cuts don't click. Near-lossless: it is re-encoded by cutClip.
+   */
+  async cutSegments(input: string, output: string, startSec: number, durationSec: number, keep: [number, number][]): Promise<void> {
+    const audio = await this.hasAudio(input);
+    const parts: string[] = [];
+    keep.forEach(([a, b], i) => {
+      parts.push(`[0:v]trim=start=${a.toFixed(3)}:end=${b.toFixed(3)},setpts=PTS-STARTPTS[v${i}]`);
+      if (audio) {
+        parts.push(`[0:a]atrim=start=${a.toFixed(3)}:end=${b.toFixed(3)},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,afade=t=out:st=${Math.max(0, b - a - 0.015).toFixed(3)}:d=0.015[a${i}]`);
+      }
+    });
+    const n = keep.length;
+    const concat = keep.map((_, i) => `[v${i}]${audio ? `[a${i}]` : ''}`).join('') + `concat=n=${n}:v=1:a=${audio ? 1 : 0}[v]${audio ? '[a]' : ''}`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-ss', startSec.toFixed(3), '-t', durationSec.toFixed(3), '-i', input,
+      '-filter_complex', `${parts.join(';')};${concat}`,
+      '-map', '[v]', ...(audio ? ['-map', '[a]'] : []),
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', INTERMEDIATE_CRF,
+      ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : []),
+      '-movflags', '+faststart',
+      output,
+    ]);
+  }
+
+  /** Mix several sound effects (lavfi sources) at their times; video is copied. */
+  async mixSfxEvents(input: string, output: string, events: { t: number; src: string }[], volume = 1): Promise<void> {
+    if (!events.length) return fs.copyFile(input, output);
+    const audio = await this.hasAudio(input);
+    const fx = events.map((e, i) => {
+      const ms = Math.round(e.t * 1000);
+      return `${e.src},volume=${volume.toFixed(2)},adelay=${ms}|${ms}[s${i}]`;
+    });
+    const labels = events.map((_, i) => `[s${i}]`).join('');
+    // No source audio: the effects become the track, padded to the video's length.
+    const graph = audio
+      ? `${fx.join(';')};[0:a]aresample=44100,aformat=channel_layouts=stereo[a0];[a0]${labels}amix=inputs=${events.length + 1}:duration=first:normalize=0[a]`
+      : `${fx.join(';')};${silence(await this.durationOf(input))}[a0];[a0]${labels}amix=inputs=${events.length + 1}:duration=first:normalize=0[a]`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y', '-i', input,
+      '-filter_complex', graph, '-map', '0:v:0', '-map', '[a]',
+      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k',
+      '-movflags', '+faststart', output,
+    ]);
+  }
+
+  /**
+   * Voice dubbing mixdown: each dubbed line starts at its time and is sped up
+   * (max 1.6×) to fit its slot; the original track stays underneath, ducked,
+   * so music and room sound remain. Video is copied.
+   */
+  async mixDub(input: string, output: string, lines: { path: string; t: number; tempo: number }[], originalVolume = 0.18): Promise<void> {
+    const audio = await this.hasAudio(input);
+    const ins: string[] = [];
+    const parts: string[] = [];
+    lines.forEach((l, i) => {
+      ins.push('-i', l.path);
+      const ms = Math.round(l.t * 1000);
+      const tempo = Math.min(1.6, Math.max(1, l.tempo));
+      parts.push(`[${i + 1}:a]aresample=44100,aformat=channel_layouts=stereo,atempo=${tempo.toFixed(3)},adelay=${ms}|${ms}[d${i}]`);
+    });
+    const labels = lines.map((_, i) => `[d${i}]`).join('');
+    const graph = audio
+      ? `${parts.join(';')};[0:a]aresample=44100,aformat=channel_layouts=stereo,volume=${originalVolume}[bg];[bg]${labels}amix=inputs=${lines.length + 1}:duration=first:normalize=0,alimiter=limit=0.95[a]`
+      : `${parts.join(';')};${silence(await this.durationOf(input))}[bg];[bg]${labels}amix=inputs=${lines.length + 1}:duration=first:normalize=0[a]`;
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y', '-i', input, ...ins,
+      '-filter_complex', graph, '-map', '0:v:0', '-map', '[a]',
+      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-shortest',
+      '-movflags', '+faststart', output,
+    ]);
+  }
+
+  /** Duration of a media file in seconds (0 if unknown). */
+  async durationOf(file: string): Promise<number> {
+    try {
+      const { stdout } = await runCommand(this.ffprobe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
+      return Number(String(stdout).trim()) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Join normalised parts with xfade/acrossfade (each overlap shortens the total by `seconds`). */
+  async joinWithTransition(parts: string[], outputPath: string, t: { name: string; seconds: number }): Promise<void> {
+    const durs = await Promise.all(parts.map((p) => this.durationOf(p)));
+    const d = Math.min(t.seconds, ...durs.map((x) => Math.max(0.1, x / 2 - 0.05)));
+    const ins = parts.flatMap((p) => ['-i', p]);
+    const g: string[] = [];
+    let v = '0:v';
+    let a = '0:a';
+    let offset = 0;
+    for (let i = 1; i < parts.length; i++) {
+      offset += durs[i - 1] - d;
+      g.push(`[${v}][${i}:v]xfade=transition=${t.name}:duration=${d.toFixed(3)}:offset=${offset.toFixed(3)}[v${i}]`);
+      g.push(`[${a}][${i}:a]acrossfade=d=${d.toFixed(3)}[a${i}]`);
+      v = `v${i}`;
+      a = `a${i}`;
+    }
+    await runCommand(this.ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', '-y', ...ins,
+      '-filter_complex', g.join(';'), '-map', `[${v}]`, '-map', `[${a}]`,
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'aac', '-b:a', '160k',
+      '-movflags', '+faststart', outputPath,
     ]);
   }
 
@@ -370,6 +522,8 @@ export class FfmpegService {
     captionStyle: string,
     /** Export quality: this is the final encode, so it sets the file quality. */
     exportQuality = 'hd',
+    /** Images (e.g. colour emojis) popped in over the video in the same pass. */
+    overlays: ImageOverlay[] = [],
   ): Promise<void> {
     const crf = (QUALITY_PRESETS[exportQuality] ?? QUALITY_PRESETS.hd).crf;
     const escaped = escapeFfmpegPath(captionsPath);
@@ -378,6 +532,7 @@ export class FfmpegService {
     for (const [label, vf] of attempts) {
       try {
         this.logger.log(`Burning captions (${label}) → ${outputPath}`);
+        const ov = overlayGraph(vf, overlays);
         await runCommand(this.ffmpeg, [
           '-hide_banner',
           '-loglevel',
@@ -385,8 +540,8 @@ export class FfmpegService {
           '-y',
           '-i',
           inputPath,
-          '-vf',
-          vf,
+          ...ov.inputs,
+          ...(ov.graph ? ['-filter_complex', ov.graph] : ['-vf', vf]),
           '-c:v',
           'libx264',
           '-preset',
@@ -394,7 +549,7 @@ export class FfmpegService {
           '-crf',
           crf,
           '-map',
-          '0:v:0',
+          ov.graph ? '[vout]' : '0:v:0',
           '-map',
           '0:a:0?',
           '-c:a',

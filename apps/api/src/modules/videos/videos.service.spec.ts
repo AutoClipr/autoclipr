@@ -657,6 +657,66 @@ describe('VideosService', () => {
     });
   });
 
+  describe('enhancements', () => {
+    const ready = () => {
+      videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);
+      jobsService.enqueueAndDispatch.mockResolvedValue({ id: 'job1' } as never);
+    };
+    const payload = () => (jobsService.enqueueAndDispatch.mock.calls[0][0].payload as any);
+
+    it('charges per-minute features up front at the longest allowed clip length', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'creator' } as never);
+      ready();
+      // 5 clips × 1 credit + (6 audio + 7 sfx) × 2 started minutes × 5 clips
+      await service.completeUpload('u1', 'v1', { clip_count: 5, durations: [30, 90], enhancements: { enhance_audio: {}, auto_sfx: { intensity: 'bold' }, color_correction: {} } } as never);
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 5 + 13 * 2 * 5, 'upload_pipeline', 'v1');
+      expect(payload().enhancement_billing).toEqual({ per_minute: 13, charged: 130 });
+      expect(payload().enhancements).toMatchObject({ auto_sfx: { intensity: 'bold' }, color_correction: {} });
+    });
+
+    it('included features cost nothing extra and combine with hooks', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { clip_count: 5, hook: { kind: 'headline', template_id: 'classic' }, enhancements: { speech_cleanup: {}, auto_zoom: {}, transitions: { style: 'fade' }, ai_emojis: {} } } as never);
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 10, 'upload_pipeline', 'v1');
+      expect(payload().enhancement_billing.charged).toBe(0);
+    });
+
+    it('Starter gets the free features only, checked before charging', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { clip_count: 5, enhancements: { ai_emojis: {}, caption_translation: { language: 'hi' } } } as never);
+      expect(usersRepo.deductCredits).toHaveBeenCalledWith('u1', 5, 'upload_pipeline', 'v1');
+      usersRepo.deductCredits.mockClear();
+      await expect(service.completeUpload('u1', 'v1', { enhancements: { auto_zoom: {} } } as never)).rejects.toThrow('Auto Zoom is available on the Creator');
+      expect(usersRepo.deductCredits).not.toHaveBeenCalled();
+    });
+
+    it('rejects unknown, unbuilt and conflicting settings', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'business' } as never);
+      ready();
+      await expect(service.completeUpload('u1', 'v1', { enhancements: { teleport: {} } } as never)).rejects.toThrow('Unknown enhancement');
+      await expect(service.completeUpload('u1', 'v1', { enhancements: { eye_contact: {} } } as never)).rejects.toThrow("isn't available yet");
+      await expect(service.completeUpload('u1', 'v1', { enhancements: { voice_dubbing: { language: 'es' }, caption_translation: { language: 'fr' } } } as never)).rejects.toThrow('same language');
+    });
+
+    it('ignores an empty enhancements object', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'pro' } as never);
+      ready();
+      await service.completeUpload('u1', 'v1', { clip_count: 5, enhancements: {} } as never);
+      expect(payload().enhancements).toBeUndefined();
+    });
+
+    it('lists enhancements with access', async () => {
+      usersRepo.getById.mockResolvedValue({ subscription_tier: 'starter' } as never);
+      const res = await service.enhancementList('u1');
+      expect(res.access).toBe('basic');
+      expect(res.items.find((e) => e.id === 'ai_emojis')!.allowed).toBe(true);
+      expect(res.items.find((e) => e.id === 'auto_zoom')!.allowed).toBe(false);
+      expect(res.items.find((e) => e.id === 'eye_contact')!.allowed).toBe(false);
+    });
+  });
+
   describe('AI hooks', () => {
     const ready = () => {
       videosRepo.getById.mockResolvedValue({ id: 'v1', status: 'uploading' } as never);

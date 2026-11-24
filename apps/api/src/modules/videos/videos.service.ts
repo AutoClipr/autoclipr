@@ -3,6 +3,8 @@ import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundEx
 import { randomUUID } from 'crypto';
 import { summarizeSrt } from '../../common/srt';
 import { HOOK_TEMPLATES, hookAllowed, hookTemplate } from '../../common/hook-templates';
+import { ENHANCEMENTS, enhancement, enhancementAllowed, estimateEnhancementCredits, type EnhancementId } from '../../common/enhancements';
+import type { EnhancementsDto } from './dto/enhancements.dto';
 import type { HookDto } from './dto/hook.dto';
 import type { LayoutDto, SubtitleUploadDto } from './dto/layout.dto';
 import { ConfigService } from '@nestjs/config';
@@ -102,8 +104,9 @@ export class VideosService {
     const render = await this.renderOptions(userId, dto.layout, dto.subtitle_srt_path);
     const hook = await this.hookOptions(userId, dto.hook, dto.layout?.aspect_ratio);
     const clipCount = dto.clip_count ?? 10;
+    const fx = await this.enhancementOptions(userId, dto.enhancements, clipCount, dto.durations);
     const costPerClip = (this.config.get<number>('clipCreditCost') ?? 1) + hook.perClip;
-    const totalCost = costPerClip * clipCount;
+    const totalCost = costPerClip * clipCount + fx.credits;
 
     const title =
       dto.title?.trim() ||
@@ -162,6 +165,7 @@ export class VideosService {
           ...(brand ? { brand } : {}),
           ...render,
           ...hook.payload,
+          ...fx.payload,
         },
       });
     } catch (err) {
@@ -259,6 +263,43 @@ export class VideosService {
           text: hook.text?.trim() || undefined,
         },
       },
+    };
+  }
+
+  /**
+   * Video enhancements: each must exist, be built and be on the user's plan.
+   * Per-minute features are charged up front at the longest allowed clip
+   * length; the worker refunds the difference once real lengths are known.
+   */
+  private async enhancementOptions(userId: string, dto: EnhancementsDto | undefined, clipCount: number, durations?: number[]) {
+    const on = Object.entries(dto ?? {}).filter(([, v]) => v != null).map(([k]) => k);
+    if (!on.length) return { payload: {}, credits: 0 };
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    for (const id of on) {
+      const e = enhancement(id);
+      if (!e) throw new BadRequestException(`Unknown enhancement: ${id}.`);
+      if (!e.available) throw new BadRequestException(`${e.name} isn't available yet.`);
+      if (!enhancementAllowed(plan.enhancementAccess, e)) {
+        throw new ForbiddenException(`${e.name} is available on the Creator, Pro and Business plans.`);
+      }
+    }
+    if (dto?.voice_dubbing && dto?.caption_translation && dto.voice_dubbing.language !== dto.caption_translation.language) {
+      throw new BadRequestException('Voice dubbing and caption translation must use the same language.');
+    }
+    const maxSeconds = Math.max(60, ...(durations?.length ? durations : [60]));
+    const { perMinute, credits } = estimateEnhancementCredits(on as EnhancementId[], clipCount, maxSeconds);
+    return {
+      credits,
+      payload: { enhancements: dto, enhancement_billing: { per_minute: perMinute, charged: credits } },
+    };
+  }
+
+  /** Enhancements with the caller's access to each. */
+  async enhancementList(userId: string) {
+    const plan = planFor((await this.usersRepo.getById(userId))?.subscription_tier);
+    return {
+      access: plan.enhancementAccess,
+      items: ENHANCEMENTS.map((e) => ({ ...e, allowed: enhancementAllowed(plan.enhancementAccess, e) })),
     };
   }
 
@@ -404,8 +445,9 @@ export class VideosService {
     const hook = await this.hookOptions(userId, dto.hook, dto.layout?.aspect_ratio);
 
     const clipCount = dto.clip_count ?? 5;
+    const fx = await this.enhancementOptions(userId, dto.enhancements, clipCount, dto.durations);
     const costPerClip = (this.config.get<number>('clipCreditCost') ?? 1) + hook.perClip;
-    const totalCost = costPerClip * clipCount;
+    const totalCost = costPerClip * clipCount + fx.credits;
 
     // Charged up front, same as URL imports; the pipeline refunds on failure.
     try {
@@ -440,6 +482,7 @@ export class VideosService {
           ...(brand ? { brand } : {}),
           ...render,
           ...hook.payload,
+          ...fx.payload,
         },
       });
     } catch (err) {

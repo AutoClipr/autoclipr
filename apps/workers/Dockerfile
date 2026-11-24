@@ -46,7 +46,8 @@ RUN apk add --no-cache fontconfig font-montserrat font-dejavu font-pacifico font
   font-noto-emoji font-noto-devanagari font-noto-arabic \
   && fc-cache -f
 
-RUN apk add --no-cache ffmpeg python3 py3-pip \
+# py3-pillow renders colour emoji images (AI Emojis) from Noto Color Emoji.
+RUN apk add --no-cache ffmpeg python3 py3-pip py3-pillow \
   && if [ "$YTDLP_VERSION" = "latest" ]; then \
        pip3 install --break-system-packages --no-cache-dir --upgrade 'yt-dlp[default]'; \
      else \

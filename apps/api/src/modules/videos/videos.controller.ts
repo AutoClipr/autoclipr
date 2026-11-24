@@ -29,6 +29,11 @@ export class VideosController {
   constructor(private readonly videosService: VideosService) {}
 
   /** Signed upload URL for an .srt subtitle file. */
+  @Get('enhancements')
+  async enhancements(@CurrentUser() user: AuthUser) {
+    return ApiResponse.ok(await this.videosService.enhancementList(user.sub));
+  }
+
   @Get('hook-templates')
   async hookTemplates(@CurrentUser() user: AuthUser) {
     return ApiResponse.ok(await this.videosService.hookTemplates(user.sub));

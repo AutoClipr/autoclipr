@@ -65,6 +65,10 @@ export type UrlPipelinePayload = {
   subtitle_srt_path?: string;
   /** AI Hook & Headline settings (validated and charged by the API). */
   hook?: import('./hooks').HookConfig & { credits?: number };
+  /** Video enhancements (validated and charged by the API). */
+  enhancements?: import('./enhance').Enhancements;
+  /** Per-minute enhancement charge taken up front; settled after rendering. */
+  enhancement_billing?: { per_minute: number; charged: number };
 };
 
 export type BrandRenderConfig = {

@@ -1,4 +1,5 @@
 import type { HookAccess } from './hook-templates';
+import type { EnhancementAccess } from './enhancements';
 /**
  * Single source of truth for subscription plans and what each one unlocks.
  *
@@ -41,6 +42,8 @@ export interface PlanConfig {
   aspectRatios: string[];
   /** AI Hook & Headline: none, basic templates, or all templates. */
   hookAccess: HookAccess;
+  /** Video enhancements: basic (free ones) or all. */
+  enhancementAccess: EnhancementAccess;
 }
 
 const ALL_RATIOS = ['9:16', '16:9', '1:1', '4:5'];
@@ -65,6 +68,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     maxBrandKits: 0,
     aspectRatios: ['9:16'],
     hookAccess: 'none',
+    enhancementAccess: 'basic',
   },
   creator: {
     id: 'creator',
@@ -83,6 +87,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     maxBrandKits: 3,
     aspectRatios: ALL_RATIOS,
     hookAccess: 'basic',
+    enhancementAccess: 'all',
   },
   pro: {
     id: 'pro',
@@ -101,6 +106,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     maxBrandKits: 10,
     aspectRatios: ALL_RATIOS,
     hookAccess: 'all',
+    enhancementAccess: 'all',
   },
   business: {
     id: 'business',
@@ -119,6 +125,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     maxBrandKits: 25,
     aspectRatios: ALL_RATIOS,
     hookAccess: 'all',
+    enhancementAccess: 'all',
   },
 };
 

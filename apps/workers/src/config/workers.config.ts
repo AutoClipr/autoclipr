@@ -4,6 +4,9 @@ export default () => ({
   supabaseUrl: process.env.SUPABASE_URL ?? '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+  /** Voice dubbing text-to-speech. */
+  ttsModel: process.env.TTS_MODEL ?? 'gpt-4o-mini-tts',
+  ttsVoice: process.env.TTS_VOICE ?? 'alloy',
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4o',
   whisperModel: process.env.WHISPER_MODEL ?? 'whisper-1',
   /** Hook analysis LLM: openai | deepseek (DeepSeek is ~10× cheaper for tokens) */

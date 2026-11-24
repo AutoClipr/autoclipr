@@ -10,6 +10,7 @@ import { CLIP_QUEUE } from './jobs.constants';
 import { CaptionService } from './pipeline/caption.service';
 import { FfmpegService } from './pipeline/ffmpeg.service';
 import { HookAnalysisService } from './pipeline/hook-analysis.service';
+import { EnhanceAiService } from './pipeline/enhance-ai.service';
 import { TempFilesService } from './pipeline/temp-files.service';
 import { UrlPipelineService } from './pipeline/url-pipeline.service';
 import { PublishService } from './publish/publish.service';
@@ -50,6 +51,7 @@ import { EmailModule } from '@autoclipr/emails';
     WorkersStorageService,
     WhisperService,
     HookAnalysisService,
+    EnhanceAiService,
     CaptionService,
     UrlPipelineService,
     PublishService,
