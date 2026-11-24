@@ -17,6 +17,7 @@ import {
   yearlySavingPct,
   type PlanId,
   type PlanNumbers,
+  planExtras,
 } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { Reveal, Stagger, MotionCard } from "@/components/ui/motion";
@@ -73,24 +74,13 @@ const THEME: Record<Accent, { header: string; sub: string; pill: string; check: 
 
 type Feature = { label: string; strong?: boolean; soon?: boolean; muted?: boolean };
 
-/**
- * Newer feature access per plan. Mirrors apps/api/src/common/plans.ts
- * (maxBrandKits, aspectRatios, hookAccess, enhancementAccess) — the API
- * enforces these; this list only describes them.
- */
-const PLAN_EXTRAS: Record<PlanNumbers["id"], { brandKits: number; allRatios: boolean; hooks: "none" | "basic" | "all"; enhancements: "basic" | "all" }> = {
-  starter: { brandKits: 0, allRatios: false, hooks: "none", enhancements: "basic" },
-  creator: { brandKits: 3, allRatios: true, hooks: "basic", enhancements: "all" },
-  pro: { brandKits: 10, allRatios: true, hooks: "all", enhancements: "all" },
-  business: { brandKits: 25, allRatios: true, hooks: "all", enhancements: "all" },
-};
 
 /** Only what the product does today; unbuilt items are marked "Soon". */
 function featuresFor(p: PlanNumbers): Feature[] {
   const paid = p.price_cents > 0;
   const live = p.platforms.filter((x) => LIVE_PUBLISH_PLATFORMS.includes(x));
   const upcoming = p.platforms.filter((x) => !LIVE_PUBLISH_PLATFORMS.includes(x));
-  const x = PLAN_EXTRAS[p.id] ?? PLAN_EXTRAS.starter;
+  const x = planExtras(p.id);
   const f: Feature[] = [
     { label: `${p.credits_per_month.toLocaleString("en-IN")} credits / month`, strong: true },
     { label: `${p.estimated_clips[0]}–${p.estimated_clips[1]} short clips (estimate)` },

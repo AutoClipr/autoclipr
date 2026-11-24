@@ -87,3 +87,18 @@ export function planLabel(tier?: string | null): string {
   const p = FALLBACK_PLANS.find((x) => x.id === tier);
   return !p || p.id === "starter" ? "Free Plan" : `${p.name} Plan`;
 }
+
+/**
+ * Newer feature access per plan, for the pricing cards and comparison table.
+ * Mirrors apps/api/src/common/plans.ts (maxBrandKits, aspectRatios,
+ * hookAccess, enhancementAccess) — the API enforces these; this only
+ * describes them.
+ */
+export type PlanExtras = { brandKits: number; allRatios: boolean; hooks: "none" | "basic" | "all"; enhancements: "basic" | "all" };
+const PLAN_EXTRAS: Record<PlanId, PlanExtras> = {
+  starter: { brandKits: 0, allRatios: false, hooks: "none", enhancements: "basic" },
+  creator: { brandKits: 3, allRatios: true, hooks: "basic", enhancements: "all" },
+  pro: { brandKits: 10, allRatios: true, hooks: "all", enhancements: "all" },
+  business: { brandKits: 25, allRatios: true, hooks: "all", enhancements: "all" },
+};
+export const planExtras = (id: string): PlanExtras => PLAN_EXTRAS[id as PlanId] ?? PLAN_EXTRAS.starter;

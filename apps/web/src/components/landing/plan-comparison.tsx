@@ -1,5 +1,5 @@
 import { Check, Clock, Minus } from "lucide-react";
-import { FALLBACK_PLANS, LIVE_PUBLISH_PLATFORMS, formatMinutes, type PlanNumbers } from "@/lib/plans";
+import { FALLBACK_PLANS, LIVE_PUBLISH_PLATFORMS, formatMinutes, planExtras, type PlanNumbers } from "@/lib/plans";
 
 type Cell = boolean | string | "soon";
 type Row = { feature: string; hint?: string; cell: (p: PlanNumbers) => Cell };
@@ -17,6 +17,20 @@ const ROWS: Row[] = [
   { feature: "AI clip scoring", cell: (p) => p.price_cents > 0 },
   { feature: "Auto captions & subtitles (15 styles)", cell: () => true },
   { feature: "Vertical 9:16 export", cell: () => true },
+  { feature: "16:9, 1:1 & 4:5 export", cell: (p) => planExtras(p.id).allRatios },
+  { feature: "Fill & Fit layouts", cell: () => true },
+  { feature: "Upload your own SRT subtitles", cell: () => true },
+  { feature: "Brand kits", hint: "Logo, colours, captions, intro & outro", cell: (p) => (planExtras(p.id).brandKits ? `Up to ${planExtras(p.id).brandKits}` : false) },
+  { feature: "AI hooks & headlines", hint: "Animated opening hooks and title styles", cell: (p) => ({ none: false, basic: "7 hooks + 4 headlines", all: "19 hooks + 4 headlines" } as const)[planExtras(p.id).hooks] },
+  { feature: "AI emojis", cell: () => true },
+  { feature: "Caption translation", hint: "11 languages", cell: () => true },
+  { feature: "Speech cleanup", hint: "Removes filler words and long pauses", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "Auto zoom, transitions & colour correction", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "Enhance audio", hint: "6 credits / min", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "Motion graphics", hint: "6 credits / min", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "Auto sound effects", hint: "7 credits / min", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "AI voice dubbing", hint: "10 credits / min, 11 languages", cell: (p) => planExtras(p.id).enhancements === "all" },
+  { feature: "Eye contact correction", cell: () => "soon" },
   { feature: "Publish to YouTube Shorts & Instagram Reels", cell: (p) => LIVE_PUBLISH_PLATFORMS.every((x) => p.platforms.includes(x)) },
   { feature: "TikTok, Facebook, LinkedIn, X & Threads", cell: (p) => p.platforms.length > LIVE_PUBLISH_PLATFORMS.length },
   { feature: "Content scheduling for all social media platforms", cell: (p) => p.scheduling },
