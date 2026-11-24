@@ -185,20 +185,37 @@ export function wrapHookLines(text: string, maxChars: number): string[] {
   return lines.length > 3 ? [...lines.slice(0, 2), lines.slice(2).join(" ")] : lines;
 }
 
-let cache: Promise<{ access: HookAccess; templates: HookTemplate[] }> | null = null;
+type HookList = { access: HookAccess; templates: HookTemplate[] };
+
+/** One shared copy per page; every reader is notified when it arrives. */
+let cache: Promise<HookList> | null = null;
+let snapshot: HookList | null = null;
+const listeners = new Set<(d: HookList) => void>();
+
+export const getHookSnapshot = () => snapshot;
+export function subscribeHookTemplates(fn: (d: HookList) => void) {
+  listeners.add(fn);
+  return () => void listeners.delete(fn);
+}
 
 /** Templates with the signed-in user's access (cached per page load). */
-export function fetchHookTemplates(force = false) {
+export function fetchHookTemplates(force = false): Promise<HookList> {
   if (!cache || force) {
     cache = (async () => {
-      const token = await getAccessToken();
+      // The session can take a moment to restore after a page load.
+      let token = await getAccessToken();
+      for (let i = 0; !token && i < 5; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        token = await getAccessToken();
+      }
       if (!token) throw new Error("Please sign in again.");
-      const res = await apiFetch<{ access: HookAccess; templates: HookTemplate[] }>("/api/v1/videos/hook-templates", { token, skipGlobalLoader: true });
+      const res = await apiFetch<HookList>("/api/v1/videos/hook-templates", { token, skipGlobalLoader: true });
       if (!res.success || !res.data) throw new Error(res.error?.message ?? "Couldn't load hook templates.");
+      snapshot = res.data;
+      listeners.forEach((fn) => fn(res.data!));
       return res.data;
     })();
     cache.catch(() => (cache = null));
   }
   return cache;
 }
-

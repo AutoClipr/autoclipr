@@ -72,14 +72,39 @@ export function estimateCredits(list: Enhancement[] | undefined, s: EnhancementS
   return { perMinute, credits: perMinute * minutes * clipCount, minutes };
 }
 
-let cache: Promise<{ access: "basic" | "all"; items: Enhancement[] }> | null = null;
-export function fetchEnhancements(force = false) {
+type EnhancementList = { access: "basic" | "all"; items: Enhancement[] };
+
+/**
+ * One shared copy of the list for the whole page. Every component reading it
+ * is notified when it arrives, so the panel and the summary always agree.
+ */
+let cache: Promise<EnhancementList> | null = null;
+let snapshot: EnhancementList | null = null;
+const listeners = new Set<(d: EnhancementList) => void>();
+
+export function getEnhancementSnapshot() {
+  return snapshot;
+}
+
+export function subscribeEnhancements(fn: (d: EnhancementList) => void) {
+  listeners.add(fn);
+  return () => void listeners.delete(fn);
+}
+
+export function fetchEnhancements(force = false): Promise<EnhancementList> {
   if (!cache || force) {
     cache = (async () => {
-      const token = await getAccessToken();
+      // The session can take a moment to restore after a page load.
+      let token = await getAccessToken();
+      for (let i = 0; !token && i < 5; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        token = await getAccessToken();
+      }
       if (!token) throw new Error("Please sign in again.");
-      const res = await apiFetch<{ access: "basic" | "all"; items: Enhancement[] }>("/api/v1/videos/enhancements", { token, skipGlobalLoader: true });
+      const res = await apiFetch<EnhancementList>("/api/v1/videos/enhancements", { token, skipGlobalLoader: true });
       if (!res.success || !res.data) throw new Error(res.error?.message ?? "Couldn't load enhancements.");
+      snapshot = res.data;
+      listeners.forEach((fn) => fn(res.data!));
       return res.data;
     })();
     cache.catch(() => (cache = null));

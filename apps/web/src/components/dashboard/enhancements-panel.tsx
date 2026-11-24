@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { PlanUpgradeCard } from "@/components/billing/plan-upgrade-card";
 import {
-  DEFAULT_SETTINGS, GROUPS, LANGUAGES, estimateCredits, fetchEnhancements,
+  DEFAULT_SETTINGS, GROUPS, LANGUAGES, estimateCredits, fetchEnhancements, getEnhancementSnapshot, subscribeEnhancements,
   type Enhancement, type EnhancementId, type EnhancementSettings,
 } from "@/lib/enhancements";
 import { cn } from "@/lib/utils";
@@ -25,13 +25,21 @@ const ICONS: Record<EnhancementId, typeof Wand2> = {
 const SAMPLE = "/showcase/podcast.jpg";
 
 export function useEnhancementList() {
-  const [data, setData] = useState<{ access: "basic" | "all"; items: Enhancement[] } | null>(null);
+  const [data, setData] = useState(getEnhancementSnapshot);
   const [error, setError] = useState<string | null>(null);
   const load = (force = false) => {
     setError(null);
-    fetchEnhancements(force).then(setData, (e: Error) => setError(e.message));
+    fetchEnhancements(force).catch((e: Error) => setError(e.message));
   };
-  useEffect(() => load(), []);
+  useEffect(() => {
+    // Any successful load (from this or another component) updates everyone.
+    const off = subscribeEnhancements((d) => {
+      setData(d);
+      setError(null);
+    });
+    if (!getEnhancementSnapshot()) load();
+    return off;
+  }, []);
   return { data, error, retry: () => load(true) };
 }
 

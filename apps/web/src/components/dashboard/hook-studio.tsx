@@ -18,6 +18,8 @@ import {
   HOOK_BACKGROUNDS,
   HOOK_FONTS,
   fetchHookTemplates,
+  getHookSnapshot,
+  subscribeHookTemplates,
   resolveLook,
   wrapHookLines,
   type HookAccess,
@@ -44,13 +46,20 @@ export type HookMedia = { video?: string | null; image?: string | null };
 /* ─── Templates ─────────────────────────────────────────────────────── */
 
 export function useHookTemplates() {
-  const [state, setState] = useState<{ access: HookAccess; templates: HookTemplate[] } | null>(null);
+  const [state, setState] = useState(getHookSnapshot);
   const [error, setError] = useState<string | null>(null);
   const load = (force = false) => {
     setError(null);
-    fetchHookTemplates(force).then(setState, (e: Error) => setError(e.message));
+    fetchHookTemplates(force).catch((e: Error) => setError(e.message));
   };
-  useEffect(() => load(), []);
+  useEffect(() => {
+    const off = subscribeHookTemplates((d) => {
+      setState(d);
+      setError(null);
+    });
+    if (!getHookSnapshot()) load();
+    return off;
+  }, []);
   return { data: state, error, retry: () => load(true) };
 }
 
