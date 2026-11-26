@@ -19,13 +19,13 @@ import { getAccessToken } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
 import { Delta, EmptyState, InfoTip, KpiCard, Panel, SectionLabel, Skeleton, downloadCsv, fmtDuration, fmtInr, fmtNum } from "./ui";
 
-type Trend = { current: number; previous: number; changePct: number | null; series: { date: string; value: number }[] };
-type Stats = {
+export type Trend = { current: number; previous: number; changePct: number | null; series: { date: string; value: number }[] };
+export type Stats = {
   period: { days: number; from: string; to: string; timezone: string };
   definitions: Record<string, string>;
   trends: { newUsers: Trend; videos: Trend; clips: Trend; creditsUsed: Trend; revenueRupees: Trend };
   users: { total: number; paid: number; free: number; conversionRate: string; newToday: number; online: number; recent: { id: string; email: string; full_name: string | null; subscription_tier: string; credits: number; created_at: string }[] };
-  revenue: { mrrRupees: number; arrRupees: number; totalRupees: number; transactionCount: number; arpuRupees: number; recent: { id: string; invoice_number: string; plan_id: string; amount: string; billing_period: string; payment_date: string }[] };
+  revenue: { mrrRupees: number; arrRupees: number; totalRupees: number; transactionCount: number; arpuRupees: number; byMonth: { month: string; revenue: number }[]; byPlan: Record<string, number>; recent: { id: string; invoice_number: string; plan_id: string; amount: string; billing_period: string; payment_date: string }[] };
   subscriptions: { active: number; cancelled: number; byPlan: Record<string, number>; churnRate: number | null; refundRate: number | null; failedPayments: number };
   videos: { storageFormatted: string; total: number };
   clips: { total: number };
@@ -40,7 +40,7 @@ const REFRESH = [
   { id: 60, label: "1 min" },
   { id: 300, label: "5 min" },
 ];
-const PLAN_COLOR: Record<string, string> = { creator: "#8B5CF6", pro: "#54D045", business: "#F59E0B" };
+export const PLAN_COLOR: Record<string, string> = { creator: "#8B5CF6", pro: "#54D045", business: "#F59E0B" };
 const FX_LABEL: Record<string, string> = {
   motion_graphics: "Motion graphics", ai_emojis: "AI emojis", speech_cleanup: "Speech cleanup", enhance_audio: "Enhance audio",
   auto_sfx: "Auto SFX", auto_zoom: "Auto zoom", transitions: "Transitions", color_correction: "Colour correction",
@@ -295,7 +295,7 @@ export function DashboardBody({ data }: { data: Stats }) {
 /** Names sometimes arrive mis-encoded (e.g. "â€”"); show the email instead. */
 const cleanName = (n: string | null) => (n && !/â€|Ã/.test(n) ? n : null);
 
-function Mini({ label, value, help, tone }: { label: string; value: string; help?: string; tone?: "bad" }) {
+export function Mini({ label, value, help, tone }: { label: string; value: string; help?: string; tone?: "bad" }) {
   return (
     <div className="rounded-lg border border-[#263449] bg-[#0F192A] px-3 py-2.5">
       <p className="flex items-center gap-1 text-[11px] text-[#64748B]">{label} <InfoTip text={help} /></p>
@@ -425,7 +425,7 @@ function AiUsage({ data }: { data: Stats }) {
 type SortKey = "payment_date" | "amount" | "plan_id";
 const amountNum = (a: string) => parseFloat(a.replace(/[^\d.]/g, "")) || 0;
 
-function Transactions({ rows }: { rows: Stats["revenue"]["recent"] }) {
+export function Transactions({ rows }: { rows: Stats["revenue"]["recent"] }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "payment_date", dir: -1 });
   const list = useMemo(() => {
