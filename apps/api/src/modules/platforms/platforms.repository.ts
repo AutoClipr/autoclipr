@@ -158,4 +158,18 @@ export class PlatformsRepository {
     if (error) throw new Error(error.message);
     return (data?.length ?? 0) > 0;
   }
+
+  /** Remove every connection for a platform account (Meta deauthorize / data deletion). Returns rows removed. */
+  async deleteByAccount(platform: PlatformId, accountId: string): Promise<number> {
+    const { data, error } = await this.supabase
+      .getClient()
+      .from('platform_connections')
+      .delete()
+      .eq('platform', platform)
+      .eq('account_id', accountId)
+      .select('id');
+
+    if (error) throw new Error(error.message);
+    return data?.length ?? 0;
+  }
 }

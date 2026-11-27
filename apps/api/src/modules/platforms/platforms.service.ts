@@ -300,6 +300,81 @@ export class PlatformsService {
     }
   }
 
+  /**
+   * Meta "Deauthorize callback": the user removed AutoClipr from their
+   * Instagram account. Drop the stored connection (and its tokens).
+   */
+  async handleInstagramDeauthorize(signedRequest: string): Promise<{ removed: number }> {
+    const { user_id } = this.parseMetaSignedRequest(signedRequest);
+    const removed = await this.platformsRepo.deleteByAccount('instagram', user_id);
+    return { removed };
+  }
+
+  /**
+   * Meta "Data deletion request": delete everything we hold that came from
+   * this Instagram account (the connection row: tokens, username, account id)
+   * and return the status URL + confirmation code Meta shows the user.
+   */
+  async handleInstagramDataDeletion(
+    signedRequest: string,
+  ): Promise<{ url: string; confirmation_code: string }> {
+    const { user_id } = this.parseMetaSignedRequest(signedRequest);
+    await this.platformsRepo.deleteByAccount('instagram', user_id);
+    const code = this.issueDeletionCode();
+    const webUrl = this.config.get<string>('webAppUrl') ?? 'http://localhost:3000';
+    return { url: `${webUrl}/data-deletion?code=${code}`, confirmation_code: code };
+  }
+
+  /** Check a confirmation code we issued. Codes are signed, so no table is needed. */
+  getDataDeletionStatus(code: string): { valid: boolean; completedAt: string | null } {
+    const m = /^DEL-([0-9a-z]+)-([0-9a-f]{16})$/.exec(code ?? '');
+    if (!m) return { valid: false, completedAt: null };
+    const expected = this.deletionSignature(m[1]);
+    const ok = crypto.timingSafeEqual(Buffer.from(m[2]), Buffer.from(expected));
+    const ms = parseInt(m[1], 36);
+    return ok && Number.isFinite(ms)
+      ? { valid: true, completedAt: new Date(ms).toISOString() }
+      : { valid: false, completedAt: null };
+  }
+
+  private issueDeletionCode(): string {
+    const ts = Date.now().toString(36);
+    return `DEL-${ts}-${this.deletionSignature(ts)}`;
+  }
+
+  private deletionSignature(ts: string): string {
+    return crypto
+      .createHmac('sha256', this.config.get<string>('metaAppSecret') ?? '')
+      .update(`data-deletion:${ts}`)
+      .digest('hex')
+      .slice(0, 16);
+  }
+
+  /** Verify Meta's `signed_request` (base64url sig + payload, HMAC-SHA256 with the app secret). */
+  private parseMetaSignedRequest(signedRequest: string): { user_id: string } {
+    const secret = this.config.get<string>('metaAppSecret');
+    if (!secret) throw new BadRequestException('Meta app secret is not configured');
+    const [sig, payload] = (signedRequest ?? '').split('.', 2);
+    if (!sig || !payload) throw new BadRequestException('Malformed signed_request');
+
+    const expected = crypto.createHmac('sha256', secret).update(payload).digest();
+    const given = Buffer.from(sig, 'base64url');
+    if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
+      throw new BadRequestException('Invalid signed_request signature');
+    }
+
+    let data: { algorithm?: string; user_id?: string | number };
+    try {
+      data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    } catch {
+      throw new BadRequestException('Malformed signed_request');
+    }
+    if (String(data.algorithm ?? '').toUpperCase() !== 'HMAC-SHA256' || data.user_id == null) {
+      throw new BadRequestException('Unsupported signed_request');
+    }
+    return { user_id: String(data.user_id) };
+  }
+
   private buildMetaOAuthUrl(userId: string, platform: PlatformId): string {
     const appId = this.config.get<string>('metaAppId')!;
     const redirectUri = this.getMetaRedirectUri(platform);

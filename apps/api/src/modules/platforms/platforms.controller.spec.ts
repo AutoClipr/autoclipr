@@ -10,6 +10,9 @@ function makeService() {
     getInstagramOAuthUrl: jest.fn(),
     handleYoutubeCallback: jest.fn(),
     handleInstagramCallback: jest.fn(),
+    handleInstagramDeauthorize: jest.fn(),
+    handleInstagramDataDeletion: jest.fn(),
+    getDataDeletionStatus: jest.fn(),
   } as unknown as jest.Mocked<PlatformsService>;
 }
 
@@ -154,5 +157,23 @@ describe('PlatformsController', () => {
     expect(res.redirect).toHaveBeenCalledWith(
       'http://localhost:3000/setup/platforms?from=oauth&platform=instagram&status=error',
     );
+  });
+
+  describe('Meta data callbacks', () => {
+    it('deauthorize wraps the result', async () => {
+      service.handleInstagramDeauthorize.mockResolvedValue({ removed: 1 });
+      await expect(controller.instagramDeauthorize('sr')).resolves.toEqual({ success: true, data: { removed: 1 }, meta: undefined });
+      expect(service.handleInstagramDeauthorize).toHaveBeenCalledWith('sr');
+    });
+
+    it('data deletion returns Meta\'s raw { url, confirmation_code } shape', async () => {
+      service.handleInstagramDataDeletion.mockResolvedValue({ url: 'u', confirmation_code: 'c' });
+      await expect(controller.instagramDataDeletion('sr')).resolves.toEqual({ url: 'u', confirmation_code: 'c' });
+    });
+
+    it('status lookup wraps the result', () => {
+      service.getDataDeletionStatus.mockReturnValue({ valid: true, completedAt: 'x' });
+      expect(controller.dataDeletionStatus('DEL-a-b')).toEqual({ success: true, data: { valid: true, completedAt: 'x' }, meta: undefined });
+    });
   });
 });

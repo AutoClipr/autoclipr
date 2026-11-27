@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Body,
@@ -92,6 +93,30 @@ export class PlatformsController {
         `${webUrl}/setup/platforms?from=oauth&platform=instagram&status=error`,
       );
     }
+  }
+
+  /** Meta calls this when a user removes the app from their Instagram account. */
+  @Public()
+  @Post('instagram/deauthorize')
+  @HttpCode(200)
+  async instagramDeauthorize(@Body('signed_request') signedRequest: string) {
+    const result = await this.platformsService.handleInstagramDeauthorize(signedRequest);
+    return ApiResponse.ok(result);
+  }
+
+  /** Meta data deletion callback. Must reply with { url, confirmation_code } (not wrapped). */
+  @Public()
+  @Post('instagram/data-deletion')
+  @HttpCode(200)
+  instagramDataDeletion(@Body('signed_request') signedRequest: string) {
+    return this.platformsService.handleInstagramDataDeletion(signedRequest);
+  }
+
+  /** Public status lookup for the confirmation code shown to the user. */
+  @Public()
+  @Get('data-deletion/:code')
+  dataDeletionStatus(@Param('code') code: string) {
+    return ApiResponse.ok(this.platformsService.getDataDeletionStatus(code));
   }
 
   @Public()

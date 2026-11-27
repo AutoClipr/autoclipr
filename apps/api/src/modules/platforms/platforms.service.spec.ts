@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PlatformsService } from './platforms.service';
 import { PlatformsRepository } from './platforms.repository';
@@ -16,6 +17,7 @@ function makeRepo() {
     upsert: jest.fn(),
     saveOAuthTokens: jest.fn(),
     delete: jest.fn(),
+    deleteByAccount: jest.fn(),
   } as unknown as jest.Mocked<PlatformsRepository>;
 }
 
@@ -936,6 +938,77 @@ describe('PlatformsService', () => {
         'instagram',
         expect.objectContaining({ access_token: 'short-tok', token_expires_at: null }),
       );
+    });
+  });
+
+  describe('Meta deauthorize / data deletion', () => {
+    const sign = (payload: object, secret = 'meta-app-secret') => {
+      const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+      const sig = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+      return `${sig}.${body}`;
+    };
+    const valid = () => sign({ algorithm: 'HMAC-SHA256', user_id: '1789', issued_at: 1 });
+
+    it('deauthorize removes the Instagram connection for that account', async () => {
+      repo.deleteByAccount.mockResolvedValue(1);
+      await expect(makeService().handleInstagramDeauthorize(valid())).resolves.toEqual({ removed: 1 });
+      expect(repo.deleteByAccount).toHaveBeenCalledWith('instagram', '1789');
+    });
+
+    it('accepts a numeric user_id', async () => {
+      repo.deleteByAccount.mockResolvedValue(0);
+      await makeService().handleInstagramDeauthorize(sign({ algorithm: 'HMAC-SHA256', user_id: 42 }));
+      expect(repo.deleteByAccount).toHaveBeenCalledWith('instagram', '42');
+    });
+
+    it('data deletion deletes and returns a verifiable confirmation code', async () => {
+      repo.deleteByAccount.mockResolvedValue(1);
+      const svc = makeService();
+      const res = await svc.handleInstagramDataDeletion(valid());
+      expect(repo.deleteByAccount).toHaveBeenCalledWith('instagram', '1789');
+      expect(res.confirmation_code).toMatch(/^DEL-[0-9a-z]+-[0-9a-f]{16}$/);
+      expect(res.url).toBe(`https://app.example.com/data-deletion?code=${res.confirmation_code}`);
+      const status = svc.getDataDeletionStatus(res.confirmation_code);
+      expect(status.valid).toBe(true);
+      expect(typeof status.completedAt).toBe('string');
+    });
+
+    it('falls back to localhost for the status URL when webAppUrl is unset', async () => {
+      repo.deleteByAccount.mockResolvedValue(0);
+      const res = await makeService({ ...FULL_CONFIG, webAppUrl: undefined }).handleInstagramDataDeletion(valid());
+      expect(res.url.startsWith('http://localhost:3000/data-deletion?code=DEL-')).toBe(true);
+    });
+
+    it('rejects forged, tampered or unknown status codes', () => {
+      const svc = makeService();
+      expect(svc.getDataDeletionStatus('nope')).toEqual({ valid: false, completedAt: null });
+      expect(svc.getDataDeletionStatus(undefined as never)).toEqual({ valid: false, completedAt: null });
+      expect(svc.getDataDeletionStatus('DEL-abc-0000000000000000')).toEqual({ valid: false, completedAt: null });
+    });
+
+    it('rejects a bad signature', async () => {
+      await expect(makeService().handleInstagramDeauthorize(sign({ algorithm: 'HMAC-SHA256', user_id: '1' }, 'other'))).rejects.toThrow('Invalid signed_request signature');
+      expect(repo.deleteByAccount).not.toHaveBeenCalled();
+    });
+
+    it('rejects malformed or unsupported requests', async () => {
+      const svc = makeService();
+      await expect(svc.handleInstagramDeauthorize('')).rejects.toThrow('Malformed signed_request');
+      await expect(svc.handleInstagramDeauthorize(undefined as never)).rejects.toThrow('Malformed signed_request');
+      const bad = Buffer.from('not json').toString('base64url');
+      const badSig = crypto.createHmac('sha256', 'meta-app-secret').update(bad).digest('base64url');
+      await expect(svc.handleInstagramDeauthorize(`${badSig}.${bad}`)).rejects.toThrow('Malformed signed_request');
+      await expect(svc.handleInstagramDeauthorize(sign({ algorithm: 'MD5', user_id: '1' }))).rejects.toThrow('Unsupported signed_request');
+      await expect(svc.handleInstagramDeauthorize(sign({ algorithm: 'HMAC-SHA256' }))).rejects.toThrow('Unsupported signed_request');
+      await expect(svc.handleInstagramDeauthorize(sign({ user_id: '1' }))).rejects.toThrow('Unsupported signed_request');
+    });
+
+    it('fails clearly when the app secret is missing', async () => {
+      await expect(makeService({ ...FULL_CONFIG, metaAppSecret: undefined }).handleInstagramDeauthorize(valid())).rejects.toThrow('Meta app secret is not configured');
+    });
+
+    it('signs codes with an empty key when the secret is unset (status lookup never throws)', () => {
+      expect(makeService({ ...FULL_CONFIG, metaAppSecret: undefined }).getDataDeletionStatus('DEL-abc-0000000000000000').valid).toBe(false);
     });
   });
 });

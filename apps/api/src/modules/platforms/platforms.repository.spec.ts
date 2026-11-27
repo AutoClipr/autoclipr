@@ -397,4 +397,23 @@ describe('PlatformsRepository', () => {
       await expect(repo.delete('u1', 'youtube')).rejects.toThrow('delete failed');
     });
   });
+
+  describe('deleteByAccount', () => {
+    it('deletes by platform + account id and returns the count', async () => {
+      setup({ data: [{ id: '1' }, { id: '2' }], error: null });
+      await expect(repo.deleteByAccount('instagram', '1789')).resolves.toBe(2);
+      expect(builder.eq).toHaveBeenCalledWith('platform', 'instagram');
+      expect(builder.eq).toHaveBeenCalledWith('account_id', '1789');
+    });
+
+    it('returns 0 when data is null', async () => {
+      setup({ data: null, error: null });
+      await expect(repo.deleteByAccount('instagram', 'x')).resolves.toBe(0);
+    });
+
+    it('throws on error', async () => {
+      setup({ data: null, error: { message: 'boom' } });
+      await expect(repo.deleteByAccount('instagram', 'x')).rejects.toThrow('boom');
+    });
+  });
 });
